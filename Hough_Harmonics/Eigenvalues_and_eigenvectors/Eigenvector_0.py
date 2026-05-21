@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 
-from Eigenvalues_and_eigenvectors.Matrix_m0 import matriz_C
-from Eigenvalues_and_eigenvectors.Matrix_m0 import matriz_D
-from Eigenvalues_and_eigenvectors.Matrix_m0 import p
-from Eigenvalues_and_eigenvectors.Matrix_m0 import r
+from Hough_Harmonics.Eigenvalues_and_eigenvectors.Matrix_m0 import matriz_C
+from Hough_Harmonics.Eigenvalues_and_eigenvectors.Matrix_m0 import matriz_D
+from Hough_Harmonics.Eigenvalues_and_eigenvectors.Matrix_m0 import p
+from Hough_Harmonics.Eigenvalues_and_eigenvectors.Matrix_m0 import r
 
 def Hough_coef_C(n,alpha, gamma, N):
     

@@ -10,35 +10,25 @@ from Eigenvalues_and_eigenvectors.Matrix_system import matriz_B
 def Hough_coef_A(m,n,alpha, gamma, N):
     
     AA = matriz_A(m, gamma, N)
-    
-    #value_A, vector_A = np.linalg.eig(AA)
     value_A, vector_A = scipy.linalg.eig(AA)
-    
     value_order = np.sort(value_A)
     
     l = n-m
     
     if alpha == 1: # EASTWARD GRAVITY MODES 
-        
         index = 2*N + l//2
     
     elif alpha == 2: # WESTWARD GRAVITY MODES
-        
         index = N-1 - l//2
     
     else: # ROTATIONAL MODES
-        
         index = N + l//2
         
     eigen = value_order[index]
     j = np.where(value_A == eigen)
-    
     index = j[0][0]
         
     X = vector_A[:,index]
-    
-    #if X[0] < 0:
-    #   X = -X
     
     A = X[1::3]
     B = X[2::3]
@@ -49,29 +39,22 @@ def Hough_coef_A(m,n,alpha, gamma, N):
 def Hough_coef_B(m,n,alpha, gamma, N):
     
     BB = matriz_B(m, gamma, N)
-    
-    #value_B, vector_B = np.linalg.eig(BB)
     value_B, vector_B = scipy.linalg.eig(BB)
-    
     value_order = np.sort(value_B)
     
     l = n-m
     
     if alpha == 1: # EASTWARD GRAVITY MODES 
-        
         index = 2*N + l//2
     
     elif alpha == 2: # WESTWARD GRAVITY MODES
-        
         index = N-1 - l//2
     
     else: # ROTATIONAL MODES
-        
         index = N + l//2
         
     eigen = value_order[index]
     j = np.where(value_B == eigen)
-    
     index = j[0][0]
         
     X = vector_B[:,index]
@@ -83,16 +66,17 @@ def Hough_coef_B(m,n,alpha, gamma, N):
     return A,B,C, eigen
 
 #-----------------------------------------------------------------------
-# We now start the construction of the spherical vector harmonics
+# SPHERICAL VECTOR HARMONICS
+#-----------------------------------------------------------------------
 
-def norm_Pmn(m, i ,f): # norm of the associated Legendre polynomials
+def norm_Pmn(m, i ,f): 
+    # Associated Legendre Polynomials norm
+    # n E [i, f]
     
     zero = np.array([])
     
-    j = m-i
-    
+    j = m-i # the Legendre polynomials are only defined if n >= m
     if j > 0:
-        
         zero = np.zeros(j)
     
     n = np.arange(max(m,i), f+1)
@@ -101,7 +85,6 @@ def norm_Pmn(m, i ,f): # norm of the associated Legendre polynomials
     den = 2*scipy.special.factorial(n+m)
     
     norm = np.sqrt(num/den)
-    
     norm = np.concatenate((zero, norm))
     
     return norm
@@ -109,11 +92,9 @@ def norm_Pmn(m, i ,f): # norm of the associated Legendre polynomials
 def important_factor(m,i, N):
     
     zero = np.array([])
-    
+
     j = m-i
-    
     if j > 0:
-        
         zero = np.zeros(j)
     
     n = np.arange(max(i,i+j), i + 2*(N-1) + 2)
@@ -134,7 +115,7 @@ def Pmn_and_derivative(m,N, phi):
      
     # For a fixed zonal wavenumber m, the derivative of the normalized
     # associated Legendre polynomials depend on P_m+1,n and P_m-1,n
-    # Therefore, we considered the associated Legendre polynomials to order m+1
+    # Therefore, it is considered the associated Legendre polynomials up to order m+1
     
     P_mn, dP_mn = scipy.special.lpmn(m+2,m + 2*(N-1) +1, np.sin(phi))
     
@@ -175,7 +156,7 @@ def Pmn_and_derivative(m,N, phi):
         
     
     # DERIVATIVE
-    # Initialy we calculate the square root factors
+    # First, we calculate the square root factors
     # We also use the loop below to calculate the factor sqrt( n(n+1) ), which
     # will be used in the definition of y_1, y_2, and y_3
     
@@ -242,19 +223,13 @@ def Spherical_vector_harmonics(m,N, phi):
 def symetry(m,n,alpha):
     
     if alpha == 3:
-        
         if (m-n)%2 == 1:
-        
             return True
-        
         return False
     
     else:
-        
-        if (m-n)%2 == 0:
-            
+        if (m-n)%2 == 0:   
             return True
-    
         return False
 
 
@@ -307,42 +282,3 @@ def Hough_harmonic(m,n,alpha, gamma,phi,N):
         DZ = sum(DC)
         
         return U,V,Z, DU, DV, DZ, eigen
-
-    
-''' EXAMPLES'''
-'''
-PHI = np.linspace(0,np.pi/2,100)
-ANG = np.linspace(0,90, 100)
-
-U_1 = []
-V_1 = []
-Z_1 = []
-
-for phi in PHI:
-
-    g = 1/np.sqrt(10) # gamma = epsilon^-1/2
-    
-    m = 1
-    n = 2
-    alpha = 1 # mode = 1 Eastward gravity, = 2 Westward gravity, = 3 rotational
-    
-    u_1,v_1,z_1 = Hough_harmonic(m,n,alpha,  g, phi, 30)
-    
-    U_1 += [-3*u_1]    # WHAT IS THE CONSTANT ?!?
-    V_1 += [3*v_1]
-    Z_1 += [4*z_1]        
-
-plt.plot(U_1, ANG,label = r'$U$')  # change here to plot U, V or Z
-plt.plot(V_1, ANG,label = r'$V$')
-plt.plot(Z_1, ANG,label = r'$Z$')
-
-plt.axvline(x = -1, color='grey', lw='1', linestyle='--')
-plt.axvline(x = 1, color='grey', lw='1', linestyle='--')  
-plt.axvline(x = 0, color='grey', lw='1', linestyle='--') 
-
-plt.ylim([0,90])
-plt.xlim([-2,2])
-plt.legend()
-plt.title('Height (Z)')
-plt.show()
-   '''     

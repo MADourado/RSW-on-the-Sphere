@@ -109,7 +109,7 @@ def dispersion_relation(h_e: int = 10000):
 
     eigen0 = np.concatenate((np.sqrt(eigen_c), np.sqrt(eigen_d)))
     eigen0 = np.sort(eigen0)[1:7]*s
-    print(eigen0)
+    
     M = np.concatenate((np.array([0]), M))
 
     #-----------------------------------------------------
