@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 
-from Eigenvalues_and_eigenvectors.Matrix_system import matriz_A
-from Eigenvalues_and_eigenvectors.Matrix_system import matriz_B
-from Eigenvalues_and_eigenvectors.Eigenvectors import Hough_harmonic
-from Eigenvalues_and_eigenvectors.Eigenvectors import symetry
+from .Eigenvalues_and_eigenvectors.Matrix_system import matriz_A
+from .Eigenvalues_and_eigenvectors.Matrix_system import matriz_B
+from .Eigenvalues_and_eigenvectors.Eigenvectors import Hough_harmonic
+from .Eigenvalues_and_eigenvectors.Eigenvectors import symetry
 
 
 def norm_Hough(m,n,alpha,gamma, N,deg):

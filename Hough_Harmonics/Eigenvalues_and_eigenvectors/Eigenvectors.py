@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 
-from Eigenvalues_and_eigenvectors.Matrix_system import matriz_A
-from Eigenvalues_and_eigenvectors.Matrix_system import matriz_B
+from .Matrix_system import matriz_A
+from .Matrix_system import matriz_B
 
 def Hough_coef_A(m,n,alpha, gamma, N):
     
