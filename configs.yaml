@@ -1,0 +1,39 @@
+# OUTPUT PATH (for the figures)
+
+OUTPUT_PATH: 'Testes_Marco/figures'
+
+# Equivalent Height (m)
+h_e: 10000 
+dispersion_relation: true # plot the dispersion relation for the chosen height
+
+Triad: # Dear user, please assert that m_c > m_a, m_b, i.e., mode c is the pump! 
+  mode_a:
+    m: 1            # zonal wavenumber
+    n: 2            # meridional wavenumber
+    alpha: 3        # 1 - EIG, 2 - WIG, 3 - RH
+    u: 25           # initial zonal velocity (m/s)
+    show_mode: true # plot the associated Hough Harmonic 
+  
+  mode_b:
+    m: 3
+    n: 4
+    alpha: 3
+    u: 25
+    show_mode: true
+  
+  mode_c:
+    m: 4
+    n: 5
+    alpha: 3
+    u: 25
+    show_mode: true
+
+Dynamics:
+  show_dynamics: true
+  t0: 0    # initial time
+  tf: 10   # final time (days)
+  h: 0.001 # discretization step
+
+
+
+

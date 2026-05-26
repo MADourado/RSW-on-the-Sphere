@@ -105,8 +105,10 @@ def important_factor(m,i, N):
     
     n = np.arange(i,i+2*(N-1) + 2 )
     
-    fat3 =  1/np.sqrt( n*(n+1) )
-    fat4 = np.sqrt( (2*n + 1)/(2*n-1) )
+    with np.errstate(divide='ignore'):
+        fat3 =  1/np.sqrt( n*(n+1) )
+    with np.errstate(invalid='ignore'):
+        fat4 = np.sqrt( (2*n + 1)/(2*n-1) )
     fat5 = np.sqrt( (n+m)*(n+m-1) )
     
     return fat1, fat2, fat3, fat4, fat5, fat6

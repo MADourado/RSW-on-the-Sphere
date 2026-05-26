@@ -1,5 +1,4 @@
 /Dynamic_four_waves.py
-/Dynamic_Triads.py
 /Five_Waves.py
 /Four_Waves
 /Hough_Harmonics3
@@ -19,3 +18,4 @@ f_plane2.py
 .pyc
 /__pycache__
 dispersion_relation.gif
+*.pyc

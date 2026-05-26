@@ -11,7 +11,7 @@ from Hough_Harmonics.Eigenvalues_and_eigenvectors.Matrix_system import matriz_A,
 # DISPERSION RELATION
 #---------------------------------
 
-def dispersion_relation(h_e: int = 10000):
+def dispersion_relation(h_e: int = 10000, path:str = None):
     g = 9.8                           # gravity
     a = 6.38e+06                      # Earth's radius
     omega = 2*np.pi/24/60/60          # Earth's rotation rate
@@ -138,7 +138,8 @@ def dispersion_relation(h_e: int = 10000):
     ]
     secax.set_yticklabels(period_labels)
     secax.set_ylabel('Period (days)')
-    plt.show()
+    plt.savefig(path)
+    plt.close()
 
 if __name__ == "__main__":
     h_e = 10000 # equivalent height, by default = 10km

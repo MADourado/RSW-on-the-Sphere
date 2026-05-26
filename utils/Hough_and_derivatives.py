@@ -7,8 +7,6 @@ from matplotlib.ticker import LinearLocator
 from Hough_Harmonics.Normalization import norm_Hough, norm_component
 from Hough_Harmonics.Eigenvalues_and_eigenvectors.Eigenvectors import Hough_harmonic
 
-
-
 def label(m,n,alpha,height):
 
     l = ''
@@ -22,7 +20,7 @@ def label(m,n,alpha,height):
     l += f'({m},{n}) at {height}m'
     return l
 
-def hough_and_derivatives(m,n,alpha, h_e:int = 10000):
+def hough_and_derivatives(m,n,alpha, h_e:int = 10000, path:str = None):
 
     l = label(m,n,alpha, h_e)
     g = 9.8
@@ -77,13 +75,14 @@ def hough_and_derivatives(m,n,alpha, h_e:int = 10000):
     plt.legend()
     plt.title(l)
     plt.xlabel(r'Latitude ($\phi$) - deg')
-    plt.show()
+    plt.savefig(f'{path}/Hough_harmonic.png')
+    plt.close()
 
     plt.plot(ANG, DU, label = 'DU')
     plt.plot(ANG, DV, label = 'DV')
     plt.plot(ANG, DZ, label = 'DZ')
 
-    plt.ylim([-1.5,1.5])
+    #plt.ylim([-1.5,1.5])
     plt.xlim([0,90])
     x_ticks = np.linspace(0,90,7) 
     plt.xticks(x_ticks)
@@ -91,7 +90,8 @@ def hough_and_derivatives(m,n,alpha, h_e:int = 10000):
     plt.legend()
     plt.title('Derivative - ' + l)
     plt.xlabel(r'Latitude ($\phi$) - deg')
-    plt.show()
+    plt.savefig(f'{path}/derivatives.png')
+    plt.close()
 
 if __name__ == "__main__":
     hough_and_derivatives(1,2,3,10000)
