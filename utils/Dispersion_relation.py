@@ -138,9 +138,12 @@ def dispersion_relation(h_e: int = 10000, path:str = None):
     ]
     secax.set_yticklabels(period_labels)
     secax.set_ylabel('Period (days)')
-    plt.savefig(path)
-    plt.close()
+    if path:
+        plt.savefig(path)
+        plt.close()
+    else:
+        plt.show()
 
 if __name__ == "__main__":
-    h_e = 10000 # equivalent height, by default = 10km
+    h_e = 10000  # equivalent height, by default = 10km
     dispersion_relation(h_e)

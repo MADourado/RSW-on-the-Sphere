@@ -99,7 +99,7 @@ def dispersion_relation(h_e: float = 10000, path: str = None):
     red   = '#c0392b'
     grey  = '0.55'
 
-    fig, ax = plt.subplots(figsize=(6.5, 6.5))   # square
+    fig, ax = plt.subplots(figsize=(8.5, 6.0))   # rectangular (wider than tall)
 
     # ── EIG ────────────────────────────────────────────────────────────────
     n = 12   # Kelvin  (n-m = 0)
