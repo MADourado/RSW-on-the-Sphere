@@ -16,6 +16,7 @@ f_plane.py
 f_plane2.py
 .gif
 .pyc
-/__pycache__
+**/__pycache__/
 dispersion_relation.gif
 *.pyc
+.claude/
