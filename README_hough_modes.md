@@ -114,30 +114,8 @@ consistent.
 ### 2.4 Requirements
 
 `Hough_spatial_ev.py` additionally requires **cartopy** (map projection +
-gridlines), now listed in `requirements.txt`. The first run downloads and
-caches Natural Earth data if coastlines are ever re-enabled (currently off
-— see below); an internet connection is needed the first time cartopy's
-`gridlines()`/projection machinery initializes.
+gridlines), listed in `requirements.txt`. 
 
-### 2.5 Known quirks (worked around in the code)
-
-- **Coastlines are off.** They were removed on request — this is an
-  idealized-sphere mode plot, not a geographic map.
-- **`bbox_inches='tight'` is not used when saving.** Combining cartopy's
-  `draw_labels=True` gridlines with a `matplotlib` colorbar triggers a
-  known `matplotlib`/`cartopy` bug where the axes' tight bounding box comes
-  out `NaN`/`inf`, silently cropping the map out of the saved PNG (only the
-  colorbar survives). Figure margins are set explicitly via
-  `fig.subplots_adjust(...)` instead.
-- **The title is a plain `ax.text()`, not `ax.set_title()`.** The same
-  `NaN`/`inf` bug corrupts `matplotlib`'s automatic title-position update
-  (it inspects the gridliner's hidden label extents), pushing the title to
-  `y = inf` and making it invisible. A manually positioned axes-fraction
-  text sidesteps the automatic positioning logic entirely.
-
-If a future `matplotlib`/`cartopy` release fixes the underlying bug, both
-workarounds are safe to simplify back to `ax.set_title()` +
-`bbox_inches='tight'`.
 
 ---
 
