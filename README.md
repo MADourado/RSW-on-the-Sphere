@@ -39,6 +39,9 @@ part) plus the plotting/driver infrastructure:
   tidal-equation eigenvalue problem, the normalized normal-mode fields
   `(u, v, h)` and their latitudinal derivatives, and the dispersion diagram of
   the three wave families.
+- **Hough mode visualization** — latitudinal profiles/derivatives of a single
+  mode, and its full spatial pattern (`h` contour + `(u, v)` quiver) on a
+  world map. See [`README_hough_modes.md`](README_hough_modes.md).
 - **Triadic interactions** — coupling coefficients, frequency mismatch, the
   three-wave amplitude equations, their time integration (Runge-Kutta), and
   energy/efficiency diagnostics.
@@ -56,7 +59,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-(`numpy<2.0`, `scipy<1.15`, `matplotlib`, `pyyaml`.)
+(`numpy<2.0`, `scipy<1.15`, `matplotlib`, `pyyaml`, `cartopy`.)
 
 ## Usage
 
@@ -76,7 +79,9 @@ Edit `configs.yaml` to change the equivalent height `h_e`, the three modes
 initial zonal velocities, and the time-integration parameters.
 
 The standalone dispersion-relation figure is documented separately in
-[`README_dispersion.md`](README_dispersion.md).
+[`README_dispersion.md`](README_dispersion.md), and the Hough mode
+visualization scripts (latitudinal profile and full spatial pattern) in
+[`README_hough_modes.md`](README_hough_modes.md).
 
 ## References
 
