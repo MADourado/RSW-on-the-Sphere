@@ -48,6 +48,7 @@ def main():
         parser.error(f"{args.config!r} is missing required key: {e}")
 
     os.makedirs(output, exist_ok=True)
+    print(f'Output directory: {os.path.abspath(output)}')
 
     if not dynamics['show_dynamics']:
         print('show_dynamics is false in the config — nothing to do.')
@@ -63,8 +64,10 @@ def main():
     h = dynamics['h']
 
     print('Starting Triad dynamics')
+    dynamics_path = f'{output}/dynamics.png'
     triad_evolution(h_e, m_a, n_a, alpha_a, m_b, n_b, alpha_b, m_c, n_c, alpha_c,
-                     u_a, u_b, u_c, t0, tf, h, f'{output}/dynamics.png')
+                     u_a, u_b, u_c, t0, tf, h, dynamics_path)
+    print(f'  wrote {os.path.abspath(dynamics_path)}')
     print('Dynamics finished')
 
 

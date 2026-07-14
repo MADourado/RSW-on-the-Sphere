@@ -23,13 +23,14 @@ solver.
 Plots the (normalized) latitudinal Hough functions `u(φ), v(φ), h(φ)` and
 their derivatives, for a single mode at a given equivalent height. This is
 the quickest sanity check of a mode's meridional structure — used to
-generate the `mode_*/Hough_harmonic.png` and `mode_*/derivatives.png`
-figures under `outputs/figures/`.
+generate the `<alpha>-<m>-<n>/Hough_harmonic_<alpha>-<m>-<n>.png` and
+`derivatives_<alpha>-<m>-<n>.png` figures under `outputs/figures/`
+(e.g. `RH-1-2/Hough_harmonic_RH-1-2.png`).
 
 ```python
 from rsw_sphere.plotting.hough_and_derivatives import hough_and_derivatives
 
-hough_and_derivatives(m=1, n=2, alpha=3, h_e=10000, path='outputs/figures/mode_a')
+hough_and_derivatives(m=1, n=2, alpha=3, h_e=10000, path='outputs/figures/RH-1-2')
 ```
 
 `alpha`: `1` = EIG, `2` = WIG, `3` = Rossby-Haurwitz (thesis EG/WG/RH — see

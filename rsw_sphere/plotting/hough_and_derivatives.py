@@ -7,22 +7,27 @@ from matplotlib.ticker import LinearLocator
 from rsw_sphere.hough_harmonics.normalization import norm_Hough, norm_component
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
 
+def alpha_label(alpha):
+
+    if alpha == 1:
+        return 'EIG'
+    elif alpha == 2:
+        return 'WIG'
+    else:
+        return 'RH'
+
 def label(m,n,alpha,height):
 
-    l = ''
-    if alpha == 1:
-        l += 'EIG'
-    elif alpha == 2:
-        l += 'WIG'
-    else:
-        l += 'RH'
-    
-    l += f'({m},{n}) at {height}m'
-    return l
+    return f'{alpha_label(alpha)}({m},{n}) at {height}m'
+
+def mode_tag(m,n,alpha):
+
+    return f'{alpha_label(alpha)}-{m}-{n}'
 
 def hough_and_derivatives(m,n,alpha, h_e:int = 10000, path:str = None):
 
     l = label(m,n,alpha, h_e)
+    tag = mode_tag(m,n,alpha)
     g = 9.8
     a = 6.38e+06
     omega = 2*np.pi/24/60/60
@@ -30,6 +35,12 @@ def hough_and_derivatives(m,n,alpha, h_e:int = 10000, path:str = None):
     gamma = 1/np.sqrt(eps)
 
     U,V,Z,DU, DV, DZ, ANG,norm, eigen = norm_Hough(m, n, alpha, gamma, 10, 60)
+
+    # U,V,Z,DU,DV,DZ are physically real; norm_Hough returns them with a
+    # complex dtype (imaginary part is numerical noise), which trips up
+    # matplotlib's isfinite() check and prints a ComplexWarning otherwise.
+    U, V, Z = np.real(U), np.real(V), np.real(Z)
+    DU, DV, DZ = np.real(DU), np.real(DV), np.real(DZ)
 
     angle = np.pi/2*ANG
 
@@ -75,7 +86,7 @@ def hough_and_derivatives(m,n,alpha, h_e:int = 10000, path:str = None):
     plt.legend()
     plt.title(l)
     plt.xlabel(r'Latitude ($\phi$) - deg')
-    plt.savefig(f'{path}/Hough_harmonic.png')
+    plt.savefig(f'{path}/Hough_harmonic_{tag}.png')
     plt.close()
 
     plt.plot(ANG, DU, label = 'DU')
@@ -90,7 +101,7 @@ def hough_and_derivatives(m,n,alpha, h_e:int = 10000, path:str = None):
     plt.legend()
     plt.title('Derivative - ' + l)
     plt.xlabel(r'Latitude ($\phi$) - deg')
-    plt.savefig(f'{path}/derivatives.png')
+    plt.savefig(f'{path}/derivatives_{tag}.png')
     plt.close()
 
 if __name__ == "__main__":
