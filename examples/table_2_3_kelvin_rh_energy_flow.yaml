@@ -1,0 +1,36 @@
+# Reproduces thesis Table 2.3 / Fig. 2.7: energy flow from Rossby-Haurwitz
+# to eastward gravity modes, via the Kelvin wave (1,1,EIG).
+# See docs/code_guide.md and .claude/THESIS_FIGURES.md for details.
+
+OUTPUT_PATH: 'outputs/figures/table_2_3_kelvin_rh_energy_flow'
+
+h_e: 10000
+dispersion_relation: false
+
+Triad: # Dear user, please assert that m_c > m_a, m_b, i.e., mode c is the pump!
+  mode_a:
+    m: 1
+    n: 1
+    alpha: 1        # EIG (Kelvin wave)
+    u: 80
+    show_mode: true
+
+  mode_b:
+    m: 3
+    n: 4
+    alpha: 3        # RH
+    u: 63.89
+    show_mode: true
+
+  mode_c:
+    m: 4
+    n: 5
+    alpha: 3        # RH
+    u: 100
+    show_mode: true
+
+Dynamics:
+  show_dynamics: true
+  t0: 0
+  tf: 10
+  h: 0.001

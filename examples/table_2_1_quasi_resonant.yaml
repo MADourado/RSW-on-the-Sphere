@@ -1,0 +1,42 @@
+# Reproduces a quasi-resonant triad from thesis Table 2.1: the coupling
+# coefficient is close to zero and the frequency mismatch is tiny
+# (~1e-4-1e-5), so run_dynamics.py should show almost no energy exchange
+# between the three modes -- useful as a sanity check that TRIAD's coupling
+# coefficient correctly comes out near-zero for these mode triples.
+# See docs/code_guide.md and .claude/THESIS_FIGURES.md for details.
+#
+# Initial zonal velocities are placeholders (25 m/s each, not from the
+# thesis table) -- feel free to tune them.
+
+OUTPUT_PATH: 'outputs/figures/table_2_1_quasi_resonant'
+
+h_e: 10000
+dispersion_relation: false
+
+Triad: # Dear user, please assert that m_c > m_a, m_b, i.e., mode c is the pump!
+  mode_a:
+    m: 1
+    n: 6
+    alpha: 3        # RH
+    u: 25
+    show_mode: true
+
+  mode_b:
+    m: 3
+    n: 7
+    alpha: 1        # EIG
+    u: 25
+    show_mode: true
+
+  mode_c:
+    m: 4
+    n: 7
+    alpha: 1        # EIG
+    u: 25
+    show_mode: true
+
+Dynamics:
+  show_dynamics: true
+  t0: 0
+  tf: 10
+  h: 0.001

@@ -1,22 +1,16 @@
-/Dynamic_four_waves.py
-#/Five_Waves.py
-#/Four_Waves
-/Hough_Harmonics3
-/Hough_Harmonics.ipynb
-/ll.py
-/modelo3.py
-/orbits.py
-#/period.py
-#/period_both.py
-#/period_Harris.py
-/testefourier.py
-/Teste_Paper.py
-/teste_Rossbymodes.py
-f_plane.py
-f_plane2.py
-.gif
-.pyc
+# Python
 **/__pycache__/
-dispersion_relation.gif
 *.pyc
+*.egg-info/
+build/
+
+# Virtual environment
+.venv/
+
+# Generated figures / outputs (regenerate via main.py and the plotting scripts)
+outputs/
+/*.png
+*.gif
+
+# Claude Code project-local context (not shared repo documentation)
 .claude/

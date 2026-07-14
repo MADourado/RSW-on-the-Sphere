@@ -1,6 +1,6 @@
 # OUTPUT PATH (for the figures)
 
-OUTPUT_PATH: 'Testes_Marco/figures'
+OUTPUT_PATH: 'outputs/figures'
 
 # Equivalent Height (m)
 h_e: 10000 

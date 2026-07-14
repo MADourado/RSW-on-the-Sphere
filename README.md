@@ -41,47 +41,82 @@ part) plus the plotting/driver infrastructure:
   the three wave families.
 - **Hough mode visualization** — latitudinal profiles/derivatives of a single
   mode, and its full spatial pattern (`h` contour + `(u, v)` quiver) on a
-  world map. See [`README_hough_modes.md`](README_hough_modes.md).
-- **Triadic interactions** — coupling coefficients, frequency mismatch, the
-  three-wave amplitude equations, their time integration (Runge-Kutta), and
-  energy/efficiency diagnostics.
-- A YAML-configured driver (`main.py` + `configs.yaml`) to reproduce the
-  single-triad experiments and mode plots.
+  world map. See [`docs/hough_modes.md`](docs/hough_modes.md).
+- **Triadic, four-wave and five-wave dynamics** — coupling coefficients,
+  frequency mismatch, the amplitude equations, their time integration
+  (Runge-Kutta), energy/efficiency diagnostics, and analytic-period
+  diagnostics (`rsw_sphere/dynamics/`).
+- Two YAML-configured drivers reading the same `configs.yaml`:
+  `run_diagnostics.py` (dispersion relation + per-mode Hough plots, no
+  dynamics) and `run_dynamics.py` (triad amplitude-equation integration).
 
+## Repository layout
+
+```
+rsw_sphere/                 # the installable package
+    hough_harmonics/        # eigenvalue problem, normal modes, inner products
+    dynamics/                # triad, four-wave and five-wave amplitude dynamics
+        periods/              # analytic-period / Hamiltonian diagnostics
+    plotting/                # dispersion relation and Hough mode plots
+docs/                      # thesis PDF, code guide, per-topic documentation
+examples/                  # named configs.yaml variants reproducing thesis figures
+outputs/                   # generated figures (gitignored, reproducible)
+run_diagnostics.py         # dispersion relation + per-mode Hough plots
+run_dynamics.py            # triad amplitude-equation integration
+configs.yaml                # shared config for both drivers above
+pyproject.toml             # pip install -e . / console scripts
+```
+
+`rsw_sphere/dynamics/` currently holds several exploratory `FOUR_WAVES`
+implementations side by side (`four_waves_2.py`, `four_waves_79.py`,
+`four_waves_pump.py`, `four_waves_basic.py`, `four_waves_rk4_driver.py`) —
+consolidating them into one canonical module is future work, not done yet.
 
 ## Installation
 
-Requires Python 3.12. Dependencies are pinned for API compatibility:
+Requires Python 3.12. Install the package (editable) so `rsw_sphere` is
+importable from anywhere and the console scripts are available:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
 
-(`numpy<2.0`, `scipy<1.15`, `matplotlib`, `pyyaml`, `cartopy`.)
+Dependencies are pinned for API compatibility (`numpy<2.0`, `scipy<1.15`,
+`matplotlib`, `pyyaml`, `cartopy`) and declared in both `pyproject.toml` and
+`requirements.txt`.
 
 ## Usage
 
-Run the driver against the default configuration:
+Both drivers read the same `configs.yaml` and write into `OUTPUT_PATH`
+(default `outputs/figures/`), each acting only on the section relevant to it:
 
 ```bash
-python main.py --config configs.yaml
+# dispersion relation + per-mode Hough harmonic plots (no dynamics)
+python run_diagnostics.py --config configs.yaml
+
+# integrate the triad amplitude equations and plot the energy exchange
+python run_dynamics.py --config configs.yaml
 ```
 
-This reads the equivalent height and the triad definition from `configs.yaml`,
-then (depending on the flags in the config) plots the dispersion relation, the
-Hough harmonics of each mode, and integrates the triad dynamics — writing the
-figures to `OUTPUT_PATH` (default `Testes_Marco/figures/`).
+`run_diagnostics.py` plots the dispersion relation (if `dispersion_relation:
+true`) and each triad mode's Hough harmonic + derivatives (per-mode
+`show_mode: true`). `run_dynamics.py` integrates the triad dynamics (if
+`Dynamics.show_dynamics: true`) and plots the energy exchange time series.
 
 Edit `configs.yaml` to change the equivalent height `h_e`, the three modes
 `(m, n, alpha)` of the triad (with `alpha`: 1 = EIG, 2 = WIG, 3 = RH), their
-initial zonal velocities, and the time-integration parameters.
+initial zonal velocities, and the time-integration parameters. See
+[`examples/`](examples/) for named config variants reproducing specific
+thesis figures/tables.
 
 The standalone dispersion-relation figure is documented separately in
-[`README_dispersion.md`](README_dispersion.md), and the Hough mode
-visualization scripts (latitudinal profile and full spatial pattern) in
-[`README_hough_modes.md`](README_hough_modes.md).
+[`docs/dispersion_relation.md`](docs/dispersion_relation.md) (also runnable
+directly as `rsw-dispersion output.png` after `pip install -e .`), and the
+Hough mode visualization scripts (latitudinal profile and full spatial
+pattern) in [`docs/hough_modes.md`](docs/hough_modes.md) (`rsw-hough-mode
+output.png --m 3 --n 7 --alpha 3`).
 
 ## References
 
