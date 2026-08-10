@@ -28,6 +28,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.matrix_m0 import matriz_C, matriz_D
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.matrix_system import matriz_A, matriz_B
+from rsw_sphere.physics import gamma_from_he
 
 
 def dispersion_relation(h_e: float = 10000, path: str = None):
@@ -52,8 +53,7 @@ def dispersion_relation(h_e: float = 10000, path: str = None):
     a     = 6.38e+06
     Omega = 2*np.pi/24/60/60
 
-    eps   = (4*a*a*Omega*Omega)/(g*h_e)
-    gamma = 1/np.sqrt(eps)
+    eps, gamma = gamma_from_he(h_e, g=g, a=a, Omega=Omega)
 
     N = 3
     M = np.arange(1, 11)

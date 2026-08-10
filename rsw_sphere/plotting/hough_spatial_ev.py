@@ -33,6 +33,7 @@ import cartopy.crs as ccrs
 
 from rsw_sphere.hough_harmonics.normalization import norm_Hough
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
+from rsw_sphere.physics import gamma_from_he
 
 
 def label(m, n, alpha, height):
@@ -80,11 +81,7 @@ def hough_spatial_ev(m, n, alpha, h_e: float = 10000, N: int = 10,
     None
     """
     l = label(m, n, alpha, h_e)
-    g = 9.8
-    a = 6.38e+06
-    omega = 2 * np.pi / 24 / 60 / 60
-    eps = (4 * a * a * omega * omega) / (g * h_e)
-    gamma = 1 / np.sqrt(eps)
+    eps, gamma = gamma_from_he(h_e)
 
     # Normalization constant, from the same quadrature-based routine used
     # in Hough_and_derivatives.py, so the two scripts stay consistent.

@@ -14,3 +14,6 @@ outputs/
 
 # Claude Code project-local context (not shared repo documentation)
 .claude/
+
+#paper (separate repository for paper)
+paper-nonlinear-interactions-SWE-sphere/

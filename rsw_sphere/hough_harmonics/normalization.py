@@ -8,6 +8,7 @@ from .eigenvalues_and_eigenvectors.matrix_system import matriz_A
 from .eigenvalues_and_eigenvectors.matrix_system import matriz_B
 from .eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
 from .eigenvalues_and_eigenvectors.eigenvectors import symetry
+from rsw_sphere.physics import gamma_from_he
 
 
 def norm_Hough(m,n,alpha,gamma, N,deg):
@@ -17,9 +18,21 @@ def norm_Hough(m,n,alpha,gamma, N,deg):
     
     # Gaussian quadrature is used for the integral
     point, weight = np.polynomial.legendre.leggauss(deg)
-    
-    s = symetry(m,n,alpha)    
-    
+
+    # NOTE: the symmetric/antisymmetric branching (Hough_coef_A vs.
+    # Hough_coef_B) already happens *inside* Hough_harmonic, based on
+    # symetry(m, n, alpha) -- see eigenvalues_and_eigenvectors/eigenvectors.py.
+    # A second, symmetry-dependent overall sign flip of (U, V, Z) was
+    # previously attempted here but left disabled (unreachable code below
+    # an unconditional return). It has been removed: Hough_harmonic's own
+    # branching already yields consistent relative signs and normalization
+    # for both symmetric and antisymmetric modes, confirmed by reproducing
+    # coupling coefficients for an antisymmetric-mode triad against an
+    # independent reference. A caller that constructs coupling coefficients
+    # directly from Hough_coef_A/Hough_coef_B (bypassing Hough_harmonic and
+    # this branching) must replicate symetry()'s A/B choice itself, or
+    # antisymmetric modes will silently use the wrong eigenvector.
+
     # Interval [-1,1] is changed to [-pi/2, pi/2]
     ang = np.pi/2 * point
     
@@ -66,25 +79,26 @@ def norm_Hough(m,n,alpha,gamma, N,deg):
     DZ = 1/np.sqrt(norm)*DZ
     
     return U,V,-Z,-DU,-DV,DZ,point, norm, eigen
-    
-    '''
-    if s:
-        
-        return U ,V , -Z, -DU, -DV, DZ, point, norm, eigen
-    
-    else:
-        
-        return -U ,-V , Z, DU, DV, -DZ, point, norm, eigen
-    '''
-    
-    if s:
-        
-        return -U ,-V , Z, DU, DV, -DZ, point, norm, eigen
-    
-    else:
-        
-        return U ,V , -Z, -DU, -DV, DZ, point, norm, eigen
-    
+
+    # DEAD CODE, kept for the record (unreachable -- the function already
+    # returned above). This was an attempt at an additional symmetry-
+    # dependent overall sign flip of (U, V, Z), on top of the
+    # Hough_coef_A/Hough_coef_B branching already done inside
+    # Hough_harmonic. Investigated and found unnecessary: the unconditional
+    # return above already gives consistent signs/normalization for both
+    # symmetric and antisymmetric modes (see the note above norm_Hough).
+    # s = symetry(m, n, alpha)
+    #
+    # if s:
+    #     return U, V, -Z, -DU, -DV, DZ, point, norm, eigen
+    # else:
+    #     return -U, -V, Z, DU, DV, -DZ, point, norm, eigen
+    #
+    # if s:
+    #     return -U, -V, Z, DU, DV, -DZ, point, norm, eigen
+    # else:
+    #     return U, V, -Z, -DU, -DV, DZ, point, norm, eigen
+
 def norm_component(u, deg = 300):
     
     # Norm of the zonal velocity component (u)
@@ -122,11 +136,7 @@ def label(m,n,alpha,height):
 def hough_and_derivatives(m,n,alpha, h_e:int = 10000):
 
     l = label(m,n,alpha, h_e)
-    g = 9.8
-    a = 6.38e+06
-    omega = 2*np.pi/24/60/60
-    eps = (4*a*a*omega*omega)/(g*h_e)
-    gamma = 1/np.sqrt(eps)
+    eps, gamma = gamma_from_he(h_e)
 
     U,V,Z,DU, DV, DZ, ANG,norm, eigen = norm_Hough(m, n, alpha, gamma, 10, 60)
 

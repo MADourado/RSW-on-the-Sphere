@@ -19,6 +19,9 @@ dependencies = [
 [project.scripts]
 rsw-dispersion = "rsw_sphere.plotting.dispersion_relation_fancy:main"
 rsw-hough-mode = "rsw_sphere.plotting.hough_spatial_ev:main"
+rsw-triad-table = "rsw_sphere.plotting.triad_table:main"
+rsw-triad = "rsw_sphere.plotting.triad_dynamics:main"
+rsw-triad-efficiency = "rsw_sphere.plotting.triad_efficiency:main"
 
 [tool.setuptools.packages.find]
 include = ["rsw_sphere*"]

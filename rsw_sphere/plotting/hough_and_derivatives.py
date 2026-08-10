@@ -6,6 +6,7 @@ from matplotlib.ticker import LinearLocator
 
 from rsw_sphere.hough_harmonics.normalization import norm_Hough, norm_component
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
+from rsw_sphere.physics import gamma_from_he
 
 def alpha_label(alpha):
 
@@ -28,11 +29,7 @@ def hough_and_derivatives(m,n,alpha, h_e:int = 10000, path:str = None):
 
     l = label(m,n,alpha, h_e)
     tag = mode_tag(m,n,alpha)
-    g = 9.8
-    a = 6.38e+06
-    omega = 2*np.pi/24/60/60
-    eps = (4*a*a*omega*omega)/(g*h_e)
-    gamma = 1/np.sqrt(eps)
+    eps, gamma = gamma_from_he(h_e)
 
     U,V,Z,DU, DV, DZ, ANG,norm, eigen = norm_Hough(m, n, alpha, gamma, 10, 60)
 

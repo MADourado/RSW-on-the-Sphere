@@ -1,0 +1,107 @@
+# Registry of resonant-triad examples used in paper §2.2 ("Resonant
+# Triads") / dissertation §2.3.1. Loaded by
+# rsw_sphere.dynamics.triad_specs.load_triad_specs() into TriadSpec
+# objects, which feed rsw-triad-table, rsw-triad and rsw-triad-efficiency
+# so the numbers reported in text, tables and figures cannot drift apart
+# from one another.
+#
+# Schema follows the other example configs (table_2_1_quasi_resonant.yaml,
+# table_2_3_kelvin_rh_energy_flow.yaml, configs.yaml): one `Triad:` block
+# per entry with mode_a/mode_b/mode_c (m, n, alpha, u), plus h_e.
+#
+# Keys are semantic *role* labels, not mode numbers -- these triads are
+# reused as building blocks in later paper sections (Multiple Triads,
+# Five-Wave), so naming a key after only one of the three modes (e.g. the
+# old `rh-34`, `kelvin`, `catalyst`) would not scale.
+#
+# alpha convention (shared with rsw_sphere.hough_harmonics):
+# 1 = EIG/EG (eastward inertia-gravity), 2 = WIG/WG (westward
+# inertia-gravity), 3 = RH (Rossby-Haurwitz).
+#
+# `label` is the human-readable name for figure/table captions; `role` is
+# a one-line free-text note on why this triad is included.
+#
+# Forward-looking note (not solved here): when Multiple-Triads/Five-Wave
+# configs are built, they should be able to reference a triad here by its
+# role key and extend it with additional modes, rather than re-listing
+# shared modes.
+
+rossby_near_resonant:
+  label: "Rossby-only, near-resonant, long period"
+  role: "Rossby-only, near-resonant, long period"
+  h_e: 10000
+  mode_a:
+    m: 3
+    n: 10
+    alpha: 3        # RH
+    u: 0.0
+  mode_b:
+    m: 1
+    n: 2
+    alpha: 3        # RH
+    u: 58.0
+  mode_c:
+    m: 4
+    n: 5
+    alpha: 3        # RH
+    u: 100.0
+
+rossby_pump:
+  label: "Rossby-only, pump mode, short period"
+  role: "Rossby-only, pump mode, short period"
+  h_e: 10000
+  mode_a:
+    m: 3
+    n: 4
+    alpha: 3        # RH
+    u: 0.0
+  mode_b:
+    m: 1
+    n: 2
+    alpha: 3        # RH
+    u: 58.0
+  mode_c:
+    m: 4
+    n: 5
+    alpha: 3        # RH
+    u: 100.0
+
+kelvin_rh_flow:
+  label: "RH -> EG flow via the Kelvin wave"
+  role: "RH->EG flow; reused in the Inertia-Gravity Waves section"
+  h_e: 10000
+  mode_a:
+    m: 1
+    n: 1
+    alpha: 1        # EIG (Kelvin wave)
+    u: 80.0
+  mode_b:
+    m: 3
+    n: 4
+    alpha: 3        # RH
+    u: 63.89
+  mode_c:
+    m: 4
+    n: 5
+    alpha: 3        # RH
+    u: 100.0
+
+gravity_catalyst:
+  label: "EG <-> EG with RH catalyst"
+  role: "EG<->EG with RH catalyst; ~200x scale separation"
+  h_e: 10000
+  mode_a:
+    m: 6
+    n: 9
+    alpha: 1        # EIG
+    u: 200.0
+  mode_b:
+    m: 1
+    n: 7
+    alpha: 3        # RH
+    u: 20.0
+  mode_c:
+    m: 7
+    n: 9
+    alpha: 1        # EIG
+    u: 0.0

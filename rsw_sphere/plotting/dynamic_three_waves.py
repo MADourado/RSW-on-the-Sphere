@@ -6,6 +6,7 @@ from matplotlib.ticker import LinearLocator
 from matplotlib.colors import ListedColormap
 
 from rsw_sphere.hough_harmonics.normalization import norm_component
+from rsw_sphere.physics import gamma_from_he
 
 from rsw_sphere.dynamics.dynamic_triads import TRIAD
 from rsw_sphere.dynamics.dynamic_triads import Triad_dynamics
@@ -27,10 +28,7 @@ def triad_evolution(h_e, m_a, n_a, alpha_a, m_b, n_b,
                  alpha_b, m_c,n_c, alpha_c, u_a, u_b, u_c, t_0, t_f,h, path ):
 
     g = 9.8
-    a = 6.38e+06
-    omega = 2*np.pi/24/60/60
-    eps = (4*a*a*omega*omega)/(g*h_e)
-    gamma = 1/np.sqrt(eps)
+    eps, gamma = gamma_from_he(h_e, g=g)
 
     N = 10
     deg = 300
@@ -70,4 +68,4 @@ def triad_evolution(h_e, m_a, n_a, alpha_a, m_b, n_b,
     #Triad_Precession(Triad, t_0, t_f, h, vel_a = 20, pri =False)
 
 if __name__ == "__main__":
-    triad_evolution(10000, 1,1,3,3,4,3,4,5,3,10,10,10,0,100,0.001)
+    triad_evolution(10000, 1,1,3,3,4,3,4,5,3,10,10,10,0,100,0.001, path=None)

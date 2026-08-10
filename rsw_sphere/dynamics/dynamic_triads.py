@@ -180,159 +180,173 @@ def Triad_dynamics(Triad, A_0, t_0, t_f, h, path = None):
     
     return ea, eb, ec, E_a, E_b, E_c
 
-def Triad_Precession(Triad, t_0, t_f, h,g=9.8,h_e=10000, vel_a = 10, pri = True):
-    
-    u_a = norm_component(Triad.uvh_a[0])*np.sqrt(g*h_e)
-    u_b = norm_component(Triad.uvh_b[0])*np.sqrt(g*h_e)
-    u_c = norm_component(Triad.uvh_c[0])*np.sqrt(g*h_e)
-
-    alpha_1 = 1/np.real(u_b)
-    alpha_100 = 50/np.real(u_b)  # velocities 1m/s --- 100m/s  mode b
-
-    ALPHA = np.linspace(alpha_1, alpha_100, 10)
-
-    beta_1 = 1/np.real(u_a)
-    beta_100 = 50/np.real(u_a)   # velocities 1m/s --- 100m/s  mode c
-
-    BETA = np.linspace(beta_1, beta_100, 10)
-
-    A, B = np.meshgrid(ALPHA, BETA)
-
-    MEASURE = []
-
-    max_value = 0
-
-    A_c = vel_a/np.real(u_c)
-    i = 0
-    for beta in BETA:
-        i+= 1
-        print(f'linha {i}/20')
-        
-        A_a = beta
-        
-        MEASURE_alpha = []
-        
-        for alpha in ALPHA:
-            
-            A_b = alpha
-            
-            A_0 = np.array([A_a, A_b, A_c])
-            E_02, E_03 = Energy_0(Triad, A_0)
-            E_0 = E_02 + E_03
-            
-            Y, T = RK33(Triad, t_0, t_f, h, A_0)
-                                       
-            Y_a = Y[:,0] # mode a
-            Y_b = Y[:,1] # mode b
-            Y_c = Y[:,2] # mode c
-            
-            Z = np.array([Y_a, Y_b, Y_c])
-            E_2, E_3 = Energy_0(Triad, Z)
-            
-            Y_c = Y_c * np.conj(Y_c)/E_0
-            
-            measure = max(Y_c) - min(Y_c)
-            MEASURE_alpha += [max(Y_c) - min(Y_c)]
-            
-            if measure > max_value:
-                max_value = measure
-                A_max = np.array([A_a, A_b, A_c])
-
-        MEASURE += [MEASURE_alpha]
-       
-    MEASURE = np.array(MEASURE)
-    #print('E_0 = ', E_0)
-    print('-----------------------')
-    print()
-    print(f'Efficiency = {np.real(max_value*100)}%')
-    print(f'Mode a = {2*A_max[0]*np.real(u_a)} m/s')
-    print(f'Mode b = {2*A_max[1]*np.real(u_b)} m/s')
-    print(f'Mode c = {2*A_max[2]*np.real(u_c)} m/s')
-    print()
-    print('-----------------------')
-    print(A_max)
-    #levels = np.linspace(0,1,100)
-
-    fig, ax = plt.subplots()
-
-    cs = ax.contourf(2*A*u_b, 2*B*u_a, 100*MEASURE, levels=100, cmap = 'terrain')
-    plt.xlabel(f'{Triad.label_b} - zonal velocity (m/s)')
-    plt.ylabel(f'{Triad.label_a} - zonal velocity (m/s)')
-    plt.title(r'Efficiency of Energy Transfer (%)')
-    #plt.xlim(1,100)
-    #RdYlBu
-    #terrain
-    #gist_ncar
-    fig.colorbar(cs)
-    plt.show()   
-    
-    Triad_dynamics(Triad, A_max, t_0, t_f = 100, h = 0.001)
-    
-    if pri:
-        print()
-        print('------------------------------------------------')
-        print('mode a = ', Triad.mode_a)
-        print('freq a = ', Triad.freq_a)
-        print('coef a = ', Triad.coef_ABC)
-        m,n,alpha = Triad.mode_a
-        print('symmetric = ', symetry(m, n, alpha))
-        print()
-        print('mode b = ', Triad.mode_b)
-        print('freq b = ', Triad.freq_b)
-        print('coef b = ', Triad.coef_BAC)
-        m,n,alpha = Triad.mode_b
-        print('symmetric = ', symetry(m, n, alpha))
-        print()
-        print('mode c = ', Triad.mode_c)
-        print('freq c = ', Triad.freq_c)
-        print('coef c = ', Triad.coef_CAB)
-        m,n,alpha = Triad.mode_c
-        print('symmetric = ', symetry(m, n, alpha))
-        print()
-        print('mismatch = ',Triad.freq_a + Triad.freq_b - Triad.freq_c)
-        print('S_abc = ', Triad.Sabc)
-        print('------------------------------------------------')
-
-def eff_tri(T, A_0, u_a):
-    
-    t_0, t_f, h = 0, 300, 0.1
-    
-    A_a, A_b, A_c = A_0
-    
-    a1 = 0/u_a
-    a100 = 50/u_a
-    
-    Ea = []
-    Eb = []
-    Ec = []
-    ALPHA = np.linspace(a1, a100, 51)
-    for alpha in ALPHA:
-        
-        ea, eb, ec,_,_,_ = Triad_dynamics(T, np.array([alpha, A_b, A_c]), 
-                                          t_0, t_f, h, p = False)
-        
-        Ea += [ea]
-        Eb += [eb]
-        Ec += [ec]
-    Ea = np.array(Ea)
-    Eb = np.array(Eb)
-    Ec = np.array(Ec)
-    
-    plt.plot(ALPHA*u_a*2, Ea*100, label = f'{T.label_a}')
-    plt.plot(ALPHA*u_a*2, Eb*100, label = f'{T.label_b}')
-    plt.plot(ALPHA*u_a*2, Ec*100, label = f'{T.label_c}')
-    plt.scatter(20, Ec[10]*100, color = 'red')
-    plt.scatter(60, Eb[30]*100, color = 'blue')
-    #plt.scatter(60, Ec[30]*100, color = 'b')
-    #plt.scatter(60, Eb[30]*100, color = 'b')
-    plt.annotate(f'Example 2', (20, Ec[10]*100), textcoords="offset points", 
-                 xytext=(30, 10), ha='center')
-    plt.annotate(f'Example 3', (60, Ec[30]*100), textcoords="offset points", 
-                 xytext=(30, 10), ha='center')
-    plt.xlabel(f'Meridional Velocity - {T.label_a}')
-    plt.ylabel(f'Efficiency (%)')
-    plt.legend()
-    plt.show()
+# Triad_Precession and eff_tri below are DEAD CODE, kept commented out for
+# the record (not deleted) rather than removed outright.
+#
+# Triad_Precession is superseded by rsw_sphere.plotting.triad_efficiency
+# (efficiency_sweep + plot_efficiency_map), which splits the same 10x10
+# RK33 sweep computed here from its plotting, adds an .npz cache (this
+# sweep is ~1e7 RK steps and must not be re-run just to restyle a figure),
+# and fixes the mis-reported "linha i/20" progress print (10 rows, not 20).
+#
+# eff_tri is additionally broken as written: it calls
+# Triad_dynamics(..., p=False), but Triad_dynamics has no "p" keyword
+# argument (it takes "path"), so any call raises TypeError. It has no
+# callers anywhere in the repo.
+#
+# def Triad_Precession(Triad, t_0, t_f, h,g=9.8,h_e=10000, vel_a = 10, pri = True):
+#
+#     u_a = norm_component(Triad.uvh_a[0])*np.sqrt(g*h_e)
+#     u_b = norm_component(Triad.uvh_b[0])*np.sqrt(g*h_e)
+#     u_c = norm_component(Triad.uvh_c[0])*np.sqrt(g*h_e)
+#
+#     alpha_1 = 1/np.real(u_b)
+#     alpha_100 = 50/np.real(u_b)  # velocities 1m/s --- 100m/s  mode b
+#
+#     ALPHA = np.linspace(alpha_1, alpha_100, 10)
+#
+#     beta_1 = 1/np.real(u_a)
+#     beta_100 = 50/np.real(u_a)   # velocities 1m/s --- 100m/s  mode c
+#
+#     BETA = np.linspace(beta_1, beta_100, 10)
+#
+#     A, B = np.meshgrid(ALPHA, BETA)
+#
+#     MEASURE = []
+#
+#     max_value = 0
+#
+#     A_c = vel_a/np.real(u_c)
+#     i = 0
+#     for beta in BETA:
+#         i+= 1
+#         print(f'linha {i}/20')
+#
+#         A_a = beta
+#
+#         MEASURE_alpha = []
+#
+#         for alpha in ALPHA:
+#
+#             A_b = alpha
+#
+#             A_0 = np.array([A_a, A_b, A_c])
+#             E_02, E_03 = Energy_0(Triad, A_0)
+#             E_0 = E_02 + E_03
+#
+#             Y, T = RK33(Triad, t_0, t_f, h, A_0)
+#
+#             Y_a = Y[:,0] # mode a
+#             Y_b = Y[:,1] # mode b
+#             Y_c = Y[:,2] # mode c
+#
+#             Z = np.array([Y_a, Y_b, Y_c])
+#             E_2, E_3 = Energy_0(Triad, Z)
+#
+#             Y_c = Y_c * np.conj(Y_c)/E_0
+#
+#             measure = max(Y_c) - min(Y_c)
+#             MEASURE_alpha += [max(Y_c) - min(Y_c)]
+#
+#             if measure > max_value:
+#                 max_value = measure
+#                 A_max = np.array([A_a, A_b, A_c])
+#
+#         MEASURE += [MEASURE_alpha]
+#
+#     MEASURE = np.array(MEASURE)
+#     #print('E_0 = ', E_0)
+#     print('-----------------------')
+#     print()
+#     print(f'Efficiency = {np.real(max_value*100)}%')
+#     print(f'Mode a = {2*A_max[0]*np.real(u_a)} m/s')
+#     print(f'Mode b = {2*A_max[1]*np.real(u_b)} m/s')
+#     print(f'Mode c = {2*A_max[2]*np.real(u_c)} m/s')
+#     print()
+#     print('-----------------------')
+#     print(A_max)
+#     #levels = np.linspace(0,1,100)
+#
+#     fig, ax = plt.subplots()
+#
+#     cs = ax.contourf(2*A*u_b, 2*B*u_a, 100*MEASURE, levels=100, cmap = 'terrain')
+#     plt.xlabel(f'{Triad.label_b} - zonal velocity (m/s)')
+#     plt.ylabel(f'{Triad.label_a} - zonal velocity (m/s)')
+#     plt.title(r'Efficiency of Energy Transfer (%)')
+#     #plt.xlim(1,100)
+#     #RdYlBu
+#     #terrain
+#     #gist_ncar
+#     fig.colorbar(cs)
+#     plt.show()
+#
+#     Triad_dynamics(Triad, A_max, t_0, t_f = 100, h = 0.001)
+#
+#     if pri:
+#         print()
+#         print('------------------------------------------------')
+#         print('mode a = ', Triad.mode_a)
+#         print('freq a = ', Triad.freq_a)
+#         print('coef a = ', Triad.coef_ABC)
+#         m,n,alpha = Triad.mode_a
+#         print('symmetric = ', symetry(m, n, alpha))
+#         print()
+#         print('mode b = ', Triad.mode_b)
+#         print('freq b = ', Triad.freq_b)
+#         print('coef b = ', Triad.coef_BAC)
+#         m,n,alpha = Triad.mode_b
+#         print('symmetric = ', symetry(m, n, alpha))
+#         print()
+#         print('mode c = ', Triad.mode_c)
+#         print('freq c = ', Triad.freq_c)
+#         print('coef c = ', Triad.coef_CAB)
+#         m,n,alpha = Triad.mode_c
+#         print('symmetric = ', symetry(m, n, alpha))
+#         print()
+#         print('mismatch = ',Triad.freq_a + Triad.freq_b - Triad.freq_c)
+#         print('S_abc = ', Triad.Sabc)
+#         print('------------------------------------------------')
+#
+# def eff_tri(T, A_0, u_a):
+#
+#     t_0, t_f, h = 0, 300, 0.1
+#
+#     A_a, A_b, A_c = A_0
+#
+#     a1 = 0/u_a
+#     a100 = 50/u_a
+#
+#     Ea = []
+#     Eb = []
+#     Ec = []
+#     ALPHA = np.linspace(a1, a100, 51)
+#     for alpha in ALPHA:
+#
+#         ea, eb, ec,_,_,_ = Triad_dynamics(T, np.array([alpha, A_b, A_c]),
+#                                           t_0, t_f, h, p = False)
+#
+#         Ea += [ea]
+#         Eb += [eb]
+#         Ec += [ec]
+#     Ea = np.array(Ea)
+#     Eb = np.array(Eb)
+#     Ec = np.array(Ec)
+#
+#     plt.plot(ALPHA*u_a*2, Ea*100, label = f'{T.label_a}')
+#     plt.plot(ALPHA*u_a*2, Eb*100, label = f'{T.label_b}')
+#     plt.plot(ALPHA*u_a*2, Ec*100, label = f'{T.label_c}')
+#     plt.scatter(20, Ec[10]*100, color = 'red')
+#     plt.scatter(60, Eb[30]*100, color = 'blue')
+#     #plt.scatter(60, Ec[30]*100, color = 'b')
+#     #plt.scatter(60, Eb[30]*100, color = 'b')
+#     plt.annotate(f'Example 2', (20, Ec[10]*100), textcoords="offset points",
+#                  xytext=(30, 10), ha='center')
+#     plt.annotate(f'Example 3', (60, Ec[30]*100), textcoords="offset points",
+#                  xytext=(30, 10), ha='center')
+#     plt.xlabel(f'Meridional Velocity - {T.label_a}')
+#     plt.ylabel(f'Efficiency (%)')
+#     plt.legend()
+#     plt.show()
 
 def period_Fourier(Amp, t, h):
     
