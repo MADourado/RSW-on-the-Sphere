@@ -122,6 +122,8 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
 
     own_fig = ax is None
     if own_fig:
+        from rsw_sphere.plotting.style import apply_house_style
+        apply_house_style()
         fig, ax = plt.subplots(figsize=(6.5, 4.5))
     else:
         fig = ax.figure

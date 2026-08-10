@@ -129,7 +129,48 @@ mode's efficiency is plotted (a/b/c). Full flags: `rsw-triad-efficiency
 
 ---
 
-## 5. References
+## 5. `examples/make_section22_figures.py` — paper composite figures
+
+Builds the two composite figures used directly in paper §2.2: a 2×2
+Rossby-only panel (`rossby_near_resonant`, `rossby_pump`) and a 2×2
+combined Rossby-gravity panel (`kelvin_rh_flow`, `gravity_catalyst`), each
+row an (efficiency map, energy integration) pair built from `triad_table.py`.
+Regenerated as a normal `outputs/`-writing script, then copied into the
+paper repo's `Figures/` by hand (the script prints the exact `cp` commands
+it needs rather than performing the copy itself).
+
+```bash
+# full run, both composite panels, current tuned settings
+python examples/make_section22_figures.py
+
+# fast/coarse look while iterating (few minutes instead of tens of minutes)
+python examples/make_section22_figures.py --n-grid 6 --tf-scale 0.5
+
+# regenerate just one triad's (efficiency, energy) pair, e.g. after
+# editing its velocities in the registry YAML
+python examples/make_section22_figures.py --triad gravity_catalyst --clear-cache
+```
+
+Per-triad grid resolution and integration horizon live in the script's
+`TRIAD_SETTINGS` dict (fallback: `DEFAULT_SETTINGS`, with a printed
+warning, for any registry triad not listed there — e.g. a newly-added
+one). **Read the module docstring's "CALIBRATION NOTES" section before
+trusting a new/edited triad's numbers** — the two most common silent
+mistakes are: (1) `tf_days` too short relative to the triad's own
+nonlinear exchange period, which under-reports efficiency without
+erroring (this is exactly what happened for `kelvin_rh_flow`'s fixed
+velocity, caught and documented in
+`paper-nonlinear-interactions-SWE-sphere/.claude/NUMBERS-CHECK-section-2.2.md`);
+and (2) the `.npz` sweep cache is keyed by triad name only, not by
+parameters, so changing a triad's settings requires `--clear-cache` (or
+deleting `outputs/figures/triads/<key>_sweep.npz` by hand) or the stale
+result is silently reused.
+
+Full flags: `python examples/make_section22_figures.py --help`.
+
+---
+
+## 6. References
 
 See [`dispersion_relation.md`](dispersion_relation.md) and the main
 [`README.md`](../README.md) for the underlying eigenvalue problem, and

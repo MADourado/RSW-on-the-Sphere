@@ -45,7 +45,8 @@ G = 9.8
 def efficiency_sweep(modes, h_e: float = 10000, u1_range=(1, 100), u2_range=(1, 100),
                       target: int = 0, fixed_velocity: float = 10.0, fixed_index: int = 2,
                       n_grid: int = 40, t_f: float = 100, h: float = 0.001,
-                      N: int = 10, deg: int = 300, cache_path: str = None):
+                      N: int = 10, deg: int = 300, cache_path: str = None,
+                      verbose: bool = False, progress_label: str = ""):
     """Pure-compute sweep of energy-transfer efficiency vs. two initial
     zonal velocities.
 
@@ -88,6 +89,12 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=(1, 100), u2_range=(1, 
         computed and then saved there. If ``None``, no caching is done.
         Essential in practice: at ``n_grid=40, t_f=100, h=0.001`` this
         sweep is ~1.6e7 RK33 steps and can take minutes.
+    verbose : bool, optional
+        If ``True``, print one progress line per completed grid row
+        (elapsed time, ETA). Default ``False``.
+    progress_label : str, optional
+        Prefix for progress lines (e.g. a triad name), only used if
+        ``verbose``.
 
     Returns
     -------
@@ -117,6 +124,9 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=(1, 100), u2_range=(1, 
     idx1, idx2 = swept_indices
 
     EFF = np.empty_like(U1)
+    if verbose:
+        import time
+        t_start = time.time()
     for i in range(n_grid):
         for j in range(n_grid):
             A0 = [0j, 0j, 0j]
@@ -128,10 +138,28 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=(1, 100), u2_range=(1, 
             E_02, E_03 = Energy_0(Triad, A0)
             E_0 = E_02 + E_03
 
+            if E_0 == 0:
+                # All three modes start at zero velocity (can happen at a
+                # sweep-grid corner when the held-fixed mode is also 0,
+                # e.g. gravity_catalyst's mode c) -- nothing to normalize
+                # by and no energy to exchange, so efficiency is 0 by
+                # convention rather than 0/0 (NaN).
+                EFF[i, j] = 0.0
+                continue
+
             Y, T = RK33(Triad, 0, t_f, h, A0)
             Y_t = Y[:, target] * np.conj(Y[:, target]) / E_0
             Y_t = np.real(Y_t)
             EFF[i, j] = Y_t.max() - Y_t.min()
+
+        if verbose:
+            done_rows = i + 1
+            elapsed = time.time() - t_start
+            eta = elapsed / done_rows * (n_grid - done_rows)
+            prefix = f"[{progress_label}] " if progress_label else ""
+            print(f"    {prefix}row {done_rows}/{n_grid} "
+                  f"({100 * done_rows / n_grid:.0f}%) "
+                  f"elapsed {elapsed:.0f}s, eta {eta:.0f}s", flush=True)
 
     if cache_path:
         np.savez(cache_path, U1=U1, U2=U2, EFF=EFF)
@@ -164,6 +192,8 @@ def plot_efficiency_map(U1, U2, EFF, xlabel='mode b - zonal velocity (m/s)',
     """
     own_fig = ax is None
     if own_fig:
+        from rsw_sphere.plotting.style import apply_house_style
+        apply_house_style()
         fig, ax = plt.subplots(figsize=(6, 5))
     else:
         fig = ax.figure
