@@ -19,3 +19,10 @@ Each writes its figures under its own `OUTPUT_PATH` (subfolders of
 
 See `docs/code_guide.md` and `.claude/THESIS_FIGURES.md` for the full
 thesis-figure-to-code map these were drawn from.
+
+## Triad registry
+
+`triads_section_2_2.yaml` is a different kind of config — not a
+`run_diagnostics.py`/`run_dynamics.py` input, but the registry of triads
+used by `rsw-triad-table` / `rsw-triad` / `rsw-triad-efficiency` (see
+[`docs/triads.md`](../docs/triads.md)).
