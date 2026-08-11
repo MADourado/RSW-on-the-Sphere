@@ -10,9 +10,11 @@ another.
 
 The registry itself lives in YAML (``examples/triads_section_2_2.yaml``),
 not in this module -- see ``load_triad_specs``. Keys are semantic **role**
-labels (``rossby_near_resonant``, ``rossby_pump``, ``kelvin_rh_flow``,
-``gravity_catalyst``), not mode numbers, since these triads are reused as
-building blocks by later paper sections.
+labels (``triad_rossby_only_near_resonant``, ``triad_rossby_only_non_resonant``,
+``triad_kelvin_rossby_flow``, ``triad_gravity_with_rossby_catalyst``), not
+mode numbers, since these triads are reused as building blocks by later
+paper sections. Each also has a short ``display_label`` ("Triad A"/"B"/"C"/"D")
+used in the master table and figure titles.
 
 ``alpha`` convention (shared with ``rsw_sphere.hough_harmonics``):
 1 = EIG/EG (eastward inertia-gravity), 2 = WIG/WG (westward inertia-gravity),
@@ -50,22 +52,33 @@ class TriadSpec:
     ----------
     key : str
         Semantic role identifier (dict key in the loaded registry, e.g.
-        ``rossby_pump``).
+        ``triad_rossby_only_non_resonant``).
     modes : tuple of 3 (m, n, alpha) int triples
         Mode a, b, c, in that order (see the ``alpha`` convention above).
     velocities : tuple of 3 float
-        Initial zonal velocities (m/s) for modes a, b, c respectively, used
-        to seed ``triad_energy_evolution``/``efficiency_sweep``.
+        Initial zonal velocities (m/s) for modes a, b, c respectively. Used
+        two different ways by the two consumers: ``triad_energy_evolution``
+        (``triad_dynamics.py``) takes all three literally as the initial
+        condition; ``efficiency_sweep`` (``triad_efficiency.py``) instead
+        sweeps two of the three modes over a velocity grid and only uses
+        this tuple's entry for whichever mode is held fixed (by default,
+        the target mode itself, held at 0 regardless of what is registered
+        here -- see ``efficiency_sweep``'s docstring). Don't assume a
+        change here silently updates both figure types the same way.
     h_e : float
         Equivalent height (equivalent depth), in metres.
     label : str
         Human-readable label for figures/tables.
+    display_label : str
+        Short "Triad A"/"B"/"C"/"D" tag for the master table's leftmost
+        column and figure titles.
     """
     key: str
     modes: tuple
     velocities: tuple = (10.0, 10.0, 10.0)
     h_e: float = 10000.0
     label: str = ""
+    display_label: str = ""
 
     def flat_modes(self):
         """Flatten ``modes`` into the positional order expected by
@@ -112,6 +125,7 @@ def load_triad_specs(yaml_path: str = DEFAULT_SPECS_PATH) -> dict:
             velocities=velocities,
             h_e=float(entry.get("h_e", 10000.0)),
             label=entry.get("label", key),
+            display_label=entry.get("display_label", ""),
         )
     return specs
 

@@ -18,16 +18,28 @@
 # 1 = EIG/EG (eastward inertia-gravity), 2 = WIG/WG (westward
 # inertia-gravity), 3 = RH (Rossby-Haurwitz).
 #
-# `label` is the human-readable name for figure/table captions; `role` is
-# a one-line free-text note on why this triad is included.
+# `label` is the human-readable name for figure/table captions; `display_label`
+# is the short "Triad A/B/C/D" tag used as the leftmost-column header in the
+# master table (rsw_sphere.plotting.triad_table) and in figure titles; `role`
+# is a one-line free-text note on why this triad is included.
+#
+# Velocity ranges (paper review, 2026-08-11): Rossby (RH) mode initial
+# velocities/sweep bounds go up to 100 m/s (jet-stream-strength winds, cf.
+# Williamson et al. 1992 test-case-6 benchmark ~50 m/s); gravity (EG/WG)
+# mode velocities are capped at 50 m/s (observed Kelvin/inertia-gravity
+# wind anomalies are ~few-20 m/s, so the previously-used 80-200 m/s values
+# were unrealistic). The velocities below respect that cap; sweep-range
+# caps are enforced in code (see triad_efficiency.efficiency_sweep's
+# mode-family-aware default ranges).
 #
 # Forward-looking note (not solved here): when Multiple-Triads/Five-Wave
 # configs are built, they should be able to reference a triad here by its
 # role key and extend it with additional modes, rather than re-listing
 # shared modes.
 
-rossby_near_resonant:
+triad_rossby_only_near_resonant:
   label: "Rossby-only, near-resonant, long period"
+  display_label: "Triad A"
   role: "Rossby-only, near-resonant, long period"
   h_e: 10000
   mode_a:
@@ -46,9 +58,10 @@ rossby_near_resonant:
     alpha: 3        # RH
     u: 100.0
 
-rossby_pump:
-  label: "Rossby-only, pump mode, short period"
-  role: "Rossby-only, pump mode, short period"
+triad_rossby_only_non_resonant:
+  label: "Rossby-only, non-resonant, short period"
+  display_label: "Triad B"
+  role: "Rossby-only, non-resonant, short period"
   h_e: 10000
   mode_a:
     m: 3
@@ -66,15 +79,20 @@ rossby_pump:
     alpha: 3        # RH
     u: 100.0
 
-kelvin_rh_flow:
-  label: "RH -> EG flow via the Kelvin wave"
-  role: "RH->EG flow; reused in the Inertia-Gravity Waves section"
+triad_kelvin_rossby_flow:
+  label: "RH <-> EG flow via the Kelvin wave"
+  display_label: "Triad C"
+  role: >-
+    RH<->EG flow; reused in the Inertia-Gravity Waves section. Has two
+    worked target-mode examples: target=EG(1,1) (RH->EG) and
+    target=RH(3,4) (EG->RH, the pump mode) -- see
+    examples/make_section22_figures.py --target.
   h_e: 10000
   mode_a:
     m: 1
     n: 1
     alpha: 1        # EIG (Kelvin wave)
-    u: 80.0
+    u: 50.0
   mode_b:
     m: 3
     n: 4
@@ -86,15 +104,20 @@ kelvin_rh_flow:
     alpha: 3        # RH
     u: 100.0
 
-gravity_catalyst:
+triad_gravity_with_rossby_catalyst:
   label: "EG <-> EG with RH catalyst"
-  role: "EG<->EG with RH catalyst; ~200x scale separation"
+  display_label: "Triad D"
+  role: >-
+    EG<->EG with RH catalyst; ~200x scale separation. The catalyst role is
+    played by the Rossby mode RH(1,7) (small coupling coefficient, sets the
+    exchange period without absorbing energy), while EG(6,9)/EG(7,9) are
+    the pair actually exchanging energy.
   h_e: 10000
   mode_a:
     m: 6
     n: 9
     alpha: 1        # EIG
-    u: 200.0
+    u: 50.0
   mode_b:
     m: 1
     n: 7

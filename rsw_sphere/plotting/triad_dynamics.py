@@ -9,18 +9,18 @@ each mode plus the (conserved) total energy.
 Run from the command line (output written under ``outputs/figures/triads/``
 by convention; nothing is written outside ``outputs/`` automatically):
 
-    python rsw_sphere/plotting/triad_dynamics.py outputs/figures/triads/gravity_catalyst_energy.png --triad gravity_catalyst
-    python rsw_sphere/plotting/triad_dynamics.py outputs/figures/triads/rossby_pump_energy.png --triad rossby_pump --tf 3
-    python -m rsw_sphere.plotting.triad_dynamics outputs/figures/triads/kelvin_rh_flow_energy.png --triad kelvin_rh_flow
+    python rsw_sphere/plotting/triad_dynamics.py outputs/figures/triads/triad_gravity_with_rossby_catalyst_energy.png --triad triad_gravity_with_rossby_catalyst
+    python rsw_sphere/plotting/triad_dynamics.py outputs/figures/triads/triad_rossby_only_non_resonant_energy.png --triad triad_rossby_only_non_resonant --tf 3
+    python -m rsw_sphere.plotting.triad_dynamics outputs/figures/triads/triad_kelvin_rossby_flow_energy.png --triad triad_kelvin_rossby_flow
 
 or import and call it from another script:
 
     from rsw_sphere.plotting.triad_dynamics import triad_energy_evolution
     from rsw_sphere.dynamics.triad_specs import load_triad_specs
-    spec = load_triad_specs()['gravity_catalyst']
+    spec = load_triad_specs()['triad_gravity_with_rossby_catalyst']
     triad_energy_evolution(spec.modes, spec.velocities, spec.h_e,
                             t0=0, tf_days=10, h=0.001,
-                            path="outputs/figures/triads/gravity_catalyst_energy.png")
+                            path="outputs/figures/triads/triad_gravity_with_rossby_catalyst_energy.png")
 """
 import os
 import sys
@@ -35,13 +35,25 @@ import matplotlib.pyplot as plt
 from rsw_sphere.physics import gamma_from_he
 from rsw_sphere.hough_harmonics.normalization import norm_component
 from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33, Energy_0
+from rsw_sphere.plotting.style import mode_color, TOTAL_ENERGY_COLOR
 
 G = 9.8
+
+
+#: Line styles by role, so the target mode is identifiable without relying
+#: on color alone (paper-review follow-up, 2026-08-11: colors alone were
+#: too similar between some modes; solid vs. dashed is also
+#: grayscale/colorblind-safe). The two non-target modes get *different*
+#: dash patterns from each other so they remain distinguishable where their
+#: curves overlap.
+_TARGET_LINESTYLE = '-'
+_OTHER_LINESTYLES = ['--', ':']
 
 
 def triad_energy_evolution(modes, velocities, h_e: float = 10000,
                             t0: float = 0, tf_days: float = 10, h: float = 0.001,
                             N: int = 10, deg: int = 300,
+                            target: int = None,
                             path: str = None, ax=None):
     """Integrate and plot the normalized kinetic energy of a resonant triad.
 
@@ -62,6 +74,13 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
         ``run_dynamics.py``). Default ``10``.
     h : float, optional
         RK33 step size (nondimensional time). Default ``0.001``.
+    target : int or None, optional
+        Index (0/1/2, i.e. a/b/c) of the target mode -- the one whose
+        efficiency is the point of the figure. If given, its curve is
+        drawn solid and the other two dashed/dotted (see
+        ``_TARGET_LINESTYLE``/``_OTHER_LINESTYLES``), so the target is
+        identifiable without relying on color alone. If ``None``
+        (default), all three modes are drawn solid.
     N : int, optional
         Hough-mode expansion truncation order. Default ``10``.
     deg : int, optional
@@ -128,10 +147,25 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
     else:
         fig = ax.figure
 
-    ax.plot(t, E_a, label=Triad.label_a, color='#c0392b')
-    ax.plot(t, E_b, label=Triad.label_b, color='#2ca02c')
-    ax.plot(t, E_c, label=Triad.label_c, color='#1a5fa8')
-    ax.plot(t, E_T, label='Total', color='0.4', ls='--', lw=1)
+    # TRIAD.label_* uses the code's internal EIG/WIG shorthand; the paper
+    # consistently uses EG/WG, so relabel for display without touching the
+    # shared TRIAD class (used elsewhere with the EIG/WIG convention intact).
+    def _paper_label(m, n, alpha, fallback):
+        return {1: 'EG', 2: 'WG', 3: 'RH'}.get(alpha, fallback[:2]) + f'({m},{n})'
+
+    if target is None:
+        ls_a = ls_b = ls_c = _TARGET_LINESTYLE
+    else:
+        styles = [None, None, None]
+        others = iter(_OTHER_LINESTYLES)
+        for i in range(3):
+            styles[i] = _TARGET_LINESTYLE if i == target else next(others)
+        ls_a, ls_b, ls_c = styles
+
+    ax.plot(t, E_a, label=_paper_label(m_a, n_a, alpha_a, Triad.label_a), color=mode_color(m_a, n_a, alpha_a), ls=ls_a)
+    ax.plot(t, E_b, label=_paper_label(m_b, n_b, alpha_b, Triad.label_b), color=mode_color(m_b, n_b, alpha_b), ls=ls_b)
+    ax.plot(t, E_c, label=_paper_label(m_c, n_c, alpha_c, Triad.label_c), color=mode_color(m_c, n_c, alpha_c), ls=ls_c)
+    ax.plot(t, E_T, label='Total', color=TOTAL_ENERGY_COLOR, ls='--', lw=1)
     ax.set_xlabel('Time (days)')
     ax.set_ylabel('Energy (nondimensional)')
     ax.set_ylim(-0.05, 1.05)
@@ -159,19 +193,19 @@ def main():
                     "(rsw_sphere.dynamics.triad_specs.load_triad_specs).")
     parser.add_argument(
         "path", nargs="?", default=None,
-        help="output image path (e.g. "
-             "outputs/figures/triads/gravity_catalyst_energy.png). "
+        help="output image path (e.g. outputs/figures/triads/"
+             "triad_gravity_with_rossby_catalyst_energy.png). "
              "If omitted, the figure is shown interactively.")
     parser.add_argument(
         "--specs", default=DEFAULT_SPECS_PATH,
         help=f"path to the triad-registry YAML (default: {DEFAULT_SPECS_PATH}).")
     parser.add_argument(
         "--triad", choices=list(load_triad_specs(DEFAULT_SPECS_PATH)),
-        default="gravity_catalyst",
+        default="triad_gravity_with_rossby_catalyst",
         help="which registered triad (role key) to integrate, from the "
-             "default registry YAML (default: gravity_catalyst). If "
-             "--specs points at a YAML with different keys, pass the "
-             "matching role key here.")
+             "default registry YAML (default: "
+             "triad_gravity_with_rossby_catalyst). If --specs points at a "
+             "YAML with different keys, pass the matching role key here.")
     parser.add_argument(
         "--tf", dest="tf_days", type=float, default=10,
         help="final integration time, in days (default: 10).")

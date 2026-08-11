@@ -4,10 +4,12 @@ Batch-computes, for each ``TriadSpec`` in the registry (loaded from
 ``examples/triads_section_2_2.yaml`` via
 ``rsw_sphere.dynamics.triad_specs.load_triad_specs``): per-mode frequency,
 linear period (days) and coupling coefficient; per-triad frequency mismatch
-``delta``, the cubic-energy integral ``S_abc``, the pump mode (largest
-|coupling coefficient|), and the energy-conservation residual
-``(alpha^a_bc + alpha^b_ac - alpha^c_ab) + delta * S_abc``, which must be
-~0 for every physically consistent triad -- a free correctness check.
+``delta``, the cubic-energy integral ``S_abc``, and the pump mode (largest
+|coupling coefficient|). The energy-conservation residual
+``(alpha^a_bc + alpha^b_ac - alpha^c_ab) + delta * S_abc`` is also computed
+and must be ~0 for every physically consistent triad -- kept as an
+internal correctness check (``triad_properties`` warns if it is not ~0)
+but not rendered in any output format (paper-review item 4).
 
 This replaces hand-assembled tables: every number here comes from
 ``TRIAD`` (``rsw_sphere.dynamics.dynamic_triads``), so the paper/table
@@ -25,11 +27,12 @@ or import and call it from another script:
     from rsw_sphere.plotting.triad_table import triad_properties, triad_table
     from rsw_sphere.dynamics.triad_specs import load_triad_specs
     specs = load_triad_specs()
-    props = triad_properties(specs['gravity_catalyst'].modes)
+    props = triad_properties(specs['triad_gravity_with_rossby_catalyst'].modes)
     triad_table(specs, fmt='latex', path='outputs/figures/triads/table.tex')
 """
 import os
 import sys
+import warnings
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _ROOT not in sys.path:
@@ -43,7 +46,9 @@ from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import
 
 
 def _mode_label(m, n, alpha):
-    return {1: 'EIG', 2: 'WIG', 3: 'RH'}[alpha] + f'({m},{n})'
+    # Paper prose consistently uses EG/WG (not the code's internal EIG/WIG
+    # shorthand) for eastward/westward inertia-gravity modes -- match it.
+    return {1: 'EG', 2: 'WG', 3: 'RH'}[alpha] + f'({m},{n})'
 
 
 def triad_properties(modes, h_e: float = 10000, N: int = 10, deg: int = 300) -> dict:
@@ -88,6 +93,16 @@ def triad_properties(modes, h_e: float = 10000, N: int = 10, deg: int = 300) -> 
     # Energy-conservation residual: (alpha^a_bc + alpha^b_ac - alpha^c_ab) + delta*S_abc ~= 0
     residual = (coef[0] + coef[1] - coef[2]) + delta * S_abc
 
+    if abs(residual) > 1e-6:
+        warnings.warn(
+            f"triad_properties: energy-conservation residual {residual:.3g} "
+            f"is not ~0 for modes {modes} -- this indicates a physically "
+            f"inconsistent triad or a numerical-precision issue, not a "
+            f"display concern (the residual itself is no longer rendered "
+            f"in the master table, per paper-review item 4, but is kept as "
+            f"an internal correctness check)."
+        )
+
     pump_index = int(np.argmax(np.abs(coef)))
     labels = [_mode_label(*modes[0]), _mode_label(*modes[1]), _mode_label(*modes[2])]
 
@@ -111,6 +126,38 @@ def _fmt_num(x, sig=6):
     return f'{x:.{sig}g}'
 
 
+def _split_name_3lines(key, max_lines=3):
+    """Word-wrap an underscore-delimited role key (e.g.
+    ``triad_rossby_only_non_resonant``) into up to ``max_lines`` lines for
+    display in the master table's leftmost column, by greedily packing
+    ``_``-delimited tokens onto each line (balanced by running character
+    count, not literally one token per line -- most role keys have more
+    than 3 tokens).
+
+    Returns
+    -------
+    list of str
+        Up to ``max_lines`` strings (tokens joined by a space), suitable for
+        joining with ``\\\\`` inside ``\\shortstack{...}``.
+    """
+    # Drop the common "triad_" prefix shared by every registry key -- it
+    # carries no information in a table where every row is a triad, so
+    # wrapping it would waste one of the 3 lines.
+    stripped = key[len('triad_'):] if key.startswith('triad_') else key
+    tokens = stripped.split('_')
+    target_len = sum(len(t) for t in tokens) / max_lines
+    lines, cur, cur_len = [], [], 0
+    for tok in tokens:
+        if cur and cur_len + len(tok) > target_len and len(lines) < max_lines - 1:
+            lines.append(' '.join(cur))
+            cur, cur_len = [], 0
+        cur.append(tok)
+        cur_len += len(tok)
+    if cur:
+        lines.append(' '.join(cur))
+    return lines
+
+
 def triad_table(specs, h_e: float = 10000, N: int = 10, deg: int = 300,
                  fmt: str = 'latex', path: str = None) -> str:
     """Build the master table over a dict of ``TriadSpec``.
@@ -128,8 +175,12 @@ def triad_table(specs, h_e: float = 10000, N: int = 10, deg: int = 300,
         See ``triad_properties``.
     fmt : {'latex', 'csv', 'markdown'}, optional
         Output format. ``'latex'`` produces a ``booktabs`` table grouped by
-        triad (a multicolumn header row with delta/pump mode, then three
-        mode rows). Default ``'latex'``.
+        triad: the leftmost column (filled only on each triad's first mode
+        row) holds the triad's role-key name word-wrapped to 3 lines, its
+        "Triad A/B/C/D" ``display_label``, and its mismatch delta; the
+        energy-conservation residual is not rendered (still computed and
+        checked internally by ``triad_properties``, which warns if it is
+        not ~0). Default ``'latex'``.
     path : str or None, optional
         If given, the table text is written to this path. If ``None``
         (default), the table text is printed to stdout.
@@ -144,53 +195,83 @@ def triad_table(specs, h_e: float = 10000, N: int = 10, deg: int = 300,
             for key, spec in specs.items()}
 
     if fmt == 'csv':
-        lines = ['triad,mode,m,n,alpha,omega,period_days,coef,symmetric,delta,S_abc,pump,residual']
+        lines = ['triad,display_label,mode,m,n,alpha,omega,period_days,coef,symmetric,delta,S_abc,pump']
         for key, p in rows.items():
+            display_label = specs[key].display_label
             for i in range(3):
                 m, n, alpha = p['mnalpha'][i]
                 lines.append(','.join(str(v) for v in [
-                    key, p['modes'][i], m, n, alpha,
+                    key, display_label if i == 0 else '', p['modes'][i], m, n, alpha,
                     p['omega'][i], p['period_days'][i], p['coef'][i],
                     p['symmetric'][i], p['delta'] if i == 0 else '',
                     p['S_abc'] if i == 0 else '',
                     p['pump_label'] if i == 0 else '',
-                    p['residual'] if i == 0 else '',
                 ]))
         text = '\n'.join(lines) + '\n'
 
     elif fmt == 'markdown':
-        lines = ['| triad | mode | omega | period (d) | coef | pump | delta | residual |',
-                 '|---|---|---|---|---|---|---|---|']
+        lines = ['| triad | mode | omega (dimensionless) | period (d) | coef | pump | delta |',
+                 '|---|---|---|---|---|---|---|']
         for key, p in rows.items():
+            display_label = specs[key].display_label
+            name_cell = f"{key} ({display_label})" if display_label else key
             for i in range(3):
                 pump_cell = p['pump_label'] if i == 0 else ''
                 delta_cell = _fmt_num(p['delta']) if i == 0 else ''
-                residual_cell = _fmt_num(p['residual']) if i == 0 else ''
                 lines.append(
-                    f"| {key if i == 0 else ''} | {p['modes'][i]} | "
+                    f"| {name_cell if i == 0 else ''} | {p['modes'][i]} | "
                     f"{_fmt_num(p['omega'][i])} | {_fmt_num(p['period_days'][i])} | "
-                    f"{_fmt_num(p['coef'][i])} | {pump_cell} | {delta_cell} | {residual_cell} |"
+                    f"{_fmt_num(p['coef'][i])} | {pump_cell} | {delta_cell} |"
                 )
         text = '\n'.join(lines) + '\n'
 
     elif fmt == 'latex':
+        # Column spec matches JFM-template.tex's copy of this table
+        # (l|l|c|c|c|c): leftmost column (triad name/label/delta), mode
+        # label, frequency, period, coupling coefficient, pump flag.
+        # Headers are individually centered via \multicolumn{1}{c}{...}
+        # (paper-review item 4); numeric body columns are also centered
+        # (not right-aligned) per a later manual revision.
+        #
+        # Leftmost-column layout (revised 2026-08-11 to match a manual
+        # edit made directly in JFM-template.tex): the bold "Triad X" tag
+        # sits on its own row above the triad's 3 mode rows (a plain
+        # `\textbf{...} \\` line, not a table cell -- LaTeX just leaves the
+        # other columns of that row blank); each of the 3 mode rows then
+        # carries one line of the wrapped role-key name (up to 2 lines) or
+        # the mismatch delta (always the 3rd row), top-aligned rather than
+        # vertically centered via \shortstack as in the previous version.
+        # No \multirow/\makecell dependency either way.
         lines = [
             r'\begin{table}',
             r'\centering',
-            r'\begin{tabular}{llrrrr}',
+            r'\begin{tabular}{l|l|c|c|c|c}',
             r'\toprule',
-            r'Triad & Mode & $\omega$ & Period (d) & Coeff. & Pump \\',
+            r'\multicolumn{1}{c}{Triad} & \multicolumn{1}{c}{Mode} & '
+            r'\multicolumn{1}{c}{Frequency ($\omega$)} & '
+            r'\multicolumn{1}{c}{Period (days)} & \multicolumn{1}{c}{Coeff.} & '
+            r'\multicolumn{1}{c}{Pump} \\',
             r'\midrule',
         ]
         for key, p in rows.items():
-            lines.append(
-                rf'\multicolumn{{6}}{{l}}{{\textbf{{{key}}}: '
-                rf'$\delta={_fmt_num(p["delta"])}$, pump mode {p["pump_label"]}, '
-                rf'residual $={_fmt_num(p["residual"])}$}} \\'
-            )
+            display_label = specs[key].display_label
+            name_lines = _split_name_3lines(key, max_lines=2)
+            delta_str = rf'$\delta={_fmt_num(p["delta"])}$'
+            # Row 0 gets name_lines[0] (if any), row 1 gets name_lines[1]
+            # (if any, else the delta if there's only one name line), row 2
+            # always gets the delta unless it was already placed on row 1.
+            left_cells = ['', '', delta_str]
+            for i, line in enumerate(name_lines[:2]):
+                left_cells[i] = line
+            if len(name_lines) < 2:
+                left_cells[1] = delta_str
+                left_cells[2] = ''
+            if display_label:
+                lines.append(rf'\textbf{{{display_label}}} \\')
             for i in range(3):
+                indent = ' ' * i
                 lines.append(
-                    f"& {p['modes'][i]} & {_fmt_num(p['omega'][i])} & "
+                    f"{indent}{left_cells[i]} & {p['modes'][i]} & {_fmt_num(p['omega'][i])} & "
                     f"{_fmt_num(p['period_days'][i])} & {_fmt_num(p['coef'][i])} & "
                     f"{'pump' if i == p['pump_index'] else ''} \\\\"
                 )
