@@ -1,0 +1,138 @@
+# Registry of quartet/quintet examples for the paper's merged §Coupled
+# Triads section (formerly §Multiple Triads / §Inertia-Gravity Waves /
+# §Five-Wave model). Loaded by
+# rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs() into
+# WaveSetSpec objects, which feed rsw-waveset-table / rsw-waveset /
+# rsw-waveset-pmeasure / rsw-waveset-periods.
+#
+# See paper-nonlinear-interactions-SWE-sphere/.claude/HARVEST-section-3.md
+# for where each mode set/velocity came from (the six legacy scripts'
+# EXAMPLES blocks and the dissertation's own published tables) and what
+# was NOT trusted from the harvest (the legacy scripts' own A_0 values --
+# not traceable to any specific published figure; and four_waves_79.py's
+# inconsistent h_e). Velocities below are chosen fresh, within the
+# established realistic caps, not copied from either source blindly.
+#
+# alpha convention (shared with rsw_sphere.hough_harmonics, and with
+# examples/triads_section_2_2.yaml): 1 = EIG/EG (eastward inertia-gravity),
+# 2 = WIG/WG (westward inertia-gravity), 3 = RH (Rossby-Haurwitz).
+#
+# Mode keys follow the PAPER's own lettering (eq :4sys1 / Appendix B):
+# 'a' is always a triad's "sum" mode, m_a = m_b + m_c (and, for a quartet,
+# also m_a = m_b + m_d -- both constituent triads share the sum mode).
+# Validated at load: m_sum == m_p + m_q for every triad.
+#
+# Velocity caps (paper-review convention, see PLAN-section-2.2.md
+# "Conventions established in §2.2"): Rossby (RH) mode velocities up to
+# 100 m/s; gravity (EG/WG) mode velocities up to 50 m/s. The three
+# published dissertation examples for the gravity-mode quartets used up to
+# 80 m/s for the gravity mode (tab: cap4ex) -- capped to 50 m/s here
+# instead of reproduced, per that convention; see PLAN-section-3.md's
+# Phase B/C notes on why exact reproduction was not the goal.
+#
+# Each quartet is a star (2 triads sharing an edge), but the shared edge
+# differs: Quartet A shares {RH(4,5), RH(1,2)} (tab: cap41's own a/b);
+# Quartet B/C and the quintet share {RH(4,5), RH(3,4)} instead (tab: cap42/
+# cap43's own a/b -- confirmed against both the published table columns
+# and four_waves_2.py's own variable assignment for that table, which
+# differ from tab: cap41's b/c choice). See HARVEST-section-3.md.
+
+quartet_rh_preference:
+  label: "RH(1,2)+RH(4,5) choosing between RH(3,4) and RH(3,6)"
+  display_label: "Quartet A"
+  role: >-
+    All-Rossby quartet (matches dissertation tab: cap41): tests whether
+    RH(4,5)+RH(1,2) prefer to exchange energy with RH(3,4) or RH(3,6).
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 40.0}
+    b: {m: 1, n: 2, alpha: 3, u: 40.0}
+    c: {m: 3, n: 4, alpha: 3, u: 0.0}
+    d: {m: 3, n: 6, alpha: 3, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 30
+    h: 0.01
+    n_grid: 10
+
+quartet_gravity_kelvin:
+  label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
+  display_label: "Quartet B"
+  role: >-
+    Matches dissertation tab: cap42. The RH-only triad (a,b,c) reused here
+    is exactly triad_kelvin_rossby_flow's RH pair from the §2.2 registry
+    (RH(3,4)+RH(4,5)), extended with RH(1,2) as the third RH member and
+    the Kelvin mode EG(1,1) as the fourth. Tests how the gravity mode
+    changes the RH-only triad's dynamics.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 1, n: 1, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+    n_grid: 10
+
+quartet_gravity_79:
+  label: "RH(4,5)+RH(3,4)+RH(1,2) with the gravity mode EG(7,9)"
+  display_label: "Quartet C"
+  role: >-
+    Matches dissertation tab: cap43 -- same RH-only triad as Quartet B,
+    paired instead with the higher-frequency gravity mode EG(7,9) (also
+    used standalone in the §2.2 registry's triad_gravity_with_rossby_catalyst).
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 7, n: 9, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    # EG(7,9) (mode d) has m=7=m_a+m_b=4+3, so it is this triad's SUM mode,
+    # not a member -- unlike Quartet B, where the gravity mode EG(1,1)
+    # (m=1) is the small private member and RH(4,5) (m=4) stays the sum.
+    # Caught by wave_set_specs.py's load-time m_sum=m_p+m_q validation.
+    - {sum: d, members: [a, b], display_label: "Triad 2 (with EG(7,9))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 10
+    h: 0.01
+    n_grid: 10
+
+quintet_gravity_star:
+  label: "RH(4,5)+RH(1,2)+RH(3,4) with both EG(1,1) and EG(7,9)"
+  display_label: "Quintet A"
+  role: >-
+    Star topology (3 constituent triads sharing the edge RH(4,5)+RH(1,2)),
+    matching what five_waves.py's FIVE_WAVES class actually computes --
+    NOT the chain topology ("connected by a single mode") the paper's own
+    prose currently describes; see HARVEST-section-3.md's topology finding
+    and PLAN-section-3.md Phase E, which must correct that prose. Union of
+    Quartet B and Quartet C's gravity modes on the same RH-only triad.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 1, n: 1, alpha: 1, u: 0.0}
+    e: {m: 7, n: 9, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
+    # EG(7,9) (mode e) has m=7=m_a+m_b=4+3, so it is this triad's SUM mode
+    # -- see the identical note in quartet_gravity_79 above.
+    - {sum: e, members: [a, b], display_label: "Triad 3 (with EG(7,9))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 10
+    h: 0.01
+    n_grid: 8

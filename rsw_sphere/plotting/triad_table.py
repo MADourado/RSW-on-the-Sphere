@@ -43,12 +43,7 @@ import numpy as np
 from rsw_sphere.physics import gamma_from_he, linear_period_days
 from rsw_sphere.dynamics.dynamic_triads import TRIAD
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import symetry
-
-
-def _mode_label(m, n, alpha):
-    # Paper prose consistently uses EG/WG (not the code's internal EIG/WIG
-    # shorthand) for eastward/westward inertia-gravity modes -- match it.
-    return {1: 'EG', 2: 'WG', 3: 'RH'}[alpha] + f'({m},{n})'
+from rsw_sphere.plotting.labels import _mode_label, _fmt_num
 
 
 def triad_properties(modes, h_e: float = 10000, N: int = 10, deg: int = 300) -> dict:
@@ -120,10 +115,6 @@ def triad_properties(modes, h_e: float = 10000, N: int = 10, deg: int = 300) -> 
         'residual': residual,
         'h_e': h_e,
     }
-
-
-def _fmt_num(x, sig=6):
-    return f'{x:.{sig}g}'
 
 
 def _split_name_3lines(key, max_lines=3):

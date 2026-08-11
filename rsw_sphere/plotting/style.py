@@ -31,17 +31,20 @@ GREY = '0.55'
 # plot time): within a family, the fastest (shortest-period) mode gets the
 # lightest hue and the slowest gets the darkest, so darker == slower reads
 # consistently across figures. Periods used to fix this ordering (computed
-# via ``triad_table.triad_properties``, h_e=10000 m, 2026-08-11):
-#   RH(3,4)=3.72d, RH(4,5)=3.99d, RH(1,2)=5.03d, RH(3,10)=19.0d, RH(1,7)=30.3d
+# via ``triad_table.triad_properties``/``wave_set_table.wave_set_table``,
+# h_e=10000 m, 2026-08-11):
+#   RH(3,4)=3.72d, RH(4,5)=3.99d, RH(1,2)=5.03d, RH(3,6)=7.59d,
+#   RH(3,10)=19.0d, RH(1,7)=30.3d
 #   EG(6,9)=0.156d, EG(7,9)=0.156d, EG(1,1)=1.35d
-# Every mode currently used across §2.2 (5 RH, 3 EG, no WG) has a fixed
+# Every mode currently used across §2.2/§3 (6 RH, 3 EG, no WG) has a fixed
 # entry below; a mode not in this dict falls back to GREY (see
-# ``mode_color``) rather than erroring, so new triads don't break plotting
-# -- extend this dict when new modes are added.
+# ``mode_color``) rather than erroring, so new triads/wave sets don't break
+# plotting -- extend this dict when new modes are added.
 MODE_COLORS = {
     (3, 4, 3):  '#f1c40f',   # RH(3,4)  -- fastest RH -> yellow
     (4, 5, 3):  '#e67e22',   # RH(4,5)
     (1, 2, 3):  '#d35400',   # RH(1,2)
+    (3, 6, 3):  '#c94615',   # RH(3,6)  -- §3 quartet A's alternative pump mode
     (3, 10, 3): '#c0392b',   # RH(3,10)
     (1, 7, 3):  '#7f1d1d',   # RH(1,7)  -- slowest RH -> dark red/maroon
     (6, 9, 1):  '#5dade2',   # EG(6,9)  -- fastest EG -> light blue

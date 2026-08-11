@@ -100,22 +100,66 @@ def norm_Hough(m,n,alpha,gamma, N,deg):
     #     return U, V, -Z, -DU, -DV, DZ, point, norm, eigen
 
 def norm_component(u, deg = 300):
-    
+
     # Norm of the zonal velocity component (u)
     # This norm is used to define the necessary amplitude to obtain a
     # specific zonal velocity.
-    
+
     point, weight = np.polynomial.legendre.leggauss(deg)
-    
+
     ang = np.pi/2 * point
-    
+
     cos = np.cos(ang)
 
     norm = np.pi/2* sum(weight * (u*u)*cos)
-    
+
     return np.sqrt(norm)
-    
-    
+
+
+def velocity_to_amplitude(u_target, u_component, h_e, g=9.8):
+    """Complex (here: real) amplitude giving a physical zonal velocity of
+    ``u_target`` m/s for a real initial amplitude.
+
+    **Includes the factor of 2 from the paper's own derivation**
+    (``eq: Azonal`` in ``JFM-template.tex``): the physical field is
+    ``A*(u,iv,h) + conj(A)*(u,-iv,h) = 2*Re(A)*u`` (for the u-component),
+    so a real amplitude ``A`` produces a physical zonal velocity
+    ``U = 2*A*u_component``, i.e. ``A = U / (2 * norm_component(u_component)
+    * sqrt(g*h_e))``.
+
+    This factor of 2 was missing from ``rsw_sphere.plotting.triad_dynamics``
+    and ``rsw_sphere.plotting.triad_efficiency``'s own velocity-to-amplitude
+    conversions until 2026-08-11 -- found while cross-checking the new
+    quartet/quintet layer's harvested parameters against the dissertation's
+    published ``tab: cap4ex`` amplitudes: every one of 4 independent
+    (mode, velocity) pairs matched the published value to ~4-5 significant
+    figures only with this factor included, and was consistently exactly
+    2x too large without it. All velocity-labeled §2.2 figures/captions
+    were regenerated after this fix (see
+    ``paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-2.2.md``);
+    the underlying mode frequencies, periods, coupling coefficients and
+    mismatches are entirely unaffected (they don't depend on amplitude).
+
+    Parameters
+    ----------
+    u_target : float
+        Desired physical zonal velocity, m/s.
+    u_component : ndarray
+        The mode's ``u`` field (e.g. ``TRIAD.uvh_a[0]``), as returned by
+        ``norm_Hough``.
+    h_e : float
+        Equivalent height, m.
+    g : float, optional
+        Gravitational acceleration, m/s^2. Default 9.8.
+
+    Returns
+    -------
+    float
+        Real initial amplitude.
+    """
+    return u_target / (2 * norm_component(u_component) * np.sqrt(g * h_e))
+
+
 #------------------
 # PLOTS
 #------------------

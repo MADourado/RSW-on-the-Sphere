@@ -96,28 +96,11 @@ class TRIAD:
 '''
 RUNGE KUTTA 33
 '''
-def RK33(Triad, t_0, t_f, h, A_0 ):
-    
-    n = (t_f - t_0)/h
-    n = int(n)
-    
-    y_0 = A_0
-    
-    Y = [y_0]
-    
-    for k in range(n):
-        
-        k1 = Triad.f( Y[-1])
-        k2 = Triad.f( Y[-1] + h/2 * k1)
-        k3 = Triad.f( Y[-1] + h/2 * k2)
-        k4 = Triad.f( Y[-1] + h * k3)
-        
-        Y += [ Y[-1] + h/6 * (k1 + 2*k2 + 2*k3 + k4)]
-        
-    Y = np.array(Y)
-    T = np.linspace(t_0, t_f, n+1)
-    
-    return Y, T  
+# Moved to rsw_sphere.dynamics.integrators (2026-08-11) so quartet/quintet
+# code (rsw_sphere.dynamics.wave_sets) can reuse it without a fourth copy --
+# RK33 only ever calls Triad.f(state), so it was already arity-agnostic.
+# Re-exported here under the same name so no call site anywhere changes.
+from rsw_sphere.dynamics.integrators import RK33
 
 
 def Energy_0(Triad, A_0):

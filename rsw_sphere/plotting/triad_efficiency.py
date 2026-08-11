@@ -32,8 +32,6 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-import hashlib
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import PowerNorm
@@ -41,6 +39,8 @@ from matplotlib.colors import PowerNorm
 from rsw_sphere.physics import gamma_from_he
 from rsw_sphere.hough_harmonics.normalization import norm_component
 from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33, Energy_0
+from rsw_sphere.plotting.labels import _mode_label
+from rsw_sphere.plotting.sweeps import cache_key_hash
 
 G = 9.8
 
@@ -58,10 +58,6 @@ def default_velocity_range(alpha):
     alpha=3 (Rossby-Haurwitz), EG_VELOCITY_RANGE for alpha=1/2 (EIG/WIG).
     """
     return RH_VELOCITY_RANGE if alpha == 3 else EG_VELOCITY_RANGE
-
-
-def _mode_label(m, n, alpha):
-    return {1: 'EG', 2: 'WG', 3: 'RH'}[alpha] + f'({m},{n})'
 
 
 def efficiency_sweep(modes, h_e: float = 10000, u1_range=None, u2_range=None,
@@ -159,10 +155,16 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=None, u2_range=None,
     (m_a, n_a, alpha_a), (m_b, n_b, alpha_b), (m_c, n_c, alpha_c) = modes
     Triad = TRIAD(gamma, m_a, n_a, alpha_a, m_b, n_b, alpha_b, m_c, n_c, alpha_c, N, deg)
 
+    # Factor of 2: eq: Azonal in the paper gives U = 2*Re(A)*u_component for
+    # a real amplitude A, so A = U/(2*norm_component(u)*sqrt(g*h_e)) -- see
+    # rsw_sphere.hough_harmonics.normalization.velocity_to_amplitude's
+    # docstring for the derivation and how this was found (2026-08-11 fix;
+    # was previously silently giving amplitudes -- and hence velocities --
+    # 2x too large for any given labeled u_target).
     nu = [
-        norm_component(Triad.uvh_a[0]) * np.sqrt(G * h_e),
-        norm_component(Triad.uvh_b[0]) * np.sqrt(G * h_e),
-        norm_component(Triad.uvh_c[0]) * np.sqrt(G * h_e),
+        2 * norm_component(Triad.uvh_a[0]) * np.sqrt(G * h_e),
+        2 * norm_component(Triad.uvh_b[0]) * np.sqrt(G * h_e),
+        2 * norm_component(Triad.uvh_c[0]) * np.sqrt(G * h_e),
     ]
 
     u1 = np.linspace(u1_range[0], u1_range[1], n_grid)
@@ -218,31 +220,6 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=None, u2_range=None,
         np.savez(cache_path, U1=U1, U2=U2, EFF=EFF)
 
     return U1, U2, EFF
-
-
-def cache_key_hash(modes, h_e, target, fixed_index, fixed_velocity,
-                    u1_range, u2_range, n_grid, t_f, h, N=10, deg=300):
-    """Short hash of every parameter that changes ``efficiency_sweep``'s
-    result, for building a ``.npz`` cache filename that auto-invalidates
-    when a sweep parameter changes.
-
-    Fixes the stale-cache bug logged in the plan's "Known issues" section:
-    caching by triad name alone silently serves an old sweep's result
-    after any of ``target``/``fixed_index``/velocity ranges/``n_grid``/
-    ``t_f``/``h`` change (this happened in practice -- e.g. a
-    ``gravity_catalyst`` cache computed before the ``E_0==0`` guard was
-    added kept a stale NaN baked into a shipped figure).
-
-    Returns
-    -------
-    str
-        8 hex characters, stable across runs for identical parameters
-        (``hashlib.sha1`` of the repr of every argument).
-    """
-    payload = repr((tuple(tuple(m) for m in modes), h_e, target, fixed_index,
-                     fixed_velocity, tuple(u1_range), tuple(u2_range),
-                     n_grid, t_f, h, N, deg))
-    return hashlib.sha1(payload.encode()).hexdigest()[:8]
 
 
 #: "Nice" ceiling values efficiency-map panels may autoscale to (paper-

@@ -33,9 +33,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from rsw_sphere.physics import gamma_from_he
-from rsw_sphere.hough_harmonics.normalization import norm_component
+from rsw_sphere.hough_harmonics.normalization import velocity_to_amplitude
 from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33, Energy_0
 from rsw_sphere.plotting.style import mode_color, TOTAL_ENERGY_COLOR
+from rsw_sphere.plotting.labels import _mode_label
 
 G = 9.8
 
@@ -108,11 +109,11 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
     Triad = TRIAD(gamma, m_a, n_a, alpha_a, m_b, n_b, alpha_b, m_c, n_c, alpha_c, N, deg)
 
     u_a, u_b, u_c = velocities
-    nu_a = norm_component(Triad.uvh_a[0]) * np.sqrt(G * h_e)
-    nu_b = norm_component(Triad.uvh_b[0]) * np.sqrt(G * h_e)
-    nu_c = norm_component(Triad.uvh_c[0]) * np.sqrt(G * h_e)
-
-    A_0 = np.array([u_a / nu_a, u_b / nu_b, u_c / nu_c])
+    A_0 = np.array([
+        velocity_to_amplitude(u_a, Triad.uvh_a[0], h_e, g=G),
+        velocity_to_amplitude(u_b, Triad.uvh_b[0], h_e, g=G),
+        velocity_to_amplitude(u_c, Triad.uvh_c[0], h_e, g=G),
+    ])
 
     t_f = tf_days * 4 * np.pi
 
@@ -147,12 +148,6 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
     else:
         fig = ax.figure
 
-    # TRIAD.label_* uses the code's internal EIG/WIG shorthand; the paper
-    # consistently uses EG/WG, so relabel for display without touching the
-    # shared TRIAD class (used elsewhere with the EIG/WIG convention intact).
-    def _paper_label(m, n, alpha, fallback):
-        return {1: 'EG', 2: 'WG', 3: 'RH'}.get(alpha, fallback[:2]) + f'({m},{n})'
-
     if target is None:
         ls_a = ls_b = ls_c = _TARGET_LINESTYLE
     else:
@@ -162,9 +157,9 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
             styles[i] = _TARGET_LINESTYLE if i == target else next(others)
         ls_a, ls_b, ls_c = styles
 
-    ax.plot(t, E_a, label=_paper_label(m_a, n_a, alpha_a, Triad.label_a), color=mode_color(m_a, n_a, alpha_a), ls=ls_a)
-    ax.plot(t, E_b, label=_paper_label(m_b, n_b, alpha_b, Triad.label_b), color=mode_color(m_b, n_b, alpha_b), ls=ls_b)
-    ax.plot(t, E_c, label=_paper_label(m_c, n_c, alpha_c, Triad.label_c), color=mode_color(m_c, n_c, alpha_c), ls=ls_c)
+    ax.plot(t, E_a, label=_mode_label(m_a, n_a, alpha_a), color=mode_color(m_a, n_a, alpha_a), ls=ls_a)
+    ax.plot(t, E_b, label=_mode_label(m_b, n_b, alpha_b), color=mode_color(m_b, n_b, alpha_b), ls=ls_b)
+    ax.plot(t, E_c, label=_mode_label(m_c, n_c, alpha_c), color=mode_color(m_c, n_c, alpha_c), ls=ls_c)
     ax.plot(t, E_T, label='Total', color=TOTAL_ENERGY_COLOR, ls='--', lw=1)
     ax.set_xlabel('Time (days)')
     ax.set_ylabel('Energy (nondimensional)')
