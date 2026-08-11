@@ -32,8 +32,9 @@ The main physical questions explored (see the thesis for full detail):
 
 ## Current content
 
-The code so far covers the material of Chapters 1–2 of the thesis (the triadic
-part) plus the plotting/driver infrastructure:
+The code covers the material of Chapters 1–3 of the thesis — the triadic part
+(Ch. 1–2) and the coupled-triad quartet/quintet part (Ch. 3) — plus the
+plotting/driver infrastructure:
 
 - **Hough harmonics & dispersion relation** — assembly and diagonalization of the
   tidal-equation eigenvalue problem, the normalized normal-mode fields
