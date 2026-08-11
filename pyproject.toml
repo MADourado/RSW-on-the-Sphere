@@ -22,6 +22,10 @@ rsw-hough-mode = "rsw_sphere.plotting.hough_spatial_ev:main"
 rsw-triad-table = "rsw_sphere.plotting.triad_table:main"
 rsw-triad = "rsw_sphere.plotting.triad_dynamics:main"
 rsw-triad-efficiency = "rsw_sphere.plotting.triad_efficiency:main"
+rsw-waveset-table = "rsw_sphere.plotting.wave_set_table:main"
+rsw-waveset = "rsw_sphere.plotting.wave_set_dynamics:main"
+rsw-waveset-periods = "rsw_sphere.plotting.wave_set_periods:main"
+rsw-waveset-pmeasure = "rsw_sphere.plotting.wave_set_pmeasure:main"
 
 [tool.setuptools.packages.find]
 include = ["rsw_sphere*"]

@@ -26,3 +26,14 @@ thesis-figure-to-code map these were drawn from.
 `run_diagnostics.py`/`run_dynamics.py` input, but the registry of triads
 used by `rsw-triad-table` / `rsw-triad` / `rsw-triad-efficiency` (see
 [`docs/triads.md`](../docs/triads.md)).
+
+## Wave-set (quartet/quintet) registry
+
+`wave_sets_section_3.yaml` is the same kind of registry, generalized to
+quartets and quintets (coupled multi-triad configurations) — used by
+`rsw-waveset-table` / `rsw-waveset` / `rsw-waveset-periods` /
+`rsw-waveset-pmeasure`, and by `make_section3_figures.py`'s composite
+builder (see [`docs/wave_sets.md`](../docs/wave_sets.md), which also
+covers how to test a triad/quartet/quintet that isn't in this file at
+all). `check_wave_set_physics.py` is the hard physics gate every new or
+edited entry must pass before any figure is trusted.

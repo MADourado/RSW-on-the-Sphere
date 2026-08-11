@@ -115,28 +115,27 @@ modes.
 - `Triad_dynamics` — integrates the triad, computes per-mode kinetic energy,
   efficiency (max−min energy), total-energy conservation check, and plots the
   time series.
-- `Triad_Precession` — sweeps initial amplitudes over a grid to map the energy
-  transfer efficiency (precession-resonance style diagnostics), with a filled
-  contour plot.
+- `Triad_Precession` — dead code (commented out since the §2.2 rebuild).
+  Superseded by `rsw_sphere/plotting/triad_efficiency.py`.
 - `eff_tri`, `period_Fourier` — efficiency-vs-velocity curves and FFT-based
   dominant-period analysis. (Some of these are exploratory helpers.)
 
-### `five_waves.py`
-`class FIVE_WAVES` — the sole five-wave implementation (extends the triad
-idea to five coupled modes). Not a duplicate of anything else here.
-
-### `four_waves_2.py`, `four_waves_79.py`, `four_waves_pump.py`, `four_waves_basic.py`, `four_waves_rk4_driver.py`
-**Five near-duplicate exploratory implementations** of a four-wave `FOUR_WAVES`
-class/experiment, kept side by side pending consolidation into one canonical
-module (none has been designated canonical yet — ask the user before picking
-one). Roughly:
-- `four_waves_basic.py` — a standalone `FOUR_WAVES` with no dependency on
-  `dynamic_triads.py`/`periods/` (only `hough_harmonics`).
-- `four_waves_2.py`, `four_waves_79.py`, `four_waves_pump.py` — variants that
-  additionally pull in `periods/period_harris.py` (`PERIOD`, `Amp_change`) and
-  `dynamic_triads.py` (`TRIAD`, `Triad_dynamics`).
-- `four_waves_rk4_driver.py` — an RK4 integration driver (`FF`, `RK44`) built
-  on top of `four_waves_pump.py`'s `FOUR_WAVES`.
+### `wave_sets.py` — quartets, quintets (generalized `TRIAD`)
+`class WaveSet` — an arbitrary set of Hough modes coupled through an
+arbitrary set of resonant triads; a quartet is 4 modes/2 triads sharing
+one edge, a quintet is 5 modes/3 triads, a plain triad is the degenerate
+3-modes/1-triad case. Replaces six earlier near-duplicate exploratory
+scripts (`five_waves.py`'s `FIVE_WAVES`; `four_waves_2.py`,
+`four_waves_79.py`, `four_waves_pump.py`, `four_waves_basic.py`,
+`four_waves_rk4_driver.py`'s various `FOUR_WAVES` variants), all deleted
+in the 2026 paper §3 rebuild — none worked as shipped (all called a
+`Triad_dynamics(..., p=...)` kwarg that never existed). `TRIAD` itself
+(`dynamic_triads.py`) is untouched and is `WaveSet`'s independent
+reference implementation, proven equivalent under a mode-relabeling
+permutation (`WaveSet`'s own module docstring;
+`examples/check_wave_set_physics.py` checks C1-C3). See
+[`../docs/wave_sets.md`](../docs/wave_sets.md) for the plotting/registry
+layer built on top and how to test a configuration not yet registered.
 
 ### `periods/` — analytic-period diagnostics
 Consumes `dynamic_triads.py`'s `TRIAD` (coupling coefficients, mismatch) to

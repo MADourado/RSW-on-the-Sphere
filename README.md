@@ -67,10 +67,13 @@ configs.yaml                # shared config for both drivers above
 pyproject.toml             # pip install -e . / console scripts
 ```
 
-`rsw_sphere/dynamics/` currently holds several exploratory `FOUR_WAVES`
-implementations side by side (`four_waves_2.py`, `four_waves_79.py`,
-`four_waves_pump.py`, `four_waves_basic.py`, `four_waves_rk4_driver.py`) —
-consolidating them into one canonical module is future work, not done yet.
+`rsw_sphere/dynamics/wave_sets.py::WaveSet` generalizes the single-triad
+`TRIAD` class (same file's `dynamic_triads.py`) to an arbitrary set of
+Hough modes coupled through an arbitrary set of resonant triads —
+quartets and quintets are instances of it, replacing six earlier
+exploratory `FOUR_WAVES`/`FIVE_WAVES` scripts that were deleted in the
+2026 paper §3 rebuild (none of them worked as shipped). See
+[`docs/wave_sets.md`](docs/wave_sets.md).
 
 ## Installation
 
@@ -117,6 +120,16 @@ directly as `rsw-dispersion output.png` after `pip install -e .`), and the
 Hough mode visualization scripts (latitudinal profile and full spatial
 pattern) in [`docs/hough_modes.md`](docs/hough_modes.md) (`rsw-hough-mode
 output.png --m 3 --n 7 --alpha 3`).
+
+Resonant-triad tools (batch properties table, energy-integration time
+series, efficiency-of-energy-transfer sweeps) are documented in
+[`docs/triads.md`](docs/triads.md) (`rsw-triad-table` / `rsw-triad` /
+`rsw-triad-efficiency`). Their generalization to quartets and quintets
+(coupled multi-triad configurations) is documented in
+[`docs/wave_sets.md`](docs/wave_sets.md) (`rsw-waveset-table` /
+`rsw-waveset` / `rsw-waveset-periods` / `rsw-waveset-pmeasure`) — including
+how to test a new triad/quartet/quintet that isn't in either registry YAML
+at all.
 
 ## References
 

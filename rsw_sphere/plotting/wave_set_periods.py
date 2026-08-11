@@ -193,6 +193,62 @@ def wave_set_period_panel(t_days, E, mode_labels, mode_mnalpha, max_period_days:
     return results
 
 
+def main():
+    import argparse
+    from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
+    from rsw_sphere.plotting.wave_set_dynamics import wave_set_energy_evolution_from_spec
+
+    parser = argparse.ArgumentParser(
+        description="Plot the power-spectrum (period) figure for a "
+                    "quartet/quintet example loaded from the wave-set "
+                    "registry YAML (rsw_sphere.dynamics.wave_set_specs."
+                    "load_wave_set_specs).")
+    parser.add_argument(
+        "path", nargs="?", default=None,
+        help="output image path. If omitted, shown interactively.")
+    parser.add_argument(
+        "--specs", default=DEFAULT_WAVESETS_PATH,
+        help=f"path to the wave-set registry YAML (default: {DEFAULT_WAVESETS_PATH}).")
+    parser.add_argument(
+        "--wave-set", choices=list(load_wave_set_specs(DEFAULT_WAVESETS_PATH)),
+        default="quartet_rh_preference",
+        help="which registered wave set (role key) to integrate and analyze.")
+    parser.add_argument(
+        "--tf", dest="tf_days", type=float, default=None,
+        help="final integration time, in days (default: from registry settings).")
+    parser.add_argument(
+        "--h", type=float, default=None,
+        help="RK33 step size, nondimensional time (default: from registry settings).")
+    parser.add_argument(
+        "--max-period", dest="max_period_days", type=float, default=None,
+        help="longest period considered resolvable, days (default: the "
+             "integration horizon tf_days -- a period longer than what "
+             "was integrated cannot be trusted, see dominant_periods()'s "
+             "docstring).")
+    args = parser.parse_args()
+
+    specs = load_wave_set_specs(args.specs)
+    spec = specs[args.wave_set]
+
+    # Throwaway axes: wave_set_energy_evolution_from_spec is a plot
+    # function that also returns the integrated trajectory -- called here
+    # only for the data, so pass ax= to suppress its own plt.show()/save
+    # (calling it with path=ax=None triggered an unwanted interactive
+    # window, caught while writing this CLI).
+    _, _throwaway_ax = plt.subplots()
+    r = wave_set_energy_evolution_from_spec(spec, tf_days=args.tf_days, h=args.h, ax=_throwaway_ax)
+    plt.close(_throwaway_ax.figure)
+
+    results = wave_set_period_panel(
+        r['t'], r['E'], r['labels'], list(spec.modes),
+        max_period_days=args.max_period_days, path=args.path)
+
+    for label, pr in zip(r['labels'], results):
+        flag = " [HORIZON-LIMITED]" if pr['horizon_limited'] else ""
+        print(f"{label}: period_global={pr['period_global']:.3g}d, "
+              f"period_local_max={pr['period_local_max']}{flag}")
+
+
 if __name__ == "__main__":
     # Synthetic two-tone self-check: a 4-day and a 12-day period signal
     # (plus noise) should be recovered as period_global=4, period_local_max=12
