@@ -30,10 +30,13 @@ happened -- see ``triad_efficiency.py``'s docstring):
 3. **Row-level denominator caching.** In a 2-axis sweep, typically only
    one of the two swept modes is even a member of a given target's
    reference triad (e.g. sweeping RH(1,2) and a private gravity mode: the
-   RH-only reference triad doesn't contain the gravity mode at all). When
-   the second swept axis doesn't touch a target's reference triad, that
-   triad's ΔEK is recomputed once per *row* (fixed first-axis velocity)
-   and reused across the row, not recomputed at every grid point.
+   RH-only reference triad doesn't contain the gravity mode at all). Given
+   ``np.meshgrid(u1, u2)``'s convention (``U1[i,j]=u1[j]`` varies across a
+   *row*, ``U2[i,j]=u2[i]`` is constant down a row), a target's
+   denominator triad is only safe to cache and reuse across a row when it
+   does **not** depend on ``idx1`` (the axis varying within that row) --
+   caching is keyed on ``(triad_idx, target_idx)`` and gated on
+   ``idx1 in triads[t_idx]``, not ``idx2``.
 
 Follows **convention 14**: ``plot_p_measure_map`` uses a *diverging*
 colormap (``RdBu_r``, ``TwoSlopeNorm(vcenter=0)``) rather than §2.2's
@@ -229,17 +232,25 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
         triad_index.get(tgt, _default_triad_index_for_mode(triads, reference_triad, tgt))
         for tgt in target_indices
     ]
-    # Whether a target's denominator triad depends on the 2nd swept axis
-    # (idx2) at all -- if not, that triad's dEK can be cached per row
-    # (fixed idx1) and reused across every column (varying idx2 only
-    # perturbs modes outside that triad, per the module docstring's point 3).
-    axis2_in_triad = [
-        (t_idx is not None and idx2 in triads[t_idx]) for t_idx in t_idx_for_target
-    ]
-
     u1 = np.linspace(u1_range[0], u1_range[1], n_grid)
     u2 = np.linspace(u2_range[0], u2_range[1], n_grid)
     U1, U2 = np.meshgrid(u1, u2)
+    # np.meshgrid(u1, u2) gives U1[i, j] = u1[j] (varies across COLUMNS j,
+    # constant down a row) and U2[i, j] = u2[i] (constant across a row,
+    # varies down ROWS i). The outer loop below is over i (rows): within
+    # one row, idx2's velocity (U2) is fixed and idx1's velocity (U1)
+    # varies across j. So a target's denominator triad is safe to cache
+    # and reuse across a row ONLY IF it does NOT depend on idx1 -- caching
+    # was previously keyed on whether idx2 was in the triad (backwards:
+    # idx2 is already constant within a row regardless of caching; it is
+    # idx1's variation across columns that a stale per-row cache would
+    # miss). This inversion was a real bug -- caught by comparing a sweep
+    # corner point against the cache-free p_measure() function, which
+    # disagreed by two orders of magnitude (3779% vs -0.29%) whenever a
+    # target's triad contained idx1 -- see NUMBERS-CHECK-section-3.md.
+    axis1_in_triad = [
+        (t_idx is not None and idx1 in triads[t_idx]) for t_idx in t_idx_for_target
+    ]
 
     P = np.full((n_grid, n_grid, len(target_indices)), np.nan)
     DRIFT = np.empty((n_grid, n_grid))
@@ -249,7 +260,17 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
         t_start = time.time()
 
     for i in range(n_grid):
-        row_cache = {}  # triad_idx -> dEK (scalar), valid across the whole row
+        # Keyed by (triad_idx, target_mode_idx), NOT triad_idx alone: two
+        # different target modes commonly share the same denominator
+        # triad (e.g. RH(4,5) and RH(3,4) both default to the RH-only
+        # reference triad), and each has its OWN dEK within that triad.
+        # Keying by triad_idx alone silently served one target's dEK to
+        # the other whenever both had axis2_in_triad==False -- a real bug
+        # caught by comparing this sweep's output at a single grid point
+        # against the (cache-free) p_measure() function, which disagreed
+        # for the second of two same-triad targets (see
+        # NUMBERS-CHECK-section-3.md / PLAN-section-3.md Phase E).
+        row_cache = {}  # (triad_idx, target_idx) -> dEK (scalar), valid across the row
         for j in range(n_grid):
             velocities = np.empty(ws.n_modes)
             for m in range(ws.n_modes):
@@ -272,13 +293,14 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
                 dEK_full = E[:, tgt].max() - E[:, tgt].min()
                 if t_idx is None:
                     continue
-                if (not axis2_in_triad[k]) and t_idx in row_cache:
-                    dEK_triad = row_cache[t_idx]
+                cache_key = (t_idx, tgt)
+                if (not axis1_in_triad[k]) and cache_key in row_cache:
+                    dEK_triad = row_cache[cache_key]
                 else:
                     dEK_triad = _dEK_for_triad(gamma, modes, triads[t_idx], velocities, h_e,
                                                 0, t_f, h, N, deg, tgt)
-                    if not axis2_in_triad[k]:
-                        row_cache[t_idx] = dEK_triad
+                    if not axis1_in_triad[k]:
+                        row_cache[cache_key] = dEK_triad
                 if dEK_triad > 0:
                     P[i, j, k] = 100 * (dEK_full - dEK_triad) / dEK_triad
 
