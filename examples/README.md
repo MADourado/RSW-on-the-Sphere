@@ -71,15 +71,34 @@ INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
 - `precession_resonance_broad_search.py` — broadened the search beyond
   the paper's own transplanted topology (an h_e sweep toward the
   barotropic limit, a finer amplitude-scale sweep, and RSW's own native
-  near-commensurate candidates from the 2026-08-12 I4e-h edge search).
-  **Result: genuine, converged phase-locking FOUND** in a native RSW
-  triad edge (`RH(4,5)+RH(1,2)` closed with a Rossby-Haurwitz partner
-  WG(3,1) or WG(5,3)) -- a sharp, separatrix-like onset in the candidate
-  mode's own driving velocity (~31 m/s at h_e=10000, RH-triad members at
-  40 m/s), with a genuine bounded oscillation (not a trivial
-  zero-amplitude artifact) and convergence verified against 2x t_f and
-  3x finer h. The *other* edge tested (`RH(3,4)+RH(1,2)` closed with
-  WG(4,2)) shows no locking at any amplitude -- the mechanism is
-  edge-specific, not generic across the base triad. See the paper
-  repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`, "Broadened search
-  (2026-08-13)" section, for full numbers.
+  near-commensurate candidates from the 2026-08-12 I4e-h edge search),
+  then extended further (same day, continued) to test the registry's
+  own "Quartet A" (`quartet_rh_preference`) with the same disciplined
+  methodology, and to distinguish *which* triad's phase actually locks.
+  **Headline result: genuine, converged, MUTUAL two-triad phase-locking
+  found in RSW**, in native triads closing the paper's own fixed
+  RH-only triad (`RH(4,5)+RH(3,4)+RH(1,2)`) with a Rossby-Haurwitz
+  partner on either of two edges -- `WG(3,1)` on `RH(4,5)+RH(1,2)` and
+  `WG(4,2)` on `RH(3,4)+RH(1,2)` both show BOTH triads' dynamical phases
+  (`Phi1` and `Phi2`) locking together inside a bounded resonance island
+  in (driving velocity) parameter space, convergence-verified against
+  2x t_f and 3x finer h. **But the registry's own "Quartet A" does NOT
+  show genuine mutual locking** -- only its directly-driven triad's
+  phase (`Phi2`) locks; the other, undriven triad (`Phi1`) keeps
+  rotating throughout (confirming/sharpening the original 2026-08-12
+  I4l finding of "partial softening, no full capture"). The apparent
+  reason: `WG(3,1)`/`WG(4,2)` were found via a search explicitly
+  targeting near-exact LINEAR mismatch commensurability
+  (`delta2~k*delta1`, built into the mode selection, independent of
+  amplitude) with shared-mode roles preserved across both triads;
+  Quartet A's own "1:1" point is an amplitude-tuned coincidence of the
+  two triads' *nonlinear* periods instead (its linear mismatches aren't
+  close: `delta1=-0.1085` vs `delta2=-0.0400`). A third candidate,
+  `WG(5,3)`, satisfies the linear-commensurability condition but
+  requires one shared mode to flip role between the two triads, and
+  shows the same Quartet-A-like partial (driven-triad-only) result --
+  consistent with, though not yet proof of, both conditions being
+  necessary. See the paper repo's
+  `.claude/INSPECT-phase-I0-I4-2026-08-12.md`, sections "Broadened
+  search (2026-08-13)" onward, for the full numbers, convergence checks,
+  and the working hypothesis in detail.
