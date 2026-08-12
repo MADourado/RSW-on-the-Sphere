@@ -96,9 +96,20 @@ INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
   close: `delta1=-0.1085` vs `delta2=-0.0400`). A third candidate,
   `WG(5,3)`, satisfies the linear-commensurability condition but
   requires one shared mode to flip role between the two triads, and
-  shows the same Quartet-A-like partial (driven-triad-only) result --
-  consistent with, though not yet proof of, both conditions being
-  necessary. See the paper repo's
+  shows the same Quartet-A-like partial (driven-triad-only) result.
+  **A 5th, deliberately-constructed test then broke the simple picture**:
+  a role-preserved candidate (`EG(1,1)`, on the *original* Gate I0-I4
+  catalogue edge) with strong coupling but a mismatch far from any
+  integer multiple of `delta1` (`k~-3.3`) shows a **third, distinct**
+  pattern -- at high driving, the triad that does NOT contain the swept
+  candidate locks, while the triad that DOES contain it spins
+  increasingly fast (moving further from resonance as amplitude grows).
+  **Net assessment: which triad locks (driven, undriven, or both)
+  depends on the specific relationship between the two triads' own
+  mismatches and couplings in a way not yet reduced to one clean rule**
+  -- the phase-locking mechanism itself is real and reproducible in
+  every individual case tested, but a general predictive condition is
+  still open. See the paper repo's
   `.claude/INSPECT-phase-I0-I4-2026-08-12.md`, sections "Broadened
-  search (2026-08-13)" onward, for the full numbers, convergence checks,
-  and the working hypothesis in detail.
+  search (2026-08-13)" onward (especially "Fifth test"), for the full
+  numbers, convergence checks, and the honest state of the hypothesis.

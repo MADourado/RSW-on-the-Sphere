@@ -18,6 +18,7 @@ import numpy as np
 G = 9.8              # gravitational acceleration, m/s^2
 A = 6.38e+06          # planetary radius, m
 OMEGA = 2 * np.pi / 86400   # planetary rotation rate, rad/s
+P_S = 101325.0        # standard sea-level atmospheric pressure, Pa (ICAO standard atmosphere)
 
 
 def gamma_from_he(h_e: float, g: float = G, a: float = A, Omega: float = OMEGA):
@@ -50,6 +51,48 @@ def gamma_from_he(h_e: float, g: float = G, a: float = A, Omega: float = OMEGA):
     eps = (4 * a * a * Omega * Omega) / (g * h_e)
     gamma = 1 / np.sqrt(eps)
     return eps, gamma
+
+
+def air_density_from_equivalent_depth(h_e: float, g: float = G, p_s: float = P_S):
+    """Reference air density for the ``eq: enerA`` Joules conversion
+    (``JFM-template.tex``, "One way to avoid division by the total
+    energy...") -- ``rho`` in ``EK_a = (g h_0^2 a^2 pi) * rho * ||A_a||^2``.
+
+    ``h_e`` (the RSW layer's equivalent depth) represents one vertical
+    normal mode of the real, stratified atmosphere, not a literal fluid
+    layer (paper Introduction, citing Majda 2003) -- so ``rho`` should not
+    be read off as a literal near-surface air density. Instead, following
+    the convention used for atmospheric vertical normal-mode
+    decompositions -- where a mode's own column mass per unit area is
+    expressed through the mean surface pressure ``p_s`` rather than an
+    assumed density profile (Kasahara & Puri 1981; Marques, Marta-Almeida
+    & Castanheira 2020, *Geosci. Model Dev.* 13, 2763) -- this sets the
+    equivalent layer's column mass ``rho * h_e`` equal to the real
+    atmosphere's own column mass per unit area, ``p_s / g``:
+
+        rho = p_s / (g * h_e)
+
+    Parameters
+    ----------
+    h_e : float
+        Equivalent depth, m.
+    g : float, optional
+        Gravitational acceleration, m/s^2. Default ``9.8``.
+    p_s : float, optional
+        Mean surface pressure, Pa. Default ``P_S`` (standard sea-level
+        pressure, 101325 Pa).
+
+    Returns
+    -------
+    float
+        Reference density, kg/m^3.
+
+    Examples
+    --------
+    >>> round(air_density_from_equivalent_depth(10000), 2)
+    1.03
+    """
+    return p_s / (g * h_e)
 
 
 def days_from_nondim_time(t):
