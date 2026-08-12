@@ -56,3 +56,30 @@ INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
   `rsw_sphere.dynamics.dynamical_phase` for the reusable
   libration-vs-rotation diagnostic (the textbook precession-resonance
   signature) this investigation also produced.
+- `precession_resonance_phase_diagnostic.py` — applies that
+  libration-vs-rotation diagnostic to both scripts above, at their own
+  efficiency peak/dip scales plus an off-peak control. **Result: the
+  barotropic case shows genuine phase-locking at its efficiency peak
+  (Phi1's precession frequency collapses to ~0 rad/day, matching the
+  paper's own Fig. 3) while the off-peak control does not (~-0.04
+  rad/day, 0.77 net windings) — but RSW's efficiency peak/dip show NO
+  such locking** (Phi1 keeps net-rotating at every scale tested, control
+  through dip, getting worse — not better — from peak to dip). The
+  RSW efficiency non-monotonicity is real (see the other script) but is
+  not accompanied by the same phase-locking mechanism that produces it
+  in the barotropic case.
+- `precession_resonance_broad_search.py` — broadened the search beyond
+  the paper's own transplanted topology (an h_e sweep toward the
+  barotropic limit, a finer amplitude-scale sweep, and RSW's own native
+  near-commensurate candidates from the 2026-08-12 I4e-h edge search).
+  **Result: genuine, converged phase-locking FOUND** in a native RSW
+  triad edge (`RH(4,5)+RH(1,2)` closed with a Rossby-Haurwitz partner
+  WG(3,1) or WG(5,3)) -- a sharp, separatrix-like onset in the candidate
+  mode's own driving velocity (~31 m/s at h_e=10000, RH-triad members at
+  40 m/s), with a genuine bounded oscillation (not a trivial
+  zero-amplitude artifact) and convergence verified against 2x t_f and
+  3x finer h. The *other* edge tested (`RH(3,4)+RH(1,2)` closed with
+  WG(4,2)) shows no locking at any amplitude -- the mechanism is
+  edge-specific, not generic across the base triad. See the paper
+  repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`, "Broadened search
+  (2026-08-13)" section, for full numbers.
