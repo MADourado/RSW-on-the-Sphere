@@ -37,3 +37,22 @@ builder (see [`docs/wave_sets.md`](../docs/wave_sets.md), which also
 covers how to test a triad/quartet/quintet that isn't in this file at
 all). `check_wave_set_physics.py` is the hard physics gate every new or
 edited entry must pass before any figure is trusted.
+
+## Precession resonance (2026-08-12)
+
+Two standalone scripts from the same-day precession-resonance
+investigation (see `paper-nonlinear-interactions-SWE-sphere/.claude/
+INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
+
+- `reproduce_raphaldini2022_fig2.py` — direct, dependency-free
+  reproduction of Raphaldini, Peixoto, Teruya, Raupp & Bustamante (2022,
+  Phys. Fluids)'s own four-wave barotropic-vorticity efficiency peak,
+  using their exact published numbers (not re-derived). Confirms the
+  precession-resonance mechanism is real and correctly transcribed
+  before comparing against RSW.
+- `precession_resonance_rsw_vs_barotropic.py` — the identical mode
+  topology, built in this repo's RSW/`WaveSet` system instead, for a
+  direct barotropic-vs-RSW comparison. See
+  `rsw_sphere.dynamics.dynamical_phase` for the reusable
+  libration-vs-rotation diagnostic (the textbook precession-resonance
+  signature) this investigation also produced.
