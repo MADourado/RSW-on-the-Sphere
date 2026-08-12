@@ -15,22 +15,37 @@ Map definition, per ``PLAN-section-3-experiments.md`` Phase I2:
     on the target mode's KE trace, matching Gate I2's own methodology --
     FFT was tried and rejected there, too coarse to resolve the
     amplitude-dependent period shift).
-  color: D1 (the Phase-I0 headline amplitude-error diagnostic).
+  color: a D1 PROXY (see ``d1_proxy``'s own docstring -- NOT calibrated
+    D1 in percent; a 2026-08-13 review found this substitution
+    overestimates real, integrated D1 by an uncalibrated, point-varying
+    factor, contradicting this module's original "no free constant"
+    claim below).
 
 Key simplification vs. a brute-force re-run: ``Omega_slow(x)`` depends
 ONLY on x (the RH-only triad triad1's own IC), not on which gravity mode
 candidate d is chosen -- so it is measured once per x value (real
 integration, 8 points) rather than once per (candidate, x) pair (which
-would need 26*8=208 integrations). D1 itself is NOT re-integrated at
-all: Gate I4b's own two-channel law,
+would need 26*8=208 integrations). This independence claim is a
+tautology of the construction (Omega_slow is measured on the RH-only
+triad alone, whose own IC never involves the candidate), not an
+independently-verified physical result -- worth stating plainly rather
+than implying it was checked.
+
+D1 itself is NOT re-integrated per candidate: Gate I4b's own two-channel
+law,
 
     D1 ~ sqrt(alpha_2s^2 + alpha_2p^2) * sqrt(x*(1-x)) / delta_2
 
-(verified R^2=0.982 across 156 points on 2026-08-12) is evaluated
-directly from each candidate's own construction-only coefficients
-(alpha_2s, alpha_2p, delta_2 -- no integration needed for any of these).
-This is exactly what "colored by the now-derived law" in the open item
-asks for, and is ~200x cheaper than re-measuring D1 by brute force.
+(fitted shape verified R^2=0.982 across 156 points on 2026-08-12) is
+evaluated directly from each candidate's own construction-only
+coefficients. **This module previously claimed "no free constant" for
+that law -- wrong.** A 2026-08-13 review, plus an independent 4-point
+spot-check reproduced here, both found the raw formula above
+overestimates true integrated D1 by a real, point-varying factor
+(measured ratios 0.11-0.27, no single clean constant) -- so its output
+is used here only as a proxy (right functional shape/exponents,
+NOT calibrated to real percentages) pending a proper per-point
+calibration in a future session. See ``d1_proxy``'s own docstring.
 
 Catalogue construction: every EG/WG mode closing a triad with the
 RH(4,5)+RH(3,4) edge, as either triad2's MEMBER (m_d=1, matching the
@@ -148,10 +163,24 @@ def omega_slow_vs_x(gamma, x_values, e_tot, tf_days=30.0, h=0.01):
     return results
 
 
-def d1_predicted(alpha_2s, alpha_2p, delta_2, x):
-    """Gate I4b's own verified two-channel law (R^2=0.982, exponents
-    (1.00, 1.06, -1.04) matching the derived (1,1,-1) almost exactly),
-    no free constant (fit intercept was ~0 in log space).
+def d1_proxy(alpha_2s, alpha_2p, delta_2, x):
+    """**NOT calibrated D1** -- despite this module's original docstring
+    claiming "no free constant," a 2026-08-13 review + an independent
+    4-point spot-check here both found the raw
+    ``sqrt(alpha_2s^2+alpha_2p^2)*sqrt(x(1-x))/delta_2`` combination
+    overestimates real, integrated D1 by a factor that itself varies
+    point to point (measured ratios 0.11-0.27 across a handful of
+    candidates, no single clean constant) -- likely because the
+    two-channel law's own log-log fit (Gate I4b, R^2=0.982) has a real
+    multiplicative prefactor/intercept the module's docstring
+    mis-described as ~0. Returned AS A PROXY ONLY: rank-correlated with
+    true D1 within a given candidate's own x-sweep (same exponents,
+    right functional shape) but NOT numerically equal to it, and not
+    safe to compare in absolute terms across candidates without a
+    proper per-point calibration (not done here -- see the INSPECT doc's
+    "Gate I2 map correction" section, queued for a future session).
+    Do not read the colorbar/printed values below as literal
+    percentages.
     """
     return np.sqrt(alpha_2s ** 2 + alpha_2p ** 2) * np.sqrt(x * (1 - x)) / abs(delta_2)
 
@@ -177,10 +206,10 @@ if __name__ == "__main__":
 
     print(f"\n{'label':>10} {'role':>7} {'omega_d':>9} {'delta_2':>10} "
           f"{'alpha_2s':>9} {'alpha_2p':>9} " +
-          " ".join(f"D1(x={x:.2f})".rjust(11) for x in X_VALUES))
+          " ".join(f"D1proxy(x={x:.2f})".rjust(11) for x in X_VALUES))
     rows = []
     for c in sorted(catalogue, key=lambda c: abs(c['omega_d'])):
-        d1_vals = [d1_predicted(c['alpha_2s'], c['alpha_2p'], c['delta_2'], x) for x in X_VALUES]
+        d1_vals = [d1_proxy(c['alpha_2s'], c['alpha_2p'], c['delta_2'], x) for x in X_VALUES]
         # omega_d is nondimensional (units of 2*Omega_earth); convert to
         # rad/day (matching Omega_slow's own units, from
         # days_from_nondim_time) via the standard 4*pi factor -- see
@@ -220,7 +249,7 @@ if __name__ == "__main__":
     ax.set_ylabel(r'$\omega_d / \Omega_{slow}$')
     ax.set_title('Gate I2 map: full 26-candidate catalogue, colored by D1 (two-channel law)')
     cbar = fig.colorbar(sc, ax=ax)
-    cbar.set_label('D1 (predicted, two-channel law)')
+    cbar.set_label('D1 proxy (uncalibrated -- see docstring, NOT literal %)')
     fig.tight_layout()
     out_path = os.path.join(_ROOT, "gate_i2_map.png")
     fig.savefig(out_path, dpi=150)

@@ -71,45 +71,52 @@ INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
 - `precession_resonance_broad_search.py` — broadened the search beyond
   the paper's own transplanted topology (an h_e sweep toward the
   barotropic limit, a finer amplitude-scale sweep, and RSW's own native
-  near-commensurate candidates from the 2026-08-12 I4e-h edge search),
-  then extended further (same day, continued) to test the registry's
-  own "Quartet A" (`quartet_rh_preference`) with the same disciplined
-  methodology, and to distinguish *which* triad's phase actually locks.
-  **Headline result: genuine, converged, MUTUAL two-triad phase-locking
-  found in RSW**, in native triads closing the paper's own fixed
-  RH-only triad (`RH(4,5)+RH(3,4)+RH(1,2)`) with a Rossby-Haurwitz
-  partner on either of two edges -- `WG(3,1)` on `RH(4,5)+RH(1,2)` and
-  `WG(4,2)` on `RH(3,4)+RH(1,2)` both show BOTH triads' dynamical phases
-  (`Phi1` and `Phi2`) locking together inside a bounded resonance island
-  in (driving velocity) parameter space, convergence-verified against
-  2x t_f and 3x finer h. **But the registry's own "Quartet A" does NOT
-  show genuine mutual locking** -- only its directly-driven triad's
-  phase (`Phi2`) locks; the other, undriven triad (`Phi1`) keeps
-  rotating throughout (confirming/sharpening the original 2026-08-12
-  I4l finding of "partial softening, no full capture"). The apparent
-  reason: `WG(3,1)`/`WG(4,2)` were found via a search explicitly
-  targeting near-exact LINEAR mismatch commensurability
-  (`delta2~k*delta1`, built into the mode selection, independent of
-  amplitude) with shared-mode roles preserved across both triads;
-  Quartet A's own "1:1" point is an amplitude-tuned coincidence of the
-  two triads' *nonlinear* periods instead (its linear mismatches aren't
-  close: `delta1=-0.1085` vs `delta2=-0.0400`). A third candidate,
-  `WG(5,3)`, satisfies the linear-commensurability condition but
-  requires one shared mode to flip role between the two triads, and
-  shows the same Quartet-A-like partial (driven-triad-only) result.
-  **A 5th, deliberately-constructed test then broke the simple picture**:
-  a role-preserved candidate (`EG(1,1)`, on the *original* Gate I0-I4
-  catalogue edge) with strong coupling but a mismatch far from any
-  integer multiple of `delta1` (`k~-3.3`) shows a **third, distinct**
-  pattern -- at high driving, the triad that does NOT contain the swept
-  candidate locks, while the triad that DOES contain it spins
-  increasingly fast (moving further from resonance as amplitude grows).
-  **Net assessment: which triad locks (driven, undriven, or both)
-  depends on the specific relationship between the two triads' own
-  mismatches and couplings in a way not yet reduced to one clean rule**
-  -- the phase-locking mechanism itself is real and reproducible in
-  every individual case tested, but a general predictive condition is
-  still open. See the paper repo's
-  `.claude/INSPECT-phase-I0-I4-2026-08-12.md`, sections "Broadened
-  search (2026-08-13)" onward (especially "Fifth test"), for the full
-  numbers, convergence checks, and the honest state of the hypothesis.
+  near-commensurate candidates from the 2026-08-12 I4e-h edge search).
+  **CORRECTED 2026-08-13 (Opus review): the original "genuine MUTUAL
+  two-triad phase-locking found in RSW, WG(3,1)/WG(4,2)" headline result
+  was FALSE.** Both `WG(3,1)=(3,1,2)` and `WG(4,2)=(4,2,2)` are invalid
+  mode specs (`n<m`, out of range for the Legendre/Hough expansion) that
+  `WaveSet` silently resolved to duplicates of `RH(3,4)`/`RH(4,5)`
+  already present in the base triad -- the "locking" found was one
+  triad's own phase compared against itself, not two distinct triads.
+  A validity guard was added to `WaveSet.__init__` the same day
+  (raises `ValueError` on `n<m`) so this can't recur silently.
+  `WG(5,3)` and the `EG(1,1)`/`WG(1,1)` "fifth test" pair are genuine,
+  valid modes and stand independently, but the three-pattern hypothesis
+  they were framed against (built on the now-invalid WG(3,1)/WG(4,2)
+  results) needs new framing if revisited. Full correction and what
+  survives: paper repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`,
+  "CORRECTION (2026-08-13, later same day)" section near the top.
+
+## Gate I2/I5/I6 and the short-gravity/long-Rossby search (2026-08-13)
+
+Continuation of the same-day inspection work above, per
+`PLAN-section-3-experiments.md` Phases I2/I5/I6:
+
+- `gate_i2_map_extension.py` — extends the S2 map from 2 to the full
+  26-candidate catalogue. Data/figure: `gate_i2_map_data.npy` /
+  `gate_i2_map.png`. **Note**: the colorbar is a `d1_proxy`, not
+  calibrated D1 in percent — a review found the two-channel law's own
+  fit has a real, point-varying multiplicative prefactor (measured
+  ratio 0.11-0.27) this module's docstring originally mis-described as
+  "no free constant." See `d1_proxy`'s own docstring.
+- `gate_i5_headline.py` — the S4 headline number, corrected 2026-08-13
+  after a review caught an inverted phase-lag sign and a wrong
+  "D1 doesn't saturate" claim (it saturates near 19% by day ~320-400).
+  Current, correct headline: **+0.83% period lengthening, +1.0%
+  peak-KE difference (1.88e19 J)**, both tf-independent, on the
+  registered `quartet_gravity_kelvin`.
+- `short_gravity_long_rossby_example.py` — searched for a short-period
+  gravity mode demonstrating both amplitude AND frequency effects on a
+  Rossby target (2026-08-11 user request). **The originally-reported
+  41-45% frequency shift for `WG(7,9)` was a Savitzky-Golay smoothing
+  artifact** (the measured period was a monotone function of the
+  smoothing window) — window-independent estimators (FFT with
+  parabolic interpolation; prominence-filtered peaks) both give <=0.1%.
+  The 2026-08-11 request remains unresolved.
+
+See the paper repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`,
+"CORRECTION (2026-08-13, later same day)" section, for the full story
+on both retractions above, what independently re-verified as solid
+(the air-density work, the Gate I2 catalogue itself, the two-channel
+law's shape), and the punch list for the next session.

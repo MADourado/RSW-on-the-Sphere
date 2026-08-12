@@ -162,6 +162,18 @@ class WaveSet:
                     f"triad ({i_sum},{i_p},{i_q}): sum mode's zonal wavenumber "
                     f"m={m_sum} != m_p+m_q={m_p}+{m_q}={m_p + m_q}")
 
+        for (m, n, alpha) in self.modes:
+            if n < m:
+                raise ValueError(
+                    f"mode (m={m}, n={n}, alpha={alpha}): n < m is out of range "
+                    f"for the associated-Legendre/Hough expansion (norm_Pmn "
+                    f"requires n >= m) -- norm_Hough would not raise on this, it "
+                    f"silently returns a zero-padded/degenerate eigenvector "
+                    f"instead (found 2026-08-13: two such 'candidate gravity "
+                    f"modes' turned out to be bit-identical to an already-"
+                    f"present RH mode, corrupting a precession-resonance search "
+                    f"that used them without ever detecting the duplication).")
+
         self._uvh = []
         self.omega = np.empty(self.n_modes)
         self.symmetric = []
