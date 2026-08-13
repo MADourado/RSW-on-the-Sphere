@@ -79,6 +79,50 @@ PMEASURE_WAVE_SETS = {
     "quintet_gravity_star":   dict(swept=("c", "d"), targets=("a", "b"), n_grid=6),
 }
 
+#: Comparison-panel highlight (solid target / dashed everything else),
+#: matching §2.2's own convention (rsw_sphere.plotting.triad_dynamics) --
+#: by mode key, per examples/wave_sets_section_3.yaml, resolved to an
+#: index via spec.index(). Two forms: a single key (one shared target,
+#: e.g. the gravity mode driving an otherwise RH-only quartet -- applied
+#: to every sub-panel and the full panel alike), or a dict of
+#: {triad_display_label: key_or_None} for wave sets built around
+#: comparing several constituent triads' own *different* private members
+#: (see wave_set_dynamics.wave_set_comparison_panel's own highlight
+#: docstring) -- resolved per-triad by triad_labels below, full panel
+#: left all-solid (no single target once sub-panels differ).
+HIGHLIGHT_WAVE_SETS = {
+    # Triad 1 = {sum:a, members:[b,c]} -- contains c=RH(3,4), not d.
+    # Triad 2 = {sum:a, members:[b,d]} -- contains d=RH(3,6), not c.
+    # (Confirmed against wave_set_specs.WaveSetSpec.triad_indices(0)/(1)
+    # directly -- an earlier version of this dict had these swapped,
+    # which silently fell back to all-solid on BOTH panels rather than
+    # erroring, since wave_set_comparison_panel treats "highlighted mode
+    # absent from this sub-triad" as "no highlight" rather than a
+    # mistake -- caught only by looking at the rendered figure.)
+    "quartet_rh_preference": {"Triad 1": "c", "Triad 2": "d"},
+    "quartet_gravity_kelvin": "d",
+    "quartet_gravity_79": "d",
+    "quintet_gravity_star": {"Triad 1 (RH-only)": None, "Triad 2 (with EG(1,1))": "d",
+                              "Triad 3 (with EG(7,9))": "e"},
+}
+
+
+def resolve_highlight(key, spec):
+    """``HIGHLIGHT_WAVE_SETS[key]`` -> ``(highlight, highlight_full)`` args
+    for ``wave_set_comparison_panel_from_spec``, or ``(None, None)`` if
+    ``key`` isn't registered there.
+    """
+    cfg = HIGHLIGHT_WAVE_SETS.get(key)
+    if cfg is None:
+        return None, None
+    if isinstance(cfg, str):
+        idx = spec.index(cfg)
+        return idx, idx
+    triad_labels = [t.display_label for t in spec.triads]
+    per_triad = [spec.index(cfg[label]) if cfg.get(label) is not None else None
+                 for label in triad_labels]
+    return per_triad, None
+
 
 def get_settings(spec, n_grid=None, h=None, tf_scale=None):
     settings = dict(spec.settings) if spec.settings else dict(tf_days=10, h=0.01, n_grid=10)
@@ -94,8 +138,10 @@ def get_settings(spec, n_grid=None, h=None, tf_scale=None):
 def make_comparison_and_period_panels(key, spec, settings, clear_cache=False):
     energy_path = os.path.join(OUT_DIR, f"{key}_panel.png")
     print(f"  [{key}] comparison panel -> {energy_path}")
+    highlight, highlight_full = resolve_highlight(key, spec)
     results = wave_set_comparison_panel_from_spec(
-        spec, tf_days=settings["tf_days"], h=settings["h"], path=energy_path)
+        spec, tf_days=settings["tf_days"], h=settings["h"],
+        highlight=highlight, highlight_full=highlight_full, path=energy_path)
     r_full = results[-1]
     print(f"    drift={r_full['drift']:.3e}, "
           f"dEK={ {l: round(float(d), 6) for l, d in zip(r_full['labels'], r_full['dEK'])} }")

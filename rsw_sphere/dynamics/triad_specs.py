@@ -31,7 +31,7 @@ Run as a quick self-check:
 """
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import yaml
 
@@ -41,6 +41,8 @@ if _ROOT not in sys.path:
 
 #: Default registry YAML, relative to the repo root.
 DEFAULT_SPECS_PATH = os.path.join(_ROOT, "examples", "triads_section_2_2.yaml")
+#: Default triad-FAMILY registry YAML (see load_triad_family below).
+DEFAULT_FAMILIES_PATH = os.path.join(_ROOT, "examples", "triad_families.yaml")
 
 
 @dataclass(frozen=True)
@@ -79,6 +81,7 @@ class TriadSpec:
     h_e: float = 10000.0
     label: str = ""
     display_label: str = ""
+    settings: dict = field(default_factory=dict)
 
     def flat_modes(self):
         """Flatten ``modes`` into the positional order expected by
@@ -129,6 +132,63 @@ def load_triad_specs(yaml_path: str = DEFAULT_SPECS_PATH) -> dict:
         )
     return specs
 
+
+def load_triad_family(key: str, yaml_path: str = DEFAULT_FAMILIES_PATH) -> list:
+    """Expand one entry of a triad-FAMILY registry into a list of
+    ``TriadSpec``, one per family member.
+
+    Two modes (``fixed_a``/``fixed_c``, TRIAD's own slot convention: slot
+    c is the "sum" mode) stay the same across every member; the third
+    (``varying``) is swept over an explicit ``n_values`` list, always in
+    slot b, held at rest (the target mode, eq. effor). Does **not** itself
+    validate the selection rule (``m_sum = m_p + m_q``) or ``n>=m`` --
+    every ``TriadSpec`` returned here still needs to pass through
+    ``WaveSet``'s validating constructor before use (e.g. via
+    ``examples.rh_partner_family.triad_efficiency_point``), the same gate
+    every other triad/wave-set construction in this repo goes through.
+
+    Parameters
+    ----------
+    key : str
+        Entry name in the family-registry YAML (e.g. ``rh_partner_family``).
+    yaml_path : str, optional
+        Path to a YAML file with one entry per family. See
+        ``examples/triad_families.yaml`` for the exact schema. Default:
+        ``examples/triad_families.yaml`` in the repo root.
+
+    Returns
+    -------
+    list of TriadSpec
+        One per value in ``varying.n_values``, keyed
+        ``f"{key}_n{n}"``, each carrying the family's ``settings`` dict
+        (``tf_days``, ``h``, ``n_grid``, ``deg``).
+    """
+    with open(yaml_path) as f:
+        raw = yaml.safe_load(f)
+    entry = raw[key]
+
+    fixed_a = entry["fixed_a"]
+    fixed_c = entry["fixed_c"]
+    varying = entry["varying"]
+    h_e = float(entry.get("h_e", 10000.0))
+    settings = dict(entry.get("settings", {}))
+
+    specs = []
+    for n in varying["n_values"]:
+        modes = (
+            (fixed_a["m"], fixed_a["n"], fixed_a["alpha"]),
+            (varying["m"], n, varying["alpha"]),
+            (fixed_c["m"], fixed_c["n"], fixed_c["alpha"]),
+        )
+        velocities = (float(fixed_a["u"]), 0.0, float(fixed_c["u"]))
+        specs.append(TriadSpec(
+            key=f"{key}_n{n}", modes=modes, velocities=velocities,
+            h_e=h_e, label=f"{entry.get('label', key)} (n={n})",
+            settings=settings,
+        ))
+    return specs
+
+
 # Table 1's quasi-resonant triads (two EG modes + one RH mode, all with
 # coupling coefficients that should come out ~0 by the equatorial-symmetry
 # selection rule). Kept separate from the YAML-loaded registry since these
@@ -156,3 +216,14 @@ TABLE1_TRIADS = {
 if __name__ == "__main__":
     for key, spec in {**load_triad_specs(), **TABLE1_TRIADS}.items():
         print(f"{key:20s} modes={spec.modes} flat={spec.flat_modes()}")
+
+    print()
+    family = load_triad_family("rh_partner_family")
+    assert len(family) == 13, f"self-check FAILED: expected 13 family members, got {len(family)}"
+    assert family[0].modes == ((1, 2, 3), (3, 4, 3), (4, 5, 3)), \
+        f"self-check FAILED: first member should vary to n=4, got {family[0].modes}"
+    assert family[0].settings.get('tf_days') == 30.0, \
+        "self-check FAILED: family settings not carried through to TriadSpec"
+    for spec in family:
+        print(f"{spec.key:20s} modes={spec.modes} velocities={spec.velocities}")
+    print("self-check OK: load_triad_family")

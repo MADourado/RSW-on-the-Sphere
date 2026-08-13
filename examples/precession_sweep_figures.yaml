@@ -1,0 +1,29 @@
+# Registry of "precession frequency vs. driving velocity" figures: one
+# entry per registered wave set (examples/wave_sets_section_3.yaml) +
+# which mode key to sweep. Loaded by
+# examples/precession_sweep_figure.py, which is fully general over any
+# entry here -- adding a figure for a new mode set is a new YAML entry,
+# not new plotting code. Triad legend labels (which modes each
+# constituent triad contains) are NOT duplicated here; they are derived
+# at plot time directly from the wave-set registry itself, so they can
+# never drift out of sync with it.
+
+quartet_a_rh36:
+  wave_set: quartet_rh_preference
+  sweep_mode: d
+  title: "Quartet A (this paper)"
+  xlabel: "RH(3,6) driving velocity $u$ (m/s)"
+  u_min: 10.0
+  u_max: 150.0
+  n_points: 45
+  tf_days: 150.0
+
+quartet_a_rh38:
+  wave_set: quartet_rh_alt_partner
+  sweep_mode: d
+  title: "RH(3,8) variant (this paper)"
+  xlabel: "RH(3,8) driving velocity $u$ (m/s)"
+  u_min: 10.0
+  u_max: 150.0
+  n_points: 30
+  tf_days: 150.0

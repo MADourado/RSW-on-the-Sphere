@@ -32,10 +32,16 @@
 #
 # Each quartet is a star (2 triads sharing an edge), but the shared edge
 # differs: Quartet A shares {RH(4,5), RH(1,2)} (tab: cap41's own a/b);
-# Quartet B/C and the quintet share {RH(4,5), RH(3,4)} instead (tab: cap42/
+# Quartet C/D and the quintet share {RH(4,5), RH(3,4)} instead (tab: cap42/
 # cap43's own a/b -- confirmed against both the published table columns
 # and four_waves_2.py's own variable assignment for that table, which
 # differ from tab: cap41's b/c choice). See HARVEST-section-3.md.
+#
+# Quartet B (Raphaldini et al. 2022's own borrowed topology, RH(1,3)+
+# RH(3,7)+RH(4,5)+RH(2,9), shared edge {RH(1,3), RH(3,7)}) is NOT
+# registered here: it is only used via the standalone, self-validating
+# WaveSet construction in examples/precession_resonance_rsw_vs_barotropic.py
+# (JFM-template.tex, Table precession_comparison / \S sec: quartet_rh_precession).
 
 quartet_rh_preference:
   label: "RH(1,2)+RH(4,5) choosing between RH(3,4) and RH(3,6)"
@@ -58,9 +64,36 @@ quartet_rh_preference:
     h: 0.01
     n_grid: 10
 
+quartet_rh_alt_partner:
+  label: "RH(1,2)+RH(4,5) with RH(3,4) and RH(3,8)"
+  display_label: "Quartet A'"
+  role: >-
+    Second all-Rossby quartet on the same shared edge as quartet_rh_preference
+    (RH(4,5)+RH(1,2)), with RH(3,6) replaced by RH(3,8) -- the other
+    well-coupled member of the RH(3,n) family (Table rhfamily, JFM-template.tex
+    section quartet_rh: 14.5% single-triad efficiency, comparable to RH(3,4)'s
+    own 24.1%, unlike RH(3,6) already used in quartet_rh_preference). Used
+    only for the precession-resonance sweep (examples/quartet_precession_sweep.py)
+    to broaden the "no genuine mutual lock found" claim beyond one topology,
+    not for an energy-transfer story of its own (already told by Table rhfamily).
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 40.0}
+    b: {m: 1, n: 2, alpha: 3, u: 40.0}
+    c: {m: 3, n: 4, alpha: 3, u: 0.0}
+    d: {m: 3, n: 8, alpha: 3, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 30
+    h: 0.01
+    n_grid: 10
+
 quartet_gravity_kelvin:
   label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
-  display_label: "Quartet B"
+  display_label: "Quartet C"
   role: >-
     Matches dissertation tab: cap42. The RH-only triad (a,b,c) reused here
     is exactly triad_kelvin_rossby_flow's RH pair from the §2.2 registry
@@ -84,9 +117,9 @@ quartet_gravity_kelvin:
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) with the gravity mode EG(7,9)"
-  display_label: "Quartet C"
+  display_label: "Quartet D"
   role: >-
-    Matches dissertation tab: cap43 -- same RH-only triad as Quartet B,
+    Matches dissertation tab: cap43 -- same RH-only triad as Quartet C,
     paired instead with the higher-frequency gravity mode EG(7,9) (also
     used standalone in the §2.2 registry's triad_gravity_with_rossby_catalyst).
   h_e: 10000
@@ -98,7 +131,7 @@ quartet_gravity_79:
   triads:
     - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
     # EG(7,9) (mode d) has m=7=m_a+m_b=4+3, so it is this triad's SUM mode,
-    # not a member -- unlike Quartet B, where the gravity mode EG(1,1)
+    # not a member -- unlike Quartet C, where the gravity mode EG(1,1)
     # (m=1) is the small private member and RH(4,5) (m=4) stays the sum.
     # Caught by wave_set_specs.py's load-time m_sum=m_p+m_q validation.
     - {sum: d, members: [a, b], display_label: "Triad 2 (with EG(7,9))", triad_key: null}
@@ -117,7 +150,7 @@ quintet_gravity_star:
     NOT the chain topology ("connected by a single mode") the paper's own
     prose currently describes; see HARVEST-section-3.md's topology finding
     and PLAN-section-3.md Phase E, which must correct that prose. Union of
-    Quartet B and Quartet C's gravity modes on the same RH-only triad.
+    Quartet C and Quartet D's gravity modes on the same RH-only triad.
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}

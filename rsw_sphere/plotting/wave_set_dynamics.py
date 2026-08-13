@@ -158,7 +158,7 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
                                triad_labels=None, wave_set_label: str = 'Wave set',
                                t0: float = 0, tf_days: float = 10, h: float = 0.01,
                                N: int = 10, deg: int = 300,
-                               highlight: int = None,
+                               highlight=None, highlight_full: int = None,
                                path: str = None):
     """"Triad 1 / triad 2 [/ triad 3] / wave set" comparison row -- the
     figure layout §3/§4 repeat for every quartet and the quintet.
@@ -173,11 +173,28 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
 
     Parameters
     ----------
-    modes, triads, velocities, h_e, t0, tf_days, h, N, deg, highlight :
-        See ``wave_set_energy_evolution``. ``highlight`` is a *global*
-        mode index (into ``modes``); it is remapped to each sub-triad's
-        own local index automatically, and omitted from a sub-triad panel
-        that doesn't contain that mode.
+    modes, triads, velocities, h_e, t0, tf_days, h, N, deg :
+        See ``wave_set_energy_evolution``.
+    highlight : int, sequence of (int or None), or None, optional
+        Either **one global mode index** (into ``modes``), applied to
+        every sub-triad panel (remapped to that panel's own local index,
+        omitted -- i.e. that panel falls back to all-solid -- if the
+        panel doesn't contain the mode) *and* to the full wave-set panel;
+        this is the original, single-target behaviour (e.g. one gravity
+        mode driving an otherwise RH-only quartet). Or **a sequence of
+        length ``len(triads)``**, one global mode index (or ``None``) per
+        sub-triad, for wave sets built around comparing several
+        constituent triads' own *different* private members against each
+        other (e.g. two Rossby partners of the same shared edge) rather
+        than one single target shared by all of them -- the full
+        wave-set panel's own highlight is then controlled separately by
+        ``highlight_full`` (default ``None``: all-solid there, since a
+        per-triad comparison has no single obvious target for the
+        aggregate view).
+    highlight_full : int or None, optional
+        Highlight for the full wave-set panel specifically. Only
+        consulted when ``highlight`` is a sequence; a scalar
+        ``highlight`` already implies the same value there.
     triad_labels : sequence of str or None, optional
         Per-triad subplot titles (e.g. "Triad 1 (RH-only)"). Defaults to
         "Triad 1", "Triad 2", ...
@@ -194,6 +211,17 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
         order), followed by the full wave set's result (last element).
     """
     n_triads = len(triads)
+    if highlight is not None and not isinstance(highlight, int):
+        per_triad_highlight = list(highlight)
+        if len(per_triad_highlight) != n_triads:
+            raise ValueError(
+                f"highlight sequence has {len(per_triad_highlight)} entries, "
+                f"expected one per triad ({n_triads})")
+        full_highlight = highlight_full
+    else:
+        per_triad_highlight = [highlight] * n_triads
+        full_highlight = highlight
+
     apply_house_style()
     fig, axes = plt.subplots(1, n_triads + 1, figsize=(4.3 * (n_triads + 1), 4.2), sharey=False)
 
@@ -202,7 +230,8 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
         sub_modes = [modes[i_p], modes[i_q], modes[i_sum]]
         sub_velocities = [velocities[i_p], velocities[i_q], velocities[i_sum]]
         local_map = {i_p: 0, i_q: 1, i_sum: 2}
-        local_highlight = local_map.get(highlight) if highlight is not None else None
+        h_i = per_triad_highlight[i]
+        local_highlight = local_map.get(h_i) if h_i is not None else None
 
         r = wave_set_energy_evolution(
             sub_modes, [(2, 0, 1)], sub_velocities, h_e=h_e,
@@ -215,7 +244,7 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
     r_full = wave_set_energy_evolution(
         modes, triads, velocities, h_e=h_e,
         t0=t0, tf_days=tf_days, h=h, N=N, deg=deg,
-        highlight=highlight, ax=axes[-1])
+        highlight=full_highlight, ax=axes[-1])
     axes[-1].set_title(wave_set_label, fontsize=10)
     results.append(r_full)
 
@@ -249,7 +278,8 @@ def wave_set_energy_evolution_from_spec(spec, tf_days: float = None, h: float = 
 
 def wave_set_comparison_panel_from_spec(spec, tf_days: float = None, h: float = None,
                                          N: int = 10, deg: int = 300,
-                                         highlight: int = None, path: str = None):
+                                         highlight=None, highlight_full: int = None,
+                                         path: str = None):
     """Registry convenience wrapper for ``wave_set_comparison_panel``."""
     triad_indices = [spec.triad_indices(i) for i in range(spec.n_triads())]
     triad_labels = [t.display_label for t in spec.triads]
@@ -259,7 +289,7 @@ def wave_set_comparison_panel_from_spec(spec, tf_days: float = None, h: float = 
         triad_labels=triad_labels, wave_set_label=spec.display_label,
         tf_days=tf_days if tf_days is not None else settings.get('tf_days', 10),
         h=h if h is not None else settings.get('h', 0.01),
-        N=N, deg=deg, highlight=highlight, path=path)
+        N=N, deg=deg, highlight=highlight, highlight_full=highlight_full, path=path)
 
 
 def main():
