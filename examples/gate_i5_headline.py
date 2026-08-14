@@ -226,7 +226,7 @@ if __name__ == "__main__":
     # lead -- for this configuration's own negative phase_lag_days value).
     lag_str = f"a {abs(phase_lag_days):.1f}-day {'lead' if phase_lag_days>0 else 'lag'}" if phase_lag_days else "an undetermined phase shift"
     print(f"Filtering the Kelvin gravity mode EG(1,1) from this configuration "
-          f"(Quartet B, RH modes at 30 m/s) lengthens the RH(3,4) Rossby "
+          f"(Quartet C, RH modes at 30 m/s) lengthens the RH(3,4) Rossby "
           f"mode's own exchange period by {period_shift_pct:.1f}% and its peak "
           f"kinetic energy by {peak_EK_diff_pct:.1f}% "
           f"({abs(EK_b_full.max()-EK_b_triad.max()):.2e} J of "

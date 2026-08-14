@@ -120,3 +120,111 @@ See the paper repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`,
 on both retractions above, what independently re-verified as solid
 (the air-density work, the Gate I2 catalogue itself, the two-channel
 law's shape), and the punch list for the next session.
+
+## §3.3 rewrite (2026-08-14)
+
+Executes `paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-3.3.md`
+(the §3.3 "Gravity-Rossby quartets" execution plan). Closes the one real
+gap the plan identified — the Gate I4b two-channel law had no saved
+script, only prose — and uses that same integration pass to calibrate
+the Gate I2 map's previously-uncalibrated `d1_proxy`.
+
+- `gate_i4_scaling_law.py` — direct, brute-force integration (not the
+  analytic proxy) of $\mathcal{F}_2$ across the full 26-candidate x 8
+  energy-fraction grid (208 points), target mode b=RH(3,4), $t_f=20$d
+  (matching `quartet_gravity_kelvin`'s own registered horizon).
+  Re-derives and re-verifies the two-channel law
+  `F2 ~ sqrt(alpha_2s^2+alpha_2p^2)*sqrt(x(1-x))/delta_2` from scratch:
+  **R^2=0.9955** (vs. the 2026-08-12 investigation's own R^2=0.982),
+  exponents (1.01, 1.20, -1.05) against the derived (1,1,-1). A
+  robustness subset re-measured at $t_f=40$d (8 candidates) gives
+  R^2=0.974, exponents (1.03, 0.82, -1.12) — confirms the law's shape is
+  not an artifact of the specific horizon chosen, even though the
+  absolute value of $\mathcal{F}_2$ itself is (per §3.1's own stated
+  diagnostic doctrine). Saves `gate_i4_scaling_law_data.npy` (all 26
+  candidates' own coupling/mismatch/measured-$\mathcal{F}_2$ data) and
+  the verification figure `gate_i4_scaling_law.png`.
+- `gate_i2_map_recalibrate.py` — re-plots the Gate I2 map using the
+  above script's real, integrated $\mathcal{F}_2$ values instead of
+  `d1_proxy`; adds the three cut dissertation examples (Table cap4ex) as
+  labeled points on the EG(1,1) curve. Output:
+  `gate_i2_map_calibrated.png`.
+- `regen_gravity_quartet_tables.py` — regenerates Table cap42/cap43
+  (Quartet C/D coefficient tables) in Table cap41's own format
+  (Mode/Freq/Period/Coeff.1/Coeff.2/Zonal/$A_0$), via
+  `rsw_sphere.plotting.wave_set_table.wave_set_properties` +
+  `WaveSet.amplitudes_from_velocities`.
+- `section33_headline_numbers.py` — generalizes `gate_i5_headline.py`'s
+  own methodology (period shift + peak-KE difference, both
+  $t_f$-independent; $\mathcal{F}_2$ at the registered $t_f$) to BOTH
+  Quartet C and Quartet D — the dissertation never computed a headline
+  number for Quartet D. Result: Quartet D's effect (period $+0.2\%$,
+  peak-KE $+0.1\%$) is an order of magnitude smaller than Quartet C's
+  ($+0.8\%$, $+1.0\%$), exactly as the scaling law predicts from
+  EG(7,9)'s much larger $|\delta_2|$.
+
+**A real bug caught and fixed while building the map figure**: an
+initial `\begin{table}[h]` in the new Appendix C literally rendered the
+string `[h]` as visible text in the compiled PDF (`JFM-FLM_Au.cls`
+appears not to support an explicit placement specifier the way a
+standard `table` environment does) — every other table in this paper
+uses a bare `\begin{table}`, so the fix was simply to match that
+convention rather than debug the class internals.
+
+All four scripts feed directly into `JFM-template.tex` §3.3, which was
+fully rewritten this session (five subsubsections replacing the three-
+example anecdotal structure, per the plan's disposition table); compiles
+clean (bibtex + 2x pdflatex, 42 pages, zero undefined references or
+warnings).
+
+**Independent triple review (2026-08-14, writing/code-correctness/
+literature), same discipline §3.2 received**: all three completed.
+Code-correctness review re-derived every number in the section from
+scratch (not just re-read the scripts) and found **zero mismatches**;
+one traceability gap (the precession-residual correlation quoted a
+number from an older, superseded fit rather than the fresh one) was
+fixed by recomputing it directly against `gate_i4_scaling_law_data.npy`
+(0.015, materially the same conclusion). Writing review found 6 real
+issues (a factually wrong "pump mode" attribution — RH(3,4), not
+RH(4,5), is the pump mode of this triad, per the paper's own existing
+Table `master`/Figure `hough_examples` — plus a leaked internal LaTeX
+label in a caption, a stray Python-variable-style phrase, a symbol
+collision, a missing relative pronoun, and a `\S` vs `Appendix` style
+slip), all fixed. Literature review found one real citation
+misattribution, inherited from the original (pre-rewrite) dissertation
+prose: `rocha2018stimulated` was cited backwards (claimed gravity waves
+are dissipated by the Rossby inverse cascade; the source's actual
+finding is the reverse — gravity/near-inertial waves are what extracts
+energy *from* the balanced flow's own inverse cascade), fixed.
+
+**§3.3.5 "A systematic search for a frequency-shift effect" (2026-08-14,
+same day, per user request to "extend the research on fast gravity -
+slow Rossby interactions and frequency change" before the review above)
+— the placeholder is now filled with a real, converged finding, not a
+`\todo{}`.** New scripts:
+
+- `frequency_shift_catalogue_search.py` — Stage 1: screens the full
+  26-candidate catalogue at $x=0.3$ using two window-independent period
+  estimators (FFT with parabolic peak interpolation; prominence-filtered
+  peak-to-peak timing — **never Savitzky-Golay**, the source of the
+  2026-08-13 WG(7,9) retraction), applied symmetrically to the full
+  quartet and the RH-only sub-triad, flagging any candidate where the
+  two estimators disagree by >1 percentage point as unreliable rather
+  than trusting either number blindly.
+- `frequency_shift_stage2.py` — Stage 2: full $x$-sweep + $t_f$
+  convergence check for the candidates Stage 1 flags as real.
+
+**Finding**: the original request's premise (a short-period mode is the
+right place to look) is wrong — 24/26 candidates, including every
+genuinely short-period one, shift the target's own period by
+$\leq0.1\%$ (extends WG(7,9)'s own corrected null result to essentially
+the whole catalogue). The two exceptions, EG(1,1) and WG(1,1), are the
+two *longest*-period modes in the catalogue but the two with by far the
+smallest timescale separation from the RH-only triad's own exchange
+rate — exactly the pair already implicated in the amplitude effect
+(Gate I2 map). Where measurable, the effect is large and opposite in
+sign: EG(1,1)'s target period lengthens $+16.7\%$ at $x=0.5$ (converged
+$t_f=60$-$240$d and $h=0.01$-$0.002$; drifts further to $+18.9\%$ by
+$t_f=480$d, reported as the shorter-horizon plateau, not asserted as
+asymptotic); WG(1,1)'s shortens $-6.2\%$ to $-6.6\%$ over the same
+range. Governed by timescale separation, not period length.
