@@ -228,3 +228,81 @@ $t_f=60$-$240$d and $h=0.01$-$0.002$; drifts further to $+18.9\%$ by
 $t_f=480$d, reported as the shorter-horizon plateau, not asserted as
 asymptotic); WG(1,1)'s shortens $-6.2\%$ to $-6.6\%$ over the same
 range. Governed by timescale separation, not period length.
+
+**Amplitude effects added alongside frequency, 2026-08-14, same day,
+per user follow-up ("check the amplitude effects too, not just
+frequency")**: `frequency_amplitude_companion.py` reports $\mathcal{F}_2^a$
+(already computed for the full catalogue, reused not recomputed) and a
+new $\mathcal{F}_{max}^a$ (signed peak-KE difference, not previously
+computed for this catalogue) for EG(1,1)/WG(1,1) at the same $x$ values
+as the frequency sweep. **The two channels agree with each other**:
+EG(1,1) routes progressively MORE peak kinetic energy into the target
+as $x$ grows ($+6.9\%$ to $+27.2\%$ over $x=0.1$-$0.7$) — the same mode
+whose period lengthens; WG(1,1) routes progressively LESS ($-0.2\%$ to
+$-2.8\%$) — the same mode whose period shortens. $\mathcal{F}_2^a$ alone
+(non-negative by construction) cannot distinguish the two directions;
+only the signed $\mathcal{F}_{max}^a$ and the frequency shift can, and
+both tell the same story. New table in the paper, `tab: freq_amp`.
+
+**Generalized further, 2026-08-14, same day, per user follow-up ("test
+also with higher frequency modes... track it" + "change the target and
+control mode structure... different experiment of topology/energy
+flux" + "always verify both amplitude effects and frequency/period
+effects") — new §3.3.6 "Generality: more modes, another target, another
+edge".** Three new scripts:
+
+- `catalogue_wide_tracking.py` — extends the frequency-shift + amplitude
+  tracking from 2 candidates to the FULL 26-candidate catalogue, and
+  from 1 target (RH(3,4)) to BOTH shared modes (RH(4,5) too), getting
+  both targets from a single integration per (candidate, x). Confirms
+  EG(1,1)/WG(1,1) remain the only two with a real frequency effect, and
+  that RH(4,5)/RH(3,4) always share the identical frequency shift
+  (expected: period is a property of the coupled triad, not a per-mode
+  quantity).
+- `alternate_topology_probe.py` — a genuinely new quartet topology: a
+  gravity mode closing a triad on Quartet A's own edge RH(4,5)+RH(1,2)
+  (§3.2) instead of this section's RH(4,5)+RH(3,4). **First version had
+  a real physics bug**, caught by a sanity check before the full run:
+  a bare 3-mode "edge triad" with the gravity mode's own IC zeroed is
+  NOT a valid gravity-absent baseline (with only one triad,
+  `dA_gravity/dt` is driven by `A_a*A_b` regardless of the gravity
+  mode's own starting value, so it doesn't stay near zero) — fixed by
+  using a proper 4-mode quartet with Quartet A's own registered triad1
+  as the genuine RH-only reference, mirroring `gate_i4_scaling_law.py`'s
+  structure exactly.
+
+**A second real bug, also caught by a sanity check rather than assumed
+away**: `catalogue_wide_tracking.py`'s first version showed $\mathcal{F}_{max}^a$
+reading exactly $0.00\%$ for RH(4,5) under several candidates — not
+small, exactly zero at every $x$. Diagnosed directly: RH(4,5) is a NET
+ENERGY LOSER under these candidates, so its peak KE sits at $t=0$ in
+both the full quartet and the sub-triad, identical by construction
+regardless of the gravity mode. $\mathcal{F}_{max}^a$ is blind to any
+effect on a target that never exceeds its own initial value. Fixed by
+adding a range-based diagnostic, $\Delta EK$ (already established in
+this paper via eq: Pa, not a new invention) — recomputed for both
+scripts and both catalogues. Corrected finding: EG(1,1) DOES
+substantially affect RH(4,5) ($+46.7\%$ range change at $x=0.5$,
+comparable to its own $+39.1\%$ effect on RH(3,4)) — the
+$\mathcal{F}_{max}^a$-based "$0\%$" was a diagnostic blind spot, not a
+real null result. The corrected diagnostic also shows amplitude effects
+extend further into the catalogue than frequency effects do (e.g.
+EG(7,7)/WG(7,9) show real, growing range effects — up to $+17\%$ —
+despite $\leq0.1\%$ frequency shift).
+
+**New topology's own finding**: the same qualitative law (smallest
+$|\omega_d|$ → largest effect) holds on the new edge, but an order of
+magnitude weaker in absolute size (EG(3,3)'s own $+11.4\%$ range effect
+vs.\ EG(1,1)'s $+46.7\%$) — the *law* generalizes, its *magnitude*
+doesn't. Also surfaced a THIRD finding, this one a confirmation rather
+than a bug: RH(1,2) on this edge (an order-of-magnitude weaker coupling
+than RH(4,5), Table `cap41`) shows the SAME small-denominator inflation
+that originally motivated retiring $\mathcal{P}_a$ (Finding F1,
+`PLAN-section-3-experiments.md`) — range-normalized percentages for
+RH(1,2) reach triple digits without a proportionally large physical
+effect, so it was excluded from the paper's own comparison, with the
+reasoning stated explicitly rather than silently dropped.
+
+All numbers in `JFM-template.tex` §3.3.6 independently verified against
+these scripts' own saved output before writing (not hand-copied from
+memory). Compiles clean, 43 pages.
