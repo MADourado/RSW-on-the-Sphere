@@ -27,6 +27,17 @@ energy exactly) alongside the precession-frequency panel, from the SAME
 already-integrated sweep -- no extra integration cost. Omitting
 ``target_mode`` reproduces the original single-panel figure exactly.
 
+Each entry may also set ``plot_triad`` (an index into that wave set's own
+``triads`` list): if present, the frequency panel draws only that one
+triad's own curve instead of every constituent triad's. Every triad's
+frequency is still computed and cached either way -- this only restricts
+what ``plot_sweep`` draws, so it never forces a recompute and can be
+changed freely. Use it when a quartet's other triad's own precession
+frequency is not the figure's subject (e.g. a driven triad that locks
+trivially onto its own forcing, next to the undriven target triad whose
+lock is the actual finding) and plotting both in one panel would read as
+two curves without a common meaning.
+
 Run:
 
     python examples/precession_sweep_figure.py quartet_a_rh36 outputs/figures/quartet_a_rh36_precession_cache.npz outputs/figures/quartet_a_rh36_precession.png
@@ -140,28 +151,47 @@ def plot_sweep(entry_key, cache_path, path=None, figures_yaml=DEFAULT_FIGURES_PA
     f_by_triad = {lbl: d[f'f_{i}'] for i, lbl in enumerate(labels)}
     efficiency = d['efficiency'] if 'efficiency' in d else None
 
+    plot_u_max = cfg.get('plot_u_max')
+    if plot_u_max is not None:
+        # Restricts only what gets plotted/autoscaled here -- the cache
+        # (sweep()'s own output) keeps the full swept range regardless.
+        mask = u_values <= plot_u_max
+        u_values = u_values[mask]
+        f_by_triad = {lbl: v[mask] for lbl, v in f_by_triad.items()}
+        if efficiency is not None:
+            efficiency = efficiency[mask]
+
     apply_house_style()
     markers = ['o', 's', '^', 'v']
 
-    if efficiency is not None:
-        fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
-    else:
-        fig, ax = plt.subplots(figsize=(6, 4.5))
+    fig, ax = plt.subplots(figsize=(7, 4.5))
 
+    plot_triad = cfg.get('plot_triad')
     for i, (lbl, mode_str) in enumerate(labels.items()):
-        ax.plot(u_values, np.abs(f_by_triad[lbl]), markers[i % len(markers)] + '-', ms=3,
-                label=f'{lbl} ({mode_str})', alpha=1.0 if i == 0 else 0.6)
+        if plot_triad is not None and i != plot_triad:
+            continue
+        ax.plot(u_values, np.abs(f_by_triad[lbl]), markers[i % len(markers)] + ':', ms=3,
+                color='C0', label=f'{lbl} ({mode_str})', alpha=1.0 if i == 0 else 0.6)
     ax.axhline(0.01, color='grey', ls=':', lw=1)
     ax.set_xlabel(cfg['xlabel'])
-    ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)')
+    ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)', color='C0')
+    ax.tick_params(axis='y', labelcolor='C0')
     ax.set_title(cfg['title'])
-    ax.legend(fontsize=8)
 
     if efficiency is not None:
-        ax2.plot(u_values, 100 * efficiency, 'o-', ms=3, color='C3')
-        ax2.set_xlabel(cfg['xlabel'])
-        ax2.set_ylabel(r'Efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)')
-        ax2.set_title('Target mode efficiency\n(time-averaged $E_{total}$ normalization)', fontsize=10)
+        # Twin y-axis, same x-axis: frequency and efficiency plotted jointly
+        # so a lock and its own efficiency signature (if any) are visible
+        # at a glance, rather than split across two separate panels.
+        ax2 = ax.twinx()
+        ax2.plot(u_values, 100 * efficiency, 'd-', ms=3, color='C3',
+                 label=r'Efficiency $\mathcal{E}_{\mathrm{avg}}$')
+        ax2.set_ylabel(r'Efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)', color='C3')
+        ax2.tick_params(axis='y', labelcolor='C3')
+        lines1, labels1 = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax.legend(lines1 + lines2, labels1 + labels2, fontsize=8, loc='best')
+    else:
+        ax.legend(fontsize=8)
 
     fig.tight_layout()
     if path:

@@ -15,10 +15,11 @@ process via concurrent.futures.ProcessPoolExecutor, one worker per n.
 
 P-measure is ill-conditioned whenever the isolated-triad ΔEK denominator
 is itself ~0 (see wave_set_pmeasure.py's own docstring on this): n=14, 16
-were confirmed (rh_partner_family.py's own family, cross-checked out to
-t_f=3840d -- see examples/rh_partner_family_long_tf_check.py) to have
-genuinely negligible isolated-triad efficiency, not an under-integration
-artifact. This function does NOT itself guard against the resulting
+were confirmed (rh_partner_family.py's own family, cross-checked bit-for-bit
+flat from t_f=30d to t_f=12000d, a 400x span -- see
+examples/rh_partner_family_long_tf_check.py) to have genuinely negligible
+isolated-triad efficiency, not an under-integration artifact. This function
+does NOT itself guard against the resulting
 blow-up: p_measure()'s own NaN guard only fires on an EXACTLY zero
 denominator (wave_set_pmeasure.py:165), and dEK_triad here is tiny but
 strictly positive, so n=14/16 return large-but-finite, reproducible

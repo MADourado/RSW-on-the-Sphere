@@ -106,13 +106,19 @@ def sweep(cache_path, scales_baro=SCALES_BARO, scales_rsw=SCALES_RSW,
     return scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw
 
 
-def plot_sweep(cache_path, path=None):
+def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
     """Pure plotting: read ``cache_path`` (must already exist -- see
-    ``sweep``) and draw the figure. Second panel shows the RSW target
-    mode's (RH(2,9)) own efficiency across the same sweep -- no
-    barotropic-side equivalent, since that system's energy is exactly
-    conserved and the standard (paper eq. effor) efficiency already
-    applies to it without the time-averaging correction needed for RSW.
+    ``sweep``) and draw the figure. Efficiency is plotted on a twin
+    y-axis, RSW only -- no barotropic-side equivalent, since that
+    system's energy is exactly conserved and the standard (paper eq.
+    effor) efficiency already applies to it without the time-averaging
+    correction needed for RSW.
+
+    ``plot_scale_min`` crops both curves' own low-amplitude tail below
+    this scale from the plot only -- ``sweep``'s own cache keeps the
+    full range regardless. Default ``2e-3`` drops the flat, uninformative
+    part of the barotropic curve's own range (it starts at ``2e-4``)
+    while leaving RSW's own range (starting at ``3e-3``) untouched.
     """
     if not os.path.exists(cache_path):
         raise FileNotFoundError(f"{cache_path} does not exist -- run sweep({cache_path!r}) first.")
@@ -120,22 +126,37 @@ def plot_sweep(cache_path, path=None):
     scales_baro, scales_rsw, f_baro, f_rsw = d['scales_baro'], d['scales_rsw'], d['f_baro'], d['f_rsw']
     efficiency_rsw = d['efficiency_rsw']
 
+    if plot_scale_min is not None:
+        mask_baro = scales_baro >= plot_scale_min
+        scales_baro, f_baro = scales_baro[mask_baro], f_baro[mask_baro]
+        mask_rsw = scales_rsw >= plot_scale_min
+        scales_rsw, f_rsw = scales_rsw[mask_rsw], f_rsw[mask_rsw]
+        efficiency_rsw = efficiency_rsw[mask_rsw]
+
     apply_house_style()
-    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
-    ax.plot(scales_baro, np.abs(f_baro), 'o-', ms=3, label='Barotropic (Raphaldini et al. 2022)')
-    ax.plot(scales_rsw, np.abs(f_rsw), 's-', ms=3, label='RSW (identical topology)')
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    ax.plot(scales_baro, np.abs(f_baro), 'o:', ms=3, color='C0',
+            label='Barotropic (Raphaldini et al. 2022)')
+    ax.plot(scales_rsw, np.abs(f_rsw), 's:', ms=3, color='C1',
+            label='RSW (identical topology)')
     ax.axhline(0.01, color='grey', ls=':', lw=1)
     ax.set_xscale('log')
     ax.set_xlabel('Amplitude scale')
     ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)')
-    ax.set_title('Barotropic vs. RSW\nRH(1,3)+RH(3,7)+RH(4,5)+RH(2,9)', fontsize=10)
-    ax.legend(fontsize=8)
+    ax.set_title('Barotropic vs. RSW\nRH(4,5)+RH(1,3)+RH(3,7)', fontsize=10)
 
-    ax2.plot(scales_rsw, 100 * efficiency_rsw, 's-', ms=3, color='C3')
-    ax2.set_xscale('log')
-    ax2.set_xlabel('Amplitude scale')
-    ax2.set_ylabel(r'RH(2,9) efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)')
-    ax2.set_title('RSW target-mode efficiency\n(time-averaged $E_{total}$ normalization)', fontsize=10)
+    # Twin y-axis, same x-axis as the frequency curves: RSW efficiency
+    # plotted jointly with frequency so the absence of a lock next to a
+    # smooth efficiency peak is visible in one panel, not two.
+    ax2 = ax.twinx()
+    ax2.plot(scales_rsw, 100 * efficiency_rsw, '^-', ms=3, color='C3',
+             label=r'RSW efficiency $\mathcal{E}_{\mathrm{avg}}$')
+    ax2.set_ylabel(r'RSW efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)', color='C3')
+    ax2.tick_params(axis='y', labelcolor='C3')
+
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax.legend(lines1 + lines2, labels1 + labels2, fontsize=8, loc='best')
 
     fig.tight_layout()
     if path:
