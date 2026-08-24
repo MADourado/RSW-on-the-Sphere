@@ -85,6 +85,38 @@ def rsw_phases(ws, scale, t_f=1500.0, h=None):
     return Phi1, Phi2, T
 
 
+def rsw_phases_and_efficiency(ws, scale, t_f=1500.0, h=None):
+    """Same as ``rsw_phases``, plus the target mode's (RH(2,9), index 3
+    -- see ``precession_resonance_rsw_vs_barotropic.efficiency``'s own
+    docstring) energy-transfer efficiency and the run's own energy
+    drift, computed from the SAME trajectory (no extra integration): the
+    time-averaged-total-energy analogue of ``rsw_comp.efficiency``'s
+    instantaneous-max-fraction (see ``quartet_precession_sweep.
+    precession_sweep``'s own ``efficiency``/``energy_drift``, same
+    convention, applied here to the standalone (non-registry) Quartet B
+    RSW build).
+
+    Returns
+    -------
+    Phi1, Phi2, T, efficiency, energy_drift
+    """
+    if h is None:
+        h = min(0.02, 0.2 / (max(1.0, scale) * 6 + 1))
+    A0 = scale * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
+    Y, T = RK33(ws, 0, t_f, h, A0)
+    i_sum1, i_p1, i_q1 = rsw_comp.TRIADS[0]
+    i_sum2, i_p2, i_q2 = rsw_comp.TRIADS[1]
+    Phi1 = dynamical_phase(Y, T, ws.omega, i_sum1, i_p1, i_q1, ws.delta[0])
+    Phi2 = dynamical_phase(Y, T, ws.omega, i_sum2, i_p2, i_q2, ws.delta[1])
+
+    E2, E3 = ws.energy(Y)
+    E_total = np.real(E2 + E3)
+    energy_drift = np.max(np.abs(E_total - E_total[0])) / np.abs(E_total[0])
+    A_sq = np.real(Y[:, 3] * np.conj(Y[:, 3]))
+    efficiency = (A_sq.max() - A_sq.min()) / E_total.mean()
+    return Phi1, Phi2, T, float(efficiency), float(energy_drift)
+
+
 def report(label, Phi1, Phi2, T):
     days = days_from_nondim_time(T)
     s1 = libration_diagnostics(Phi1, days)

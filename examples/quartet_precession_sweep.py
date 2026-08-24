@@ -37,7 +37,8 @@ from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagn
 
 
 def precession_sweep(wave_set_key, sweep_mode_key, u_values, base_velocities=None,
-                      tf_days=150.0, h=0.01, N=10, deg=300, yaml_path=DEFAULT_WAVESETS_PATH):
+                      tf_days=150.0, h=0.01, N=10, deg=300, yaml_path=DEFAULT_WAVESETS_PATH,
+                      target_mode_key=None):
     """Sweep one mode's driving velocity, report every constituent
     triad's own dynamical-phase libration statistics at each point.
 
@@ -53,13 +54,31 @@ def precession_sweep(wave_set_key, sweep_mode_key, u_values, base_velocities=Non
     base_velocities : dict of {mode_key: float} or None, optional
         Override the registered velocity of any OTHER mode. ``None``:
         use the registry's own values unchanged.
+    target_mode_key : str or None, optional
+        If given, also report that mode's own energy-transfer efficiency
+        at each swept point (see ``efficiency`` below), reusing the same
+        trajectory already integrated for the phase diagnostic -- no
+        extra integration cost. ``None`` (default): efficiency is not
+        computed, matching this function's original behaviour exactly.
 
     Returns
     -------
     list of dict
-        One entry per swept velocity: ``u``, and per-triad
+        One entry per swept velocity: ``u``; per-triad
         ``precession_freq``/``net_windings``/``oscillation_amplitude_windings``
-        (dict keyed by that triad's own display_label).
+        (dict keyed by that triad's own display_label); ``energy_drift``,
+        the wave set's own energy-conservation violation over the run
+        (``max|E_total(t)-E_total(0)| / |E_total(0)|``, same convention as
+        ``rsw_sphere.plotting.wave_set_pmeasure.p_measure``) -- always
+        reported, since a genuine quartet does not conserve energy exactly
+        (paper Appendix "Energy conservation of the four-wave truncation")
+        and this is the sanity check for whether the time-averaged total
+        energy below is a stable enough quantity to normalize by. If
+        ``target_mode_key`` is given, also ``efficiency``: that mode's own
+        ``(max|A|^2 - min|A|^2) / mean(E_total(t))`` -- the paper's usual
+        efficiency (eq. effor) but normalized by the trajectory's own
+        time-averaged total energy rather than its (for a quartet, not
+        exactly conserved) initial value.
     """
     specs = load_wave_set_specs(yaml_path)
     spec = specs[wave_set_key]
@@ -70,6 +89,7 @@ def precession_sweep(wave_set_key, sweep_mode_key, u_values, base_velocities=Non
         for mk, u in base_velocities.items():
             velocities[spec.index(mk)] = u
     sweep_idx = spec.index(sweep_mode_key)
+    target_idx = spec.index(target_mode_key) if target_mode_key is not None else None
 
     triad_indices = [spec.triad_indices(i) for i in range(spec.n_triads())]
     triad_labels = [t.display_label for t in spec.triads]
@@ -85,7 +105,14 @@ def precession_sweep(wave_set_key, sweep_mode_key, u_values, base_velocities=Non
         Y, T = RK33(ws, 0, t_f, h, A0)
         T_days = days_from_nondim_time(T)
 
-        row = {'u': u}
+        E2, E3 = ws.energy(Y)
+        E_total = np.real(E2 + E3)
+        energy_drift = np.max(np.abs(E_total - E_total[0])) / np.abs(E_total[0])
+
+        row = {'u': u, 'energy_drift': float(energy_drift)}
+        if target_idx is not None:
+            A_sq = np.real(Y[:, target_idx] * np.conj(Y[:, target_idx]))
+            row['efficiency'] = float((A_sq.max() - A_sq.min()) / E_total.mean())
         for t_idx, (i_sum, i_p, i_q) in enumerate(triad_indices):
             Phi = dynamical_phase(Y, T, ws.omega, i_sum, i_p, i_q, ws.delta[t_idx])
             stats = libration_diagnostics(Phi, T_days)

@@ -11,6 +11,7 @@
 quartet_a_rh36:
   wave_set: quartet_rh_preference
   sweep_mode: d
+  target_mode: c   # RH(3,4): the target triad's own private, undriven member
   title: "Quartet A (this paper)"
   xlabel: "RH(3,6) driving velocity $u$ (m/s)"
   u_min: 10.0
@@ -21,6 +22,7 @@ quartet_a_rh36:
 quartet_a_rh38:
   wave_set: quartet_rh_alt_partner
   sweep_mode: d
+  target_mode: c   # RH(3,4): the target triad's own private, undriven member
   title: "RH(3,8) variant (this paper)"
   xlabel: "RH(3,8) driving velocity $u$ (m/s)"
   u_min: 10.0

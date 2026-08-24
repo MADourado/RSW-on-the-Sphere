@@ -18,6 +18,15 @@ Per-triad legend labels (which modes each constituent triad contains)
 are derived directly from the wave-set registry at plot time -- never
 hardcoded -- so they cannot drift out of sync with the registry itself.
 
+Each entry may set ``target_mode`` (a mode key, e.g. ``c``): if present,
+the figure gains a second panel showing that mode's own energy-transfer
+efficiency (``quartet_precession_sweep.precession_sweep``'s own
+``efficiency``, normalized by the trajectory's time-averaged total
+energy rather than its initial value, since a quartet does not conserve
+energy exactly) alongside the precession-frequency panel, from the SAME
+already-integrated sweep -- no extra integration cost. Omitting
+``target_mode`` reproduces the original single-panel figure exactly.
+
 Run:
 
     python examples/precession_sweep_figure.py quartet_a_rh36 outputs/figures/quartet_a_rh36_precession_cache.npz outputs/figures/quartet_a_rh36_precession.png
@@ -63,33 +72,51 @@ def sweep(entry_key, cache_path, figures_yaml=DEFAULT_FIGURES_PATH, wave_sets_ya
     """Pure compute: run the sweep for ``entry_key`` and write it to
     ``cache_path`` (.npz). Does no plotting. Re-running this with an
     already-existing ``cache_path`` is a no-op (skips the sweep) --
-    delete the cache file first to force a recompute.
+    delete the cache file first to force a recompute (required after
+    adding/changing this entry's own ``target_mode``, since that changes
+    what gets computed, not just how it's plotted).
 
     Returns
     -------
     u_values : ndarray
     f_by_triad : dict of {triad display_label: ndarray}
+    energy_drift : ndarray
+    efficiency : ndarray or None
+        ``None`` iff this entry has no ``target_mode``.
     """
     with open(figures_yaml) as f:
         cfg = yaml.safe_load(f)[entry_key]
     labels = triad_mode_labels(cfg['wave_set'], wave_sets_yaml)
+    target_mode = cfg.get('target_mode')
 
     if os.path.exists(cache_path):
         d = np.load(cache_path)
-        return d['u_values'], {lbl: d[f'f_{i}'] for i, lbl in enumerate(labels)}
+        f_by_triad = {lbl: d[f'f_{i}'] for i, lbl in enumerate(labels)}
+        efficiency = d['efficiency'] if 'efficiency' in d else None
+        return d['u_values'], f_by_triad, d['energy_drift'], efficiency
 
     u_values = np.linspace(cfg['u_min'], cfg['u_max'], cfg['n_points'])
     f_by_triad = {lbl: [] for lbl in labels}
+    energy_drift = []
+    efficiency = [] if target_mode is not None else None
     for u in u_values:
-        r = precession_sweep(cfg['wave_set'], cfg['sweep_mode'], [u], tf_days=cfg['tf_days'])[0]
+        r = precession_sweep(cfg['wave_set'], cfg['sweep_mode'], [u], tf_days=cfg['tf_days'],
+                              target_mode_key=target_mode)[0]
         for lbl in labels:
             f_by_triad[lbl].append(r[lbl]['precession_freq'])
+        energy_drift.append(r['energy_drift'])
+        if target_mode is not None:
+            efficiency.append(r['efficiency'])
     f_by_triad = {lbl: np.array(v) for lbl, v in f_by_triad.items()}
+    energy_drift = np.array(energy_drift)
+    efficiency = np.array(efficiency) if efficiency is not None else None
 
-    save_kwargs = {'u_values': u_values}
+    save_kwargs = {'u_values': u_values, 'energy_drift': energy_drift}
     save_kwargs.update({f'f_{i}': f_by_triad[lbl] for i, lbl in enumerate(labels)})
+    if efficiency is not None:
+        save_kwargs['efficiency'] = efficiency
     np.savez(cache_path, **save_kwargs)
-    return u_values, f_by_triad
+    return u_values, f_by_triad, energy_drift, efficiency
 
 
 def plot_sweep(entry_key, cache_path, path=None, figures_yaml=DEFAULT_FIGURES_PATH,
@@ -97,6 +124,10 @@ def plot_sweep(entry_key, cache_path, path=None, figures_yaml=DEFAULT_FIGURES_PA
     """Pure plotting: read ``cache_path`` (must already exist -- see
     ``sweep``) and draw the figure. Never runs the sweep itself, so
     labels/styling can be iterated freely without re-paying its cost.
+
+    Two panels (precession frequency, efficiency) if the cache has an
+    ``efficiency`` array (i.e. this entry has a ``target_mode``); one
+    panel (the original figure, unchanged) otherwise.
     """
     if not os.path.exists(cache_path):
         raise FileNotFoundError(
@@ -107,10 +138,16 @@ def plot_sweep(entry_key, cache_path, path=None, figures_yaml=DEFAULT_FIGURES_PA
     d = np.load(cache_path)
     u_values = d['u_values']
     f_by_triad = {lbl: d[f'f_{i}'] for i, lbl in enumerate(labels)}
+    efficiency = d['efficiency'] if 'efficiency' in d else None
 
     apply_house_style()
-    fig, ax = plt.subplots(figsize=(6, 4.5))
     markers = ['o', 's', '^', 'v']
+
+    if efficiency is not None:
+        fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
+    else:
+        fig, ax = plt.subplots(figsize=(6, 4.5))
+
     for i, (lbl, mode_str) in enumerate(labels.items()):
         ax.plot(u_values, np.abs(f_by_triad[lbl]), markers[i % len(markers)] + '-', ms=3,
                 label=f'{lbl} ({mode_str})', alpha=1.0 if i == 0 else 0.6)
@@ -119,6 +156,12 @@ def plot_sweep(entry_key, cache_path, path=None, figures_yaml=DEFAULT_FIGURES_PA
     ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)')
     ax.set_title(cfg['title'])
     ax.legend(fontsize=8)
+
+    if efficiency is not None:
+        ax2.plot(u_values, 100 * efficiency, 'o-', ms=3, color='C3')
+        ax2.set_xlabel(cfg['xlabel'])
+        ax2.set_ylabel(r'Efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)')
+        ax2.set_title('Target mode efficiency\n(time-averaged $E_{total}$ normalization)', fontsize=10)
 
     fig.tight_layout()
     if path:

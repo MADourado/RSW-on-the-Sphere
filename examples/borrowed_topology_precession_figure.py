@@ -61,15 +61,26 @@ def sweep(cache_path, scales_baro=SCALES_BARO, scales_rsw=SCALES_RSW,
     """Pure compute: run both curves and write them to ``cache_path``
     (.npz). Does no plotting. Re-running with an already-existing
     ``cache_path`` is a no-op -- delete the file first to force a
-    recompute.
+    recompute (required after this function's own signature change to
+    add ``efficiency_rsw``/``energy_drift_rsw``, since an old cache
+    predating them silently has neither array).
 
     Returns
     -------
-    scales_baro, scales_rsw, f_baro, f_rsw : ndarray
+    scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw : ndarray
+        ``efficiency_rsw``/``energy_drift_rsw`` are the RSW target mode's
+        (RH(2,9)) own time-averaged-total-energy efficiency and the
+        run's own energy drift (see
+        ``precession_resonance_phase_diagnostic.rsw_phases_and_efficiency``),
+        from the SAME trajectory as ``f_rsw`` -- no extra integration.
+        Barotropic energy is quadratic and exactly conserved by
+        construction (paper §1), so no analogous drift-corrected
+        efficiency is needed on that side.
     """
     if os.path.exists(cache_path):
         d = np.load(cache_path)
-        return d['scales_baro'], d['scales_rsw'], d['f_baro'], d['f_rsw']
+        return (d['scales_baro'], d['scales_rsw'], d['f_baro'], d['f_rsw'],
+                d['efficiency_rsw'], d['energy_drift_rsw'])
 
     f_baro = []
     for s in scales_baro:
@@ -79,27 +90,38 @@ def sweep(cache_path, scales_baro=SCALES_BARO, scales_rsw=SCALES_RSW,
 
     ws = rsw_comp.build()
     f_rsw = []
+    efficiency_rsw = []
+    energy_drift_rsw = []
     for s in scales_rsw:
-        Phi1, _, T = phase_diag.rsw_phases(ws, scale=s, t_f=t_f_rsw)
+        Phi1, _, T, eff, drift = phase_diag.rsw_phases_and_efficiency(ws, scale=s, t_f=t_f_rsw)
         days = days_from_nondim_time(T)
         f_rsw.append(libration_diagnostics(Phi1, days)['precession_freq'])
+        efficiency_rsw.append(eff)
+        energy_drift_rsw.append(drift)
 
     f_baro, f_rsw = np.array(f_baro), np.array(f_rsw)
-    np.savez(cache_path, scales_baro=scales_baro, scales_rsw=scales_rsw, f_baro=f_baro, f_rsw=f_rsw)
-    return scales_baro, scales_rsw, f_baro, f_rsw
+    efficiency_rsw, energy_drift_rsw = np.array(efficiency_rsw), np.array(energy_drift_rsw)
+    np.savez(cache_path, scales_baro=scales_baro, scales_rsw=scales_rsw, f_baro=f_baro, f_rsw=f_rsw,
+              efficiency_rsw=efficiency_rsw, energy_drift_rsw=energy_drift_rsw)
+    return scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw
 
 
 def plot_sweep(cache_path, path=None):
     """Pure plotting: read ``cache_path`` (must already exist -- see
-    ``sweep``) and draw the figure.
+    ``sweep``) and draw the figure. Second panel shows the RSW target
+    mode's (RH(2,9)) own efficiency across the same sweep -- no
+    barotropic-side equivalent, since that system's energy is exactly
+    conserved and the standard (paper eq. effor) efficiency already
+    applies to it without the time-averaging correction needed for RSW.
     """
     if not os.path.exists(cache_path):
         raise FileNotFoundError(f"{cache_path} does not exist -- run sweep({cache_path!r}) first.")
     d = np.load(cache_path)
     scales_baro, scales_rsw, f_baro, f_rsw = d['scales_baro'], d['scales_rsw'], d['f_baro'], d['f_rsw']
+    efficiency_rsw = d['efficiency_rsw']
 
     apply_house_style()
-    fig, ax = plt.subplots(figsize=(6, 4.5))
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(11, 4.5))
     ax.plot(scales_baro, np.abs(f_baro), 'o-', ms=3, label='Barotropic (Raphaldini et al. 2022)')
     ax.plot(scales_rsw, np.abs(f_rsw), 's-', ms=3, label='RSW (identical topology)')
     ax.axhline(0.01, color='grey', ls=':', lw=1)
@@ -108,6 +130,12 @@ def plot_sweep(cache_path, path=None):
     ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)')
     ax.set_title('Barotropic vs. RSW\nRH(1,3)+RH(3,7)+RH(4,5)+RH(2,9)', fontsize=10)
     ax.legend(fontsize=8)
+
+    ax2.plot(scales_rsw, 100 * efficiency_rsw, 's-', ms=3, color='C3')
+    ax2.set_xscale('log')
+    ax2.set_xlabel('Amplitude scale')
+    ax2.set_ylabel(r'RH(2,9) efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)')
+    ax2.set_title('RSW target-mode efficiency\n(time-averaged $E_{total}$ normalization)', fontsize=10)
 
     fig.tight_layout()
     if path:
