@@ -1,4 +1,18 @@
-"""General "precession frequency vs. driving velocity" figure for any
+"""SUPERSEDED (2026-08-25, PLAN-codebase-reorg-2026-08-25.md Phase 3/6):
+this script's own sweep logic now lives in
+``rsw_sphere.plotting.wave_set_precession.precession_frequency_efficiency``/
+``plot_dual_axis_frequency_efficiency``, driven by ``run_sweep.py`` (repo
+root) reading ``examples/sweep_quartet_a_rh36.yaml``/
+``examples/sweep_quartet_a_rh38.yaml`` (migrated from
+``examples/legacy/precession_sweep_figures.yaml``'s two entries here).
+Verified to reproduce this script's own output pixel-for-pixel before the
+move. Kept here, not deleted, per this repo's own
+``examples/legacy/`` convention (a holding area, pending a later separate
+cleanup pass) -- prefer the new path for anything new.
+
+Original docstring follows.
+
+General "precession frequency vs. driving velocity" figure for any
 registered wave set, config-driven (examples/precession_sweep_figures.yaml)
 rather than one hardcoded script per figure -- e.g. this paper's own
 Quartet A (RH(3,6) swept) and its RH(3,8) variant are two entries in

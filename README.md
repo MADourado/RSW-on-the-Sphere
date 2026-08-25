@@ -47,24 +47,32 @@ plotting/driver infrastructure:
   frequency mismatch, the amplitude equations, their time integration
   (Runge-Kutta), energy/efficiency diagnostics, and analytic-period
   diagnostics (`rsw_sphere/dynamics/`).
-- Two YAML-configured drivers reading the same `configs.yaml`:
-  `run_diagnostics.py` (dispersion relation + per-mode Hough plots, no
-  dynamics) and `run_dynamics.py` (triad amplitude-equation integration).
+- Three YAML-configured root drivers: `run_diagnostics.py` (dispersion
+  relation + per-mode Hough plots, no dynamics) and `run_dynamics.py`
+  (triad/wave-set amplitude-equation integration) read the same
+  `configs.yaml`; `run_sweep.py` (a general parameter-sweep driver over
+  the registered quartet/quintet tools) takes its own `--config` YAML per
+  invocation. `postproc/` holds bespoke, paper-specific figure assembly
+  that reads already-computed outputs rather than running new dynamics.
 
 ## Repository layout
 
 ```
 rsw_sphere/                 # the installable package
     hough_harmonics/        # eigenvalue problem, normal modes, inner products
-    dynamics/                # triad, four-wave and five-wave amplitude dynamics
+    dynamics/                # triad/wave-set amplitude dynamics, trajectory cache
         periods/              # analytic-period / Hamiltonian diagnostics
-    plotting/                # dispersion relation and Hough mode plots
+    plotting/                # dispersion relation, Hough mode and wave-set plots
 docs/                      # thesis PDF, code guide, per-topic documentation
-examples/                  # named configs.yaml variants reproducing thesis figures
-outputs/                   # generated figures (gitignored, reproducible)
+examples/                  # named configs reproducing thesis/paper figures
+    legacy/                  # scripts superseded by a later reorganization, kept for now
+postproc/                  # bespoke, paper-specific figure assembly (reads saved outputs)
+outputs/                   # generated figures + cached trajectories (gitignored, reproducible)
+tests/                     # pytest suite (structural/exact invariants)
 run_diagnostics.py         # dispersion relation + per-mode Hough plots
-run_dynamics.py            # triad amplitude-equation integration
-configs.yaml                # shared config for both drivers above
+run_dynamics.py            # triad/wave-set amplitude-equation integration
+run_sweep.py               # general YAML-configured parameter-sweep driver
+configs.yaml                # shared config for run_diagnostics.py/run_dynamics.py
 pyproject.toml             # pip install -e . / console scripts
 ```
 
@@ -108,12 +116,26 @@ python run_dynamics.py --config configs.yaml
 true`) and each triad mode's Hough harmonic + derivatives (per-mode
 `show_mode: true`). `run_dynamics.py` integrates the triad dynamics (if
 `Dynamics.show_dynamics: true`) and plots the energy exchange time series.
+Both also accept `--wave-set KEY [--specs path.yaml]` to act on a
+registered quartet/quintet instead of `configs.yaml`'s single triad (a
+plain triad is the degenerate 3-modes/1-triad case of a wave set) — see
+`docs/code_guide.md`'s "Entry points" section.
 
 Edit `configs.yaml` to change the equivalent height `h_e`, the three modes
 `(m, n, alpha)` of the triad (with `alpha`: 1 = EIG, 2 = WIG, 3 = RH), their
 initial zonal velocities, and the time-integration parameters. See
 [`examples/`](examples/) for named config variants reproducing specific
 thesis figures/tables.
+
+`run_sweep.py --config path.yaml` is a general driver for parameter sweeps
+over a registered wave set (precession frequency, P-measure, or
+efficiency vs. a swept velocity) — a config file per sweep instead of a
+new script per sweep; see `docs/wave_sets.md` §6.1. Every swept trajectory
+is cached under `outputs/trajectories/`, so re-running the same sweep is
+fast. `postproc/` scripts (e.g. `postproc/precession_quartet_ab_panel.py`)
+assemble bespoke, paper-specific figures from already-computed sweep
+caches, printing the `cp` command into the paper repo's `Figures/` rather
+than performing the copy themselves.
 
 The standalone dispersion-relation figure is documented separately in
 [`docs/dispersion_relation.md`](docs/dispersion_relation.md) (also runnable
@@ -128,9 +150,10 @@ series, efficiency-of-energy-transfer sweeps) are documented in
 `rsw-triad-efficiency`). Their generalization to quartets and quintets
 (coupled multi-triad configurations) is documented in
 [`docs/wave_sets.md`](docs/wave_sets.md) (`rsw-waveset-table` /
-`rsw-waveset` / `rsw-waveset-periods` / `rsw-waveset-pmeasure`) — including
-how to test a new triad/quartet/quintet that isn't in either registry YAML
-at all.
+`rsw-waveset` / `rsw-waveset-periods` / `rsw-waveset-pmeasure` /
+`rsw-waveset-precession`) — including how to test a new
+triad/quartet/quintet that isn't in either registry YAML at all, and how
+`run_sweep.py`/`postproc/` build on top of these.
 
 ## References
 

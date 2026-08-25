@@ -12,16 +12,19 @@ equations** → **energy diagnostics and plots**.
 
 ```
 run_diagnostics.py               driver: dispersion relation + per-mode Hough plots
-run_dynamics.py                  driver: triad amplitude-equation integration
+run_dynamics.py                  driver: triad/wave-set amplitude-equation integration
+run_sweep.py                     driver: YAML-configured parameter sweep + figure
   └─ rsw_sphere/
        ├─ hough_harmonics/       the numerical core (eigenproblem, modes, inner products)
-       ├─ dynamics/              triad / four-wave / five-wave objects + ODE integrator
+       ├─ dynamics/              triad / wave-set objects, ODE integrator, trajectory cache
        │    └─ periods/          analytic-period / Hamiltonian diagnostics
        └─ plotting/              thin orchestration + plotting layer
             ├─ dispersion_relation*.py   build & plot the dispersion diagram
             ├─ hough_and_derivatives.py  build & plot one normal mode + derivatives
             ├─ hough_spatial_ev.py       build & plot one mode's full (λ,φ) pattern
-            └─ dynamic_three_waves.py    set up a triad and run its dynamics
+            ├─ dynamic_three_waves.py    set up a triad and run its dynamics
+            └─ wave_set_*.py             registry-driven quartet/quintet tools (docs/wave_sets.md)
+postproc/                        bespoke, paper-specific figure assembly (reads saved outputs only)
 ```
 
 The package is `pip install -e .`-installable (`pyproject.toml`); `rsw_sphere`
@@ -36,19 +39,44 @@ time units.
 
 ## Entry points
 
-Both scripts below read the same `configs.yaml` (`--config`, default
-`configs.yaml`), each using only the section relevant to it. See
-`examples/` for named config variants reproducing specific thesis figures.
+`run_diagnostics.py`/`run_dynamics.py` read the same `configs.yaml`
+(`--config`, default `configs.yaml`), each using only the section relevant
+to it. See `examples/` for named config variants reproducing specific
+thesis figures. `run_sweep.py` is separate (YAML-per-invocation via
+`--config`, no shared `configs.yaml`).
 
 ### `run_diagnostics.py`
 Loads the config, creates the output directory, then optionally:
 1. plots the dispersion relation (`dispersion_relation: true`);
-2. plots each triad mode's Hough harmonic + derivatives (`show_mode` per mode).
+2. plots each triad mode's Hough harmonic + derivatives (`show_mode` per
+   mode) -- or, with `--wave-set KEY [--specs path.yaml]`, every mode of
+   that registered quartet/quintet (`rsw_sphere.dynamics.wave_set_specs`)
+   instead of `configs.yaml`'s `Triad:` block. A plain triad is the
+   degenerate 3-modes/1-triad case of a wave set (`wave_sets.py`'s own
+   module docstring), so `--wave-set` is a strict addition: without it,
+   the original `configs.yaml`-only path is unchanged.
 
 ### `run_dynamics.py`
 Loads the config, creates the output directory, then (if
 `Dynamics.show_dynamics: true`) integrates the triad dynamics and plots the
-energy exchange.
+energy exchange -- or, with `--wave-set KEY [--specs path.yaml]`, integrates
+that registered quartet/quintet instead
+(`rsw_sphere.plotting.wave_set_dynamics.wave_set_energy_evolution_from_spec`),
+sourcing `tf`/`h` from the wave set's own registry `settings` rather than
+`configs.yaml`'s `Dynamics:` block. Same strict-addition rule as above.
+
+### `run_sweep.py`
+General sweep driver: reads a YAML naming a registered wave set, a
+diagnostic (`precession` / `p_measure` / `efficiency`), and a swept
+parameter/range, then produces a cached `.npz` + figure. Dispatches over
+existing sweep functions (`rsw_sphere.plotting.wave_set_precession`,
+`wave_set_pmeasure`, `triad_efficiency`) rather than reimplementing their
+math -- replaces the need for a new bespoke `examples/*.py` script per
+sweep combination; the config goes in `examples/` instead (e.g.
+`examples/sweep_quartet_a_rh36.yaml`). See `docs/wave_sets.md` §6.1 for
+the full schema and `run_sweep.py`'s own module docstring.
+
+    python run_sweep.py --config examples/sweep_quartet_a_rh36.yaml
 
 ### `configs.yaml`
 All user-facing knobs: output path (`OUTPUT_PATH`, default `outputs/figures`),
@@ -57,6 +85,8 @@ per-mode initial zonal velocity `u` and a `show_mode` flag, and the dynamics
 block (`t0`, `tf` in days, step `h`). Convention: `alpha` = 1 → EIG (eastward
 inertia-gravity), 2 → WIG (westward inertia-gravity), 3 → RH
 (Rossby-Haurwitz). Mode **c** should be the pump mode (`m_c > m_a, m_b`).
+Only consulted when `run_diagnostics.py`/`run_dynamics.py` are run
+*without* `--wave-set`.
 
 ## `rsw_sphere/hough_harmonics/` — the numerical core
 
@@ -137,6 +167,17 @@ permutation (`WaveSet`'s own module docstring;
 [`../docs/wave_sets.md`](../docs/wave_sets.md) for the plotting/registry
 layer built on top and how to test a configuration not yet registered.
 
+### `trajectory_cache.py` — raw trajectory caching
+`run_and_cache(ws, A0, t_f, h, wave_set_key, run_label, output_root="outputs/trajectories")`
+caches a `WaveSet`/`RK33` run's raw `Y(t)` solution itself (not just a
+derived summary) under `outputs/trajectories/<wave_set_key>/` — the one
+piece with no prior analogue in this repo (every other cache here,
+`rsw_sphere.plotting.sweeps`/the `wave_set_*.py` sweep functions' own
+`cache_path`, stores summary arrays only). Used by
+`rsw_sphere.plotting.wave_set_precession`; any new script computing a
+`WaveSet` trajectory that might be revisited should go through this
+rather than calling `RK33` directly. See `docs/wave_sets.md` §6.2.
+
 ### `periods/` — analytic-period diagnostics
 Consumes `dynamic_triads.py`'s `TRIAD` (coupling coefficients, mismatch) to
 compute the resonant-triad energy-exchange period **analytically** (Jacobi
@@ -181,6 +222,15 @@ physical velocities to amplitudes via `norm_component`, constructs a `TRIAD`,
 prints coupling coefficients / frequencies / mismatch / energy-conservation
 constraint, and calls `Triad_dynamics` to integrate and plot.
 
+### `wave_set_*.py` — quartet/quintet registry tools
+`wave_set_table.py`/`wave_set_dynamics.py`/`wave_set_periods.py`/
+`wave_set_pmeasure.py`/`wave_set_precession.py`: the `WaveSet` (above)
+analogue of this section's single-triad tools, each registry-driven
+(`rsw_sphere.dynamics.wave_set_specs`) and each with its own
+`rsw-waveset-*` console script. Fully documented, one section per script,
+in [`../docs/wave_sets.md`](../docs/wave_sets.md) rather than duplicated
+here — that file is the authoritative reference for this battery of tools.
+
 ## Outputs
 
 Figures are written under `OUTPUT_PATH` from the config (default
@@ -192,6 +242,18 @@ the mode so files stay identifiable if moved out of their folder. `outputs/`
 is gitignored and regenerated by running `run_diagnostics.py` /
 `run_dynamics.py`. Standalone dispersion/Hough scripts write wherever their
 `path` argument points.
+
+`outputs/trajectories/<wave_set_key>/<run_label>_<hash8>.npz` holds raw
+cached `WaveSet` trajectories (`rsw_sphere.dynamics.trajectory_cache`,
+above) — separate from `outputs/figures/`, since these are reusable
+intermediate data (any diagnostic can be re-derived from one without
+re-integrating), not figures. Also gitignored.
+
+`examples/legacy/` holds scripts superseded by
+`paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-codebase-reorg-2026-08-25.md`'s
+reorganization (verified to reproduce their own prior output before the
+move) — a holding area pending a later, separate deletion pass, not a
+statement that the code there still reflects current practice.
 
 ## Conventions & gotchas
 

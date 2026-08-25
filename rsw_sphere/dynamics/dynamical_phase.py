@@ -124,6 +124,42 @@ def libration_diagnostics(Phi, T_days):
     }
 
 
+def individual_phase(Y, j):
+    """Raw phase ``phi_j~(t) = arg(Y[:, j](t))`` of ONE mode's own
+    trajectory, unwrapped -- Raphaldini et al. (2022)'s "original phase"
+    (their Fig. 3, Section III.A), NOT the combined-triad ``Phi`` this
+    module's own ``dynamical_phase`` computes.
+
+    Only valid as-is for a raw ``WaveSet``/``RK33`` trajectory: ``Y[:, j]``
+    already has linear rotation NOT removed (this module's own docstring
+    above), which already *is* Raphaldini's lab-frame ``phi_j~`` -- no
+    correction term needed. In the linear (uncoupled) limit this reduces to
+    a straight line of slope ``-omega_j``; nonlinear coupling bends it, and
+    a strong enough bend flips the local slope's sign -- that flip is the
+    reported "reversal."
+
+    A trajectory in the *interaction picture* (e.g.
+    ``examples/reproduce_raphaldini2022_fig2.py``'s barotropic ``A_j(t)``,
+    which is envelope-only) is the opposite convention: there the
+    correction ``phi_j_tilde = np.unwrap(np.angle(A_j)) - omega_j * T``
+    must be added on top of this function's output -- local to whatever
+    script performs that calibration, not part of this function.
+
+    Parameters
+    ----------
+    Y : ndarray, shape (n_times, n_modes), complex
+        Raw trajectory (``RK33``'s own first return value).
+    j : int
+        Mode index.
+
+    Returns
+    -------
+    ndarray, shape (n_times,)
+        Unwrapped raw phase of mode ``j``'s own trajectory.
+    """
+    return np.unwrap(np.angle(Y[:, j]))
+
+
 if __name__ == "__main__":
     from rsw_sphere.physics import gamma_from_he, days_from_nondim_time
     from rsw_sphere.dynamics.integrators import RK33
@@ -154,3 +190,16 @@ if __name__ == "__main__":
     # resonance), so a nonzero precession_freq here is expected -- this
     # self-check exists to confirm the module runs end-to-end, not that
     # this particular triad locks.
+
+    # individual_phase: linear-limit check -- with coupling switched off
+    # (zero amplitude), each mode's own raw phase must be an exact
+    # straight line of slope -omega_j.
+    A0_linear = np.zeros(3, dtype=complex)
+    A0_linear[0] = 1e-6
+    Y_lin, T_lin = RK33(ws, 0, t_f, 0.01, A0_linear)
+    phi0 = individual_phase(Y_lin, 0)
+    slope = np.polyfit(T_lin, phi0, 1)[0]
+    print(f"\nindividual_phase linear-limit check: slope={slope:.6f}, "
+          f"-omega[0]={-ws.omega[0]:.6f}")
+    assert abs(slope - (-ws.omega[0])) < 1e-6, "individual_phase linear-limit check failed"
+    print("individual_phase OK")

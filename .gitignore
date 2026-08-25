@@ -9,8 +9,16 @@ build/
 
 # Generated figures / outputs (regenerate via main.py and the plotting scripts)
 outputs/
-/*.png
+*.png
 *.gif
+*.npy
+examples/*.tex
+
+# Superseded/archived scripts and their outputs -- a holding area, not meant
+# to gain new git history. Files already tracked here from before this rule
+# stay tracked; this only blocks NEW additions (git add refuses an ignored
+# path without -f).
+examples/legacy/
 
 # Claude Code project-local context (not shared repo documentation)
 .claude/

@@ -16,6 +16,9 @@ dependencies = [
     "cartopy",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest"]
+
 [project.scripts]
 rsw-dispersion = "rsw_sphere.plotting.dispersion_relation_fancy:main"
 rsw-hough-mode = "rsw_sphere.plotting.hough_spatial_ev:main"
@@ -26,6 +29,7 @@ rsw-waveset-table = "rsw_sphere.plotting.wave_set_table:main"
 rsw-waveset = "rsw_sphere.plotting.wave_set_dynamics:main"
 rsw-waveset-periods = "rsw_sphere.plotting.wave_set_periods:main"
 rsw-waveset-pmeasure = "rsw_sphere.plotting.wave_set_pmeasure:main"
+rsw-waveset-precession = "rsw_sphere.plotting.wave_set_precession:main"
 
 [tool.setuptools.packages.find]
 include = ["rsw_sphere*"]

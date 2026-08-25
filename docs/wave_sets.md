@@ -1,6 +1,6 @@
 # Quartet/quintet ("wave set") tools
 
-Four scripts in `rsw_sphere/plotting/` compute and visualize coupled
+Five scripts in `rsw_sphere/plotting/` compute and visualize coupled
 multi-triad interactions (quartets, quintets, and — as a degenerate case —
 single triads) — built on `rsw_sphere.dynamics.wave_sets.WaveSet`, a
 generalization of the single-triad `rsw_sphere.dynamics.dynamic_triads.TRIAD`
@@ -16,6 +16,12 @@ reference implementation `WaveSet` is checked against (see §0 below).
 | `rsw_sphere/plotting/wave_set_dynamics.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
 | `rsw_sphere/plotting/wave_set_periods.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
 | `rsw_sphere/plotting/wave_set_pmeasure.py` | P-measure (%): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value or a 2D sweep over two initial velocities |
+| `rsw_sphere/plotting/wave_set_precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity, with every swept trajectory cached (§6) |
+
+`run_sweep.py` (repo root, §6.1) is a thin YAML-driven dispatcher over
+these scripts' own sweep functions — prefer it over calling a
+`wave_set_*.py` script directly when the sweep is a one-off tied to a
+specific figure, so the config (not a new script) is what's committed.
 
 All four load their wave sets from a **registry YAML** rather than
 hardcoding mode numbers — by default
@@ -329,7 +335,81 @@ inhibition" by looking at the rendered PNG.
 
 ---
 
-## 6. `examples/make_section3_figures.py` — paper composite figures
+## 6. `wave_set_precession.py` — precession-frequency + efficiency sweep
+
+Sweeps one mode's driving velocity for a registered wave set, reporting
+every constituent triad's dynamical-phase (`Φ`, `rsw_sphere.dynamics.dynamical_phase`)
+libration statistics, plus (optionally) one target mode's own
+time-averaged-total-energy efficiency and/or one or more modes' own raw
+`individual_phase` slope (Raphaldini et al. 2022's individual-mode
+phase-reversal diagnostic, their Section III.A/Fig. 3). Generalizes what
+were previously two bespoke scripts
+(`examples/quartet_precession_sweep.py`, `examples/legacy/precession_sweep_figure.py`)
+into this repo's own registry-driven `wave_set_<topic>.py` pattern.
+
+Every swept trajectory is cached via
+`rsw_sphere.dynamics.trajectory_cache.run_and_cache` under
+`outputs/trajectories/<wave_set_key>/` (§6.2) — re-running the same sweep
+a second time reads from cache rather than re-integrating. The sweep's own
+summary arrays (frequency/efficiency/individual-phase-slope vs. swept
+velocity) can additionally be cached at the sweep level via
+`precession_frequency_efficiency`'s own `sweep_cache_path` (same
+`cache_path` pattern as `p_measure_sweep`, §5) — this is what
+`run_sweep.py` (§6.1) passes so a re-plot never re-derives the summary
+from 45+ trajectory loads.
+
+```bash
+python rsw_sphere/plotting/wave_set_precession.py outputs/figures/wave_sets/quartet_rh_preference_precession.png --wave-set quartet_rh_preference --sweep-mode d --target c
+```
+
+Console script: `rsw-waveset-precession`. Full flags:
+`rsw-waveset-precession --help`.
+
+Also exposes `plot_phase_trace` — one or more `phi(t)` vs. time traces
+(works for both the combined `Φ` and an individual raw mode phase
+`phi_j~`), for a low-vs-high driving-amplitude comparison (Raphaldini et
+al. 2022's own Fig. 3 layout).
+
+### 6.1. `run_sweep.py` (repo root) — general sweep driver
+
+Reads a YAML naming which registered wave set, which diagnostic
+(`precession` / `p_measure` / `efficiency`), and which parameter(s) to
+sweep, and produces a cached `.npz` + a figure — a dispatcher over the
+sweep functions above (and `rsw_sphere.plotting.triad_efficiency`'s
+`efficiency_sweep`), not a reimplementation of their math. Replaces the
+need for a new bespoke `examples/*.py` script every time someone wants a
+new sweep combination — config files go in `examples/` instead (e.g.
+`examples/sweep_quartet_a_rh36.yaml`, the migrated replacement for
+`examples/legacy/precession_sweep_figure.py`'s own
+`precession_sweep_figures.yaml` entry, verified to reproduce that
+script's output pixel-for-pixel).
+
+```bash
+python run_sweep.py --config examples/sweep_quartet_a_rh36.yaml
+```
+
+See `run_sweep.py`'s own module docstring for the full config schema (it
+differs slightly between the 1D `precession` sweep and the 2D
+`p_measure`/`efficiency` sweeps).
+
+### 6.2. `rsw_sphere/dynamics/trajectory_cache.py` — raw trajectory caching
+
+`run_and_cache(ws, A0, t_f, h, wave_set_key, run_label, output_root="outputs/trajectories")`
+caches the raw `Y(t)` ODE solution itself (not just a derived summary) —
+the one piece with no analogue elsewhere in this repo before this was
+added: every other cache in this codebase (this file's own `p_measure_sweep`/
+`efficiency_sweep`, `rsw_sphere.plotting.sweeps`) stores summary/sweep
+arrays only, so any new diagnostic on an already-run trajectory used to
+mean re-integrating from scratch. Cache path:
+`outputs/trajectories/<wave_set_key>/<run_label>_<hash8>.npz`, hash
+covering everything that changes the numerical result (modes, triads,
+`gamma`, `N`, `deg`, `A0`, `t_f`, `h`). Any script computing a `WaveSet`
+trajectory that might be revisited should go through this rather than
+calling `RK33` directly.
+
+---
+
+## 7. `examples/make_section3_figures.py` — paper composite figures
 
 Builds, per registered wave set: a comparison panel (§3), a period panel
 (§4), and — for the wave sets listed in `PMEASURE_WAVE_SETS` — a P-measure
@@ -353,9 +433,16 @@ python examples/make_section3_figures.py --skip-pmeasure
 
 Full flags: `python examples/make_section3_figures.py --help`.
 
+`postproc/precession_quartet_ab_panel.py` is the analogous bespoke
+assembly step for the Quartet A/B precession-frequency figure
+specifically (JFM-template.tex `fig: precession_frequency`) — unlike this
+script, it reads only already-saved sweep caches (§6/§6.1) and runs no
+new dynamics; see its own module docstring and `docs/code_guide.md`'s
+"Outputs" section for the `postproc/` convention in general.
+
 ---
 
-## 7. References
+## 8. References
 
 See [`triads.md`](triads.md) for the single-triad tools this generalizes,
 [`dispersion_relation.md`](dispersion_relation.md) and the main
@@ -363,4 +450,6 @@ See [`triads.md`](triads.md) for the single-triad tools this generalizes,
 `paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-3.md` for
 the design rationale (the permutation between `TRIAD`'s and `WaveSet`'s
 conventions, the `fat`/gauge argument, why quartets don't conserve
-energy) and what's still open.
+energy) and what's still open. `paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-codebase-reorg-2026-08-25.md`
+documents the design rationale for `run_sweep.py`, trajectory caching,
+and `postproc/`.
