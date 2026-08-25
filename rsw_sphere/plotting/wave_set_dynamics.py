@@ -223,7 +223,7 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
         full_highlight = highlight
 
     apply_house_style()
-    fig, axes = plt.subplots(1, n_triads + 1, figsize=(4.3 * (n_triads + 1), 4.2), sharey=False)
+    fig, axes = plt.subplots(1, n_triads + 1, figsize=(4.3 * (n_triads + 1), 4.2), sharey=True)
 
     results = []
     for i, (i_sum, i_p, i_q) in enumerate(triads):

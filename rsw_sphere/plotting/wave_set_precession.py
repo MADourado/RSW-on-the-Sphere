@@ -10,8 +10,11 @@ plot live together here, not split across ``dynamics``/``plotting``.
 
 Every swept trajectory is cached via
 ``rsw_sphere.dynamics.trajectory_cache.run_and_cache`` under
-``outputs/trajectories/<wave_set_key>/`` -- re-running the same sweep a
-second time is a cache hit per point, not a re-integration.
+``outputs/trajectories/<topology>/`` (``triads``/``quartets``/
+``quintets``, auto-derived from the wave set's own mode count -- see
+that module) -- re-running the same sweep a second time is a cache hit
+per point, not a re-integration, and any other script driving the same
+modes at the same velocities hits the same cache entry too.
 
 Run from the command line (registry-driven CLI, matching the other three
 ``wave_set_*.py`` scripts' own ``--wave-set``/``--specs`` convention):
@@ -170,8 +173,7 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
         v = list(velocities)
         v[sweep_idx] = u
         A0 = ws.amplitudes_from_velocities(v, spec.h_e, g=G)
-        run_label = f"{sweep_mode_key}{u:.2f}_tf{tf_days:.0f}_h{h}"
-        Y, T, _ = run_and_cache(ws, A0, t_f, h, spec.key, run_label, output_root=cache_root)
+        Y, T, _ = run_and_cache(ws, A0, t_f, h, velocities=v, output_root=cache_root)
         T_days = days_from_nondim_time(T)
 
         E2, E3 = ws.energy(Y)

@@ -15,19 +15,21 @@ reference implementation `WaveSet` is checked against (see §0 below).
 | `rsw_sphere/plotting/wave_set_table.py` | Batch table: per-mode frequency/period, one coupling-coefficient column per constituent triad, per-triad mismatch `δ` and pump mode |
 | `rsw_sphere/plotting/wave_set_dynamics.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
 | `rsw_sphere/plotting/wave_set_periods.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
-| `rsw_sphere/plotting/wave_set_pmeasure.py` | P-measure (%): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value or a 2D sweep over two initial velocities |
+| `rsw_sphere/plotting/wave_set_pmeasure.py` | P-measure (%) and filtering error ($\mathcal{F}_2^a$): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value or a 2D sweep over two initial velocities. Both diagnostics share one sweep loop (`wave_set_diagnostics_sweep`) so computing both costs one integration pass, not two |
 | `rsw_sphere/plotting/wave_set_precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity, with every swept trajectory cached (§6) |
 
 `run_sweep.py` (repo root, §6.1) is a thin YAML-driven dispatcher over
 these scripts' own sweep functions — prefer it over calling a
 `wave_set_*.py` script directly when the sweep is a one-off tied to a
 specific figure, so the config (not a new script) is what's committed.
+Its `quartet_diagnostics` diagnostic is the entry point for §5's combined
+P-measure + $\mathcal{F}_2^a$ panel.
 
-All four load their wave sets from a **registry YAML** rather than
+All five load their wave sets from a **registry YAML** rather than
 hardcoding mode numbers — by default
 [`examples/wave_sets_section_3.yaml`](../examples/wave_sets_section_3.yaml),
 via `rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs()`. Pass
-`--specs path/to/other.yaml` to point any of the four scripts at a
+`--specs path/to/other.yaml` to point any of the five scripts at a
 different registry.
 
 **Every function's core signature takes an explicit configuration**
@@ -45,7 +47,7 @@ Output convention: every script defaults to printing/showing (`stdout` or
 tell it to — by convention `outputs/figures/wave_sets/` (gitignored).
 **None of these scripts ever write into the paper repository**; copying a
 finished figure into `paper-nonlinear-interactions-SWE-sphere/Figures/` is
-a separate, manual step (`examples/make_section3_figures.py`, §5, prints
+a separate, manual step (`examples/make_section3_figures.py`, §7, prints
 the exact `cp` commands it needs rather than performing the copy itself).
 
 ---
@@ -278,13 +280,17 @@ registry-independent synthetic self-check instead of the registry CLI.
 
 ---
 
-## 5. `wave_set_pmeasure.py` — P-measure
+## 5. `wave_set_pmeasure.py` — P-measure and filtering error ($\mathcal{F}_2^a$)
 
-The P-measure (paper eq. `Pa`) compares one target mode's kinetic-energy
-variation in the full wave set against its variation in one constituent
-triad alone: `P = 100 * (ΔEK_wave_set - ΔEK_triad) / ΔEK_triad`. Positive
+Two per-target diagnostics live here, both comparing one target mode's
+own trajectory in the full wave set against its trajectory in one
+constituent triad alone (the paper's own $\Delta E^a_{b,c,\ldots}$
+notation, §4.1). The P-measure (paper eq. `Pa`) compares kinetic-energy
+variation: `P = 100 * (ΔEK_wave_set - ΔEK_triad) / ΔEK_triad`. Positive
 means the extra mode(s) enhance that target's energy exchange; negative
-means they inhibit it.
+means they inhibit it. $\mathcal{F}_2^a$ (paper eq. `F2`) instead compares
+amplitude trajectories directly and is unsigned: `F2 = RMS_t(|A_full(t)| -
+|A_triad(t)|) / RMS_t(|A_triad(t)|)`.
 
 ```bash
 # single point (no sweep) -- fast, useful while iterating
@@ -307,8 +313,10 @@ Three things live in the function signature, not a plotting special case
 (the exact way a scalar-only API caused a real bug in the §2.2 tools):
 **per-mode `triad_index`** (different target modes can use different
 denominator triads — the default follows the dissertation's own rule, see
-the module docstring); **`dEK_triad == 0` → `NaN`**, guarded explicitly
-rather than raising; and **row-level denominator caching** in the sweep
+the module docstring); **`dEK_triad < MIN_REFERENCE_DEK` (1e-4) → `NaN`**,
+guarded explicitly rather than raising (paper eq. `Pa`'s own stated rule —
+not just the exact-zero corner, the wider near-zero band where the ratio
+is ill-conditioned); and **row-level denominator caching** in the sweep
 (free speedup whenever a target's own denominator triad doesn't depend on
 one of the two swept modes).
 
@@ -332,6 +340,39 @@ elsewhere in the domain — this exact mistake was made and caught twice in
 one session. **Always check `p_measure_sweep`'s returned array directly** (e.g.
 `(result['P'] < 0).mean()`) rather than answering "does this figure show
 inhibition" by looking at the rendered PNG.
+
+**Computing both diagnostics together: `wave_set_diagnostics_sweep`.**
+Calling `p_measure_sweep` and a separate `F2`-only sweep back to back
+would integrate the same full-wave-set and reference-triad trajectories
+twice for no reason. `wave_set_diagnostics_sweep(..., diagnostics=
+("p_measure", "filtering_error"))` shares **one** grid loop across
+whichever diagnostics are requested — the switch `run_sweep.py`'s own
+`quartet_diagnostics` diagnostic (§6.1) exposes as YAML. `p_measure_sweep`
+itself is kept as its own separate, unchanged function rather than
+replaced, since its `.npz` cache format is pinned to figures already on
+disk (`rsw_sphere.plotting.sweeps`'s own docstring) — `wave_set_diagnostics_sweep`
+is for a new combined-panel use case, not a drop-in replacement.
+
+```bash
+python -c "
+from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
+from rsw_sphere.plotting.wave_set_pmeasure import wave_set_diagnostics_sweep
+spec = load_wave_set_specs()['quartet_gravity_kelvin']
+triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
+result = wave_set_diagnostics_sweep(spec.modes, triads, spec.h_e, (2, 3),
+                                     {0: 30.0, 1: 30.0}, [2, 3], n_grid=5, tf_days=20, h=0.01)
+print(result['P'], result['F2'])
+"
+```
+
+`plot_filtering_error_map`'s colormap is sequential (`viridis`), unlike
+the P-measure's diverging one — $\mathcal{F}_2^a \geq 0$ by construction,
+so there is no zero-crossing to preserve. $\mathcal{F}_{max}^a$ (paper eq.
+`Fmax`, signed, dimensional) is not implemented yet; add it as a new
+entry to `_DIAGNOSTIC_ARRAY_KEYS`/the per-point branch in
+`wave_set_diagnostics_sweep` (both in `wave_set_pmeasure.py`) — it would
+read the same `E_full`/`amp_sub` already computed per grid point, no new
+integration.
 
 ---
 
@@ -373,39 +414,78 @@ al. 2022's own Fig. 3 layout).
 ### 6.1. `run_sweep.py` (repo root) — general sweep driver
 
 Reads a YAML naming which registered wave set, which diagnostic
-(`precession` / `p_measure` / `efficiency`), and which parameter(s) to
-sweep, and produces a cached `.npz` + a figure — a dispatcher over the
-sweep functions above (and `rsw_sphere.plotting.triad_efficiency`'s
-`efficiency_sweep`), not a reimplementation of their math. Replaces the
-need for a new bespoke `examples/*.py` script every time someone wants a
-new sweep combination — config files go in `examples/` instead (e.g.
-`examples/sweep_quartet_a_rh36.yaml`, the migrated replacement for
-`examples/legacy/precession_sweep_figure.py`'s own
-`precession_sweep_figures.yaml` entry, verified to reproduce that
+(`precession` / `p_measure` / `quartet_diagnostics` / `efficiency`), and
+which parameter(s) to sweep, and produces a cached `.npz` + a figure — a
+dispatcher over the sweep functions above (and
+`rsw_sphere.plotting.triad_efficiency`'s `efficiency_sweep`), not a
+reimplementation of their math. Replaces the need for a new bespoke
+`examples/*.py` script every time someone wants a new sweep combination —
+config files go in `examples/` instead (e.g. `examples/sweep_quartet_a_rh36.yaml`,
+the migrated replacement for `examples/legacy/precession_sweep_figure.py`'s
+own `precession_sweep_figures.yaml` entry, verified to reproduce that
 script's output pixel-for-pixel).
 
 ```bash
 python run_sweep.py --config examples/sweep_quartet_a_rh36.yaml
 ```
 
-See `run_sweep.py`'s own module docstring for the full config schema (it
-differs slightly between the 1D `precession` sweep and the 2D
-`p_measure`/`efficiency` sweeps).
+**`diagnostic: quartet_diagnostics`** wraps §5's `wave_set_diagnostics_sweep`:
+one combined draft panel (one row per requested diagnostic, one column
+per target), from `sweep.diagnostics: [p_measure, filtering_error]` (the
+switch — any subset). Swept/target modes default to the wave set's own
+"private" modes (`WaveSetSpec.shared_and_private_modes()`, `rsw_sphere.dynamics.wave_set_specs` —
+a mode common to every constituent triad is "shared" and held fixed at
+its own registered velocity; a mode private to exactly one triad is a
+swept axis and a target column), so an ordinary quartet needs no config
+beyond `wave_set` + `output`:
+
+```yaml
+wave_set: quartet_gravity_kelvin
+diagnostic: quartet_diagnostics
+sweep:
+  diagnostics: [p_measure, filtering_error]   # optional, this is the default
+  n_grid: 10
+output: outputs/figures/wave_sets/quartet_gravity_kelvin_diagnostics.png
+```
+
+```bash
+python run_sweep.py --config examples/sweep_quartet_gravity_kelvin_diagnostics.yaml
+```
+
+Only the 2-private-mode case (an ordinary quartet) is supported without
+an explicit `sweep.swept` — a 3-private-mode quintet would need a 3D
+sweep, not yet implemented. This panel is a draft for analysis, not
+copied into the paper repository (see the module docstring convention
+above). See `run_sweep.py`'s own module docstring for the full config
+schema (it differs slightly between the 1D `precession` sweep and the 2D
+`p_measure`/`quartet_diagnostics`/`efficiency` sweeps).
 
 ### 6.2. `rsw_sphere/dynamics/trajectory_cache.py` — raw trajectory caching
 
-`run_and_cache(ws, A0, t_f, h, wave_set_key, run_label, output_root="outputs/trajectories")`
+`run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajectories", label=None)`
 caches the raw `Y(t)` ODE solution itself (not just a derived summary) —
 the one piece with no analogue elsewhere in this repo before this was
 added: every other cache in this codebase (this file's own `p_measure_sweep`/
 `efficiency_sweep`, `rsw_sphere.plotting.sweeps`) stores summary/sweep
 arrays only, so any new diagnostic on an already-run trajectory used to
 mean re-integrating from scratch. Cache path:
-`outputs/trajectories/<wave_set_key>/<run_label>_<hash8>.npz`, hash
-covering everything that changes the numerical result (modes, triads,
-`gamma`, `N`, `deg`, `A0`, `t_f`, `h`). Any script computing a `WaveSet`
-trajectory that might be revisited should go through this rather than
-calling `RK33` directly.
+`outputs/trajectories/<topology>/<label>_<hash8>.npz`; hash covers
+everything that changes the numerical result (modes, triads, `gamma`,
+`N`, `deg`, `A0`, `t_f`, `h`). `topology` is auto-derived from the wave
+set's own mode count (`triads`/`quartets`/`quintets`/`n<k>modes`,
+`topology_folder(ws.n_modes)`), and `label` defaults to
+`ic_label(ws.modes, velocities)` (every mode's own family/wavenumber +
+initial velocity, canonically sorted) plus `t_f`/`h` — **not** a
+caller-supplied key, so the same physical configuration lands in the
+same cache entry regardless of which script built it (2026-08-25 —
+previously grouped by a caller-chosen `wave_set_key` string, which a
+few scripts had to hand-coordinate a shared tag for just to get this
+same reuse). Pass an explicit `label` instead of `velocities` when a run
+is driven by something other than per-mode velocities (e.g. a single
+overall amplitude scale — see `examples/precession_resonance_phase_diagnostic.py`'s
+own comment on this). Any script computing a `WaveSet` trajectory that
+might be revisited should go through this rather than calling `RK33`
+directly.
 
 ---
 

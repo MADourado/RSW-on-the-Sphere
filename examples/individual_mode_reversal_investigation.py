@@ -103,8 +103,12 @@ def step2_quartet_b_rsw(scales=None, t_f=1500.0):
     for s in scales:
         h = min(0.02, 0.2 / (max(1.0, s) * 6 + 1))
         A0 = s * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
-        run_label = f"scale{s:.6g}_tf{t_f:.0f}_h{h:.5f}"
-        Y, T, _ = run_and_cache(ws, A0, t_f, h, "quartet_b_rsw", run_label)
+        # Explicit scale-based label -- shares a cache namespace (now
+        # rsw_sphere.dynamics.trajectory_cache's own "quartets" topology
+        # folder) with every other scale-driven Quartet B RSW call site
+        # in this repo, see precession_resonance_phase_diagnostic.py's own comment.
+        label = f"scale{s:.6g}_tf{t_f:.0f}_h{h:.5f}"
+        Y, T, _ = run_and_cache(ws, A0, t_f, h, label=label)
         days = days_from_nondim_time(T)
 
         phi3 = individual_phase(Y, 2)

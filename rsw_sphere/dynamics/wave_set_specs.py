@@ -160,6 +160,25 @@ class WaveSetSpec:
         (m_p, n_p, a_p), (m_q, n_q, a_q), (m_s, n_s, a_s) = self.sub_triad_modes(i)
         return (m_p, n_p, a_p, m_q, n_q, a_q, m_s, n_s, a_s)
 
+    def shared_and_private_modes(self):
+        """Mode indices common to every constituent triad ("shared",
+        e.g. a quartet's own edge -- naturally kept fixed) vs. private to
+        exactly one ("private" -- each triad's own member, the natural
+        candidate for a swept axis/diagnostic target), in registration
+        order. Used by ``run_sweep.py``'s ``quartet_diagnostics``
+        diagnostic to auto-derive a sweep's swept/target modes from the
+        registry alone, with no extra per-wave-set config needed.
+
+        Returns
+        -------
+        (list of int, list of int)
+            ``(shared, private)`` mode indices.
+        """
+        triad_sets = [set(self.triad_indices(i)) for i in range(self.n_triads())]
+        shared = set.intersection(*triad_sets) if triad_sets else set()
+        private = sorted(set.union(*triad_sets) - shared) if triad_sets else []
+        return sorted(shared), private
+
 
 def load_wave_set_specs(yaml_path: str = DEFAULT_WAVESETS_PATH) -> dict:
     """Load the §Coupled Triads wave-set registry from a YAML config.

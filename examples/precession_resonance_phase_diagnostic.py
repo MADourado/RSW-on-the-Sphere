@@ -95,7 +95,7 @@ def rsw_phases_and_efficiency(ws, scale, t_f=1500.0, h=None, low_freq_period_cut
     convention, applied here to the standalone (non-registry) Quartet B
     RSW build). The trajectory itself is cached via
     ``rsw_sphere.dynamics.trajectory_cache.run_and_cache`` under
-    ``outputs/trajectories/quartet_b_rsw/`` -- re-running at the same
+    ``outputs/trajectories/quartets/`` -- re-running at the same
     ``(scale, t_f, h)`` is a cache hit.
 
     Parameters
@@ -120,8 +120,14 @@ def rsw_phases_and_efficiency(ws, scale, t_f=1500.0, h=None, low_freq_period_cut
     if h is None:
         h = min(0.02, 0.2 / (max(1.0, scale) * 6 + 1))
     A0 = scale * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
-    run_label = f"scale{scale:.6g}_tf{t_f:.0f}_h{h:.5f}"
-    Y, T, _ = run_and_cache(ws, A0, t_f, h, "quartet_b_rsw", run_label)
+    # No `velocities` here: A0 is driven directly by `scale`, not built via
+    # amplitudes_from_velocities -- an explicit label (same formula as
+    # every other scale-based call site in this repo) keeps this and
+    # individual_mode_reversal_investigation.py/low_frequency_precession_check.py's
+    # step2 sharing one cache namespace, matching a set-driven run's own
+    # natural identifier (scale/tf/h) rather than a per-mode IC label.
+    label = f"scale{scale:.6g}_tf{t_f:.0f}_h{h:.5f}"
+    Y, T, _ = run_and_cache(ws, A0, t_f, h, label=label)
     i_sum1, i_p1, i_q1 = rsw_comp.TRIADS[0]
     i_sum2, i_p2, i_q2 = rsw_comp.TRIADS[1]
     Phi1 = dynamical_phase(Y, T, ws.omega, i_sum1, i_p1, i_q1, ws.delta[0])

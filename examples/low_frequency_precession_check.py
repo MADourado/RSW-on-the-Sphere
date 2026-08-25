@@ -12,16 +12,18 @@ Three checks, reusing already-cached trajectories where available (Phase
 1. Barotropic calibration -- direct reproduction, same scale range as
    ``examples/reproduce_raphaldini2022_fig2.py``.
 2. Quartet B, RSW -- reuses the trajectories cached under
-   ``outputs/trajectories/quartet_b_rsw/`` by
+   ``outputs/trajectories/quartets/`` by
    ``individual_mode_reversal_investigation.step2_quartet_b_rsw`` and
    ``precession_resonance_phase_diagnostic.rsw_phases_and_efficiency``
-   (both use the same cache namespace -- previously two separate ones,
-   see paper-nonlinear-interactions-SWE-sphere's own code review,
-   2026-08-25).
+   (same explicit scale-based label, both share this cache entry).
 3. Quartet A, RSW -- reuses the trajectories cached under
-   ``outputs/trajectories/quartet_rh_preference/`` by
+   ``outputs/trajectories/quartets/`` by
    ``rsw_sphere.plotting.wave_set_precession`` (the confirmed lock at
-   u~83-92).
+   u~83-92) -- automatically, since ``run_and_cache``'s own label is now
+   built from every mode's own initial condition
+   (``rsw_sphere.dynamics.trajectory_cache.ic_label``), not a
+   caller-supplied tag, so any two call sites integrating the same
+   modes at the same velocities land in the same cache entry.
 
 Run:
 
@@ -90,7 +92,7 @@ def step1_barotropic(scales=None):
 
 def step2_quartet_b_rsw(scales=None, t_f=1500.0):
     """Target mode RH4 (RH(2,9), index 3) -- reuses the trajectories
-    already cached under outputs/trajectories/quartet_b_rsw/ by
+    already cached under outputs/trajectories/quartets/ by
     individual_mode_reversal_investigation.step2_quartet_b_rsw (same
     scales/t_f/h -- a cache hit, no new integration).
 
@@ -111,8 +113,9 @@ def step2_quartet_b_rsw(scales=None, t_f=1500.0):
     for s in scales:
         h = min(0.02, 0.2 / (max(1.0, s) * 6 + 1))
         A0 = s * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
-        run_label = f"scale{s:.6g}_tf{t_f:.0f}_h{h:.5f}"
-        Y, T, _ = run_and_cache(ws, A0, t_f, h, "quartet_b_rsw", run_label)
+        # Explicit scale-based label, see precession_resonance_phase_diagnostic.py's comment.
+        label = f"scale{s:.6g}_tf{t_f:.0f}_h{h:.5f}"
+        Y, T, _ = run_and_cache(ws, A0, t_f, h, label=label)
         days = days_from_nondim_time(T)
         E = np.real(Y * np.conj(Y))
         E_total_t = np.sum(E, axis=1)
@@ -125,7 +128,7 @@ def step2_quartet_b_rsw(scales=None, t_f=1500.0):
 
 def step3_quartet_a_rsw(u_values=None, tf_days=150.0):
     """Target mode c (RH(3,4)) -- reuses the trajectories already cached
-    under outputs/trajectories/quartet_rh_preference/ by the run_sweep.py
+    under outputs/trajectories/quartets/ by the run_sweep.py
     verification run (same tf_days/h -- a cache hit for u values already
     swept, e.g. the 45-point examples/sweep_quartet_a_rh36.yaml grid)."""
     if u_values is None:
@@ -151,8 +154,7 @@ def step3_quartet_a_rsw(u_values=None, tf_days=150.0):
         v = list(velocities)
         v[sweep_idx] = u
         A0 = ws.amplitudes_from_velocities(v, spec.h_e, g=G)
-        run_label = f"d{u:.2f}_tf{tf_days:.0f}_h{h}"
-        Y, T, _ = run_and_cache(ws, A0, t_f, h, spec.key, run_label)
+        Y, T, _ = run_and_cache(ws, A0, t_f, h, velocities=v)
         days = days_from_nondim_time(T)
         E_c = np.real(Y[:, target_idx] * np.conj(Y[:, target_idx]))
         E_total = np.real(sum(ws.energy(Y)))
