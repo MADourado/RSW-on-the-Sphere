@@ -24,8 +24,23 @@ run_sweep.py                     driver: YAML-configured parameter sweep + figur
             ├─ hough_spatial_ev.py       build & plot one mode's full (λ,φ) pattern
             ├─ dynamic_three_waves.py    set up a triad and run its dynamics
             └─ wave_set_*.py             registry-driven quartet/quintet tools (docs/wave_sets.md)
-postproc/                        bespoke, paper-specific figure assembly (reads saved outputs only)
 ```
+
+No `postproc/` folder: an earlier reorg plan called for one (bespoke,
+paper-specific figure *assembly*, distinct from the general-analysis
+scripts above), but the one candidate use case (combining Quartet A's and
+Quartet B's own precession-frequency panels into JFM-template.tex's
+`fig: precession_frequency`) turned out not to need it -- that figure is
+two independent PNGs combined by LaTeX `subfigure`, not a Python
+composite, and each source script (`run_sweep.py` + a config, or
+`examples/borrowed_topology_precession_figure.py`) already writes its own
+complete, publication-ready PNG on its own. A `postproc/` wrapper that
+just re-called those same plotting functions added no assembly work,
+only a second code path to keep in sync (2026-08-25 review). Create the
+folder if a figure genuinely needs combining two already-computed,
+independently-generated outputs into one new image neither source script
+can produce alone -- not for "the paper needs this specific PNG," which
+the generating script's own config/title/crop already covers.
 
 The package is `pip install -e .`-installable (`pyproject.toml`); `rsw_sphere`
 resolves from anywhere once installed. Two plotting scripts

@@ -104,7 +104,7 @@ def step2_quartet_b_rsw(scales=None, t_f=1500.0):
         h = min(0.02, 0.2 / (max(1.0, s) * 6 + 1))
         A0 = s * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
         run_label = f"scale{s:.6g}_tf{t_f:.0f}_h{h:.5f}"
-        Y, T, _ = run_and_cache(ws, A0, t_f, h, "quartet_b_rsw_reversal", run_label)
+        Y, T, _ = run_and_cache(ws, A0, t_f, h, "quartet_b_rsw", run_label)
         days = days_from_nondim_time(T)
 
         phi3 = individual_phase(Y, 2)

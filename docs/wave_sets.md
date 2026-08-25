@@ -433,12 +433,14 @@ python examples/make_section3_figures.py --skip-pmeasure
 
 Full flags: `python examples/make_section3_figures.py --help`.
 
-`postproc/precession_quartet_ab_panel.py` is the analogous bespoke
-assembly step for the Quartet A/B precession-frequency figure
-specifically (JFM-template.tex `fig: precession_frequency`) — unlike this
-script, it reads only already-saved sweep caches (§6/§6.1) and runs no
-new dynamics; see its own module docstring and `docs/code_guide.md`'s
-"Outputs" section for the `postproc/` convention in general.
+The Quartet A/B precession-frequency figure (JFM-template.tex
+`fig: precession_frequency`) has no analogous composite script: it is two
+independent PNGs (`run_sweep.py` + `examples/sweep_quartet_a_rh36.yaml`
+for Quartet A, `examples/borrowed_topology_precession_figure.py` for
+Quartet B) combined by LaTeX `subfigure`, not a Python-composited image
+-- each source script already writes its own complete, publication-ready
+PNG, so no separate assembly step exists or is needed (see
+`docs/code_guide.md`'s note on why there is no `postproc/` folder).
 
 ---
 
@@ -451,5 +453,6 @@ See [`triads.md`](triads.md) for the single-triad tools this generalizes,
 the design rationale (the permutation between `TRIAD`'s and `WaveSet`'s
 conventions, the `fat`/gauge argument, why quartets don't conserve
 energy) and what's still open. `paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-codebase-reorg-2026-08-25.md`
-documents the design rationale for `run_sweep.py`, trajectory caching,
-and `postproc/`.
+documents the design rationale for `run_sweep.py` and trajectory caching
+(including why the `postproc/` folder it originally called for was
+dropped after execution -- see `docs/code_guide.md`).

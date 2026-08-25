@@ -52,8 +52,7 @@ plotting/driver infrastructure:
   (triad/wave-set amplitude-equation integration) read the same
   `configs.yaml`; `run_sweep.py` (a general parameter-sweep driver over
   the registered quartet/quintet tools) takes its own `--config` YAML per
-  invocation. `postproc/` holds bespoke, paper-specific figure assembly
-  that reads already-computed outputs rather than running new dynamics.
+  invocation.
 
 ## Repository layout
 
@@ -66,7 +65,6 @@ rsw_sphere/                 # the installable package
 docs/                      # thesis PDF, code guide, per-topic documentation
 examples/                  # named configs reproducing thesis/paper figures
     legacy/                  # scripts superseded by a later reorganization, kept for now
-postproc/                  # bespoke, paper-specific figure assembly (reads saved outputs)
 outputs/                   # generated figures + cached trajectories (gitignored, reproducible)
 tests/                     # pytest suite (structural/exact invariants)
 run_diagnostics.py         # dispersion relation + per-mode Hough plots
@@ -132,10 +130,10 @@ over a registered wave set (precession frequency, P-measure, or
 efficiency vs. a swept velocity) — a config file per sweep instead of a
 new script per sweep; see `docs/wave_sets.md` §6.1. Every swept trajectory
 is cached under `outputs/trajectories/`, so re-running the same sweep is
-fast. `postproc/` scripts (e.g. `postproc/precession_quartet_ab_panel.py`)
-assemble bespoke, paper-specific figures from already-computed sweep
-caches, printing the `cp` command into the paper repo's `Figures/` rather
-than performing the copy themselves.
+fast. It writes its figure to the YAML's own `output:` path under
+`outputs/`; copying a finished PNG into the paper repo's `Figures/` is a
+separate, manual step (as with every other figure-generating script in
+this repository).
 
 The standalone dispersion-relation figure is documented separately in
 [`docs/dispersion_relation.md`](docs/dispersion_relation.md) (also runnable
@@ -153,7 +151,7 @@ series, efficiency-of-energy-transfer sweeps) are documented in
 `rsw-waveset` / `rsw-waveset-periods` / `rsw-waveset-pmeasure` /
 `rsw-waveset-precession`) — including how to test a new
 triad/quartet/quintet that isn't in either registry YAML at all, and how
-`run_sweep.py`/`postproc/` build on top of these.
+`run_sweep.py` builds on top of these.
 
 ## References
 

@@ -37,20 +37,23 @@ from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics, individual_phase
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache
-from rsw_sphere.plotting.style import apply_house_style
+from rsw_sphere.plotting.style import apply_house_style, add_outward_twin_axis
 from rsw_sphere.plotting.labels import _mode_label
+from rsw_sphere.plotting.wave_set_periods import low_frequency_power
 
 
 def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocities=None,
                                      target_mode_key=None, individual_mode_keys=None,
+                                     low_freq_period_cutoff_days=None,
                                      tf_days=None, h=None, N=10, deg=300,
                                      cache_root="outputs/trajectories", sweep_cache_path=None):
     """Sweep one mode's driving velocity for a registered wave set,
     reporting every constituent triad's dynamical-phase libration
     statistics, plus (optionally) one target mode's energy-transfer
-    efficiency and/or one or more modes' own raw ``individual_phase``
-    slope -- all from the SAME cached trajectory per swept point, no
-    extra integration cost between quantities.
+    efficiency, its integrated low-frequency spectral power, and/or one or
+    more modes' own raw ``individual_phase`` slope -- all from the SAME
+    cached trajectory per swept point, no extra integration cost between
+    quantities.
 
     Parameters
     ----------
@@ -72,6 +75,18 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
         al. 2022's raw ``phi_j~``) fitted slope for, at each swept point
         (Phase 5's individual-mode-reversal diagnostic: a sign flip in
         this slope across the sweep is the reported "reversal").
+    low_freq_period_cutoff_days : float or None, optional
+        If given (and ``target_mode_key`` is also given), also report the
+        target mode's own integrated low-frequency spectral power
+        (``rsw_sphere.plotting.wave_set_periods.low_frequency_power``,
+        Raphaldini et al. 2022's eq. 37 diagnostic -- distinct from their
+        Fig. 3 individual-mode-reversal claim above; see
+        ``examples/low_frequency_precession_check.py``), computed on the
+        SAME normalized energy-fraction time series
+        (``E_target(t)/E_total(t)``) used for ``efficiency`` -- raw
+        ``|A|^2`` is NOT used, since it inflates trivially with the
+        overall driving-amplitude scale (see that script's own
+        docstring). ``None`` (default): not computed.
     tf_days, h : float or None, optional
         Integration horizon (days) / RK33 step. Default: ``spec.settings``
         if not given, else ``150.0``/``0.01``.
@@ -85,9 +100,9 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
     dict
         ``u_values``, ``freq_by_triad`` (dict of triad display_label ->
         ndarray, rad/day), ``energy_drift`` (ndarray), ``efficiency``
-        (ndarray or ``None``), ``individual_slope`` (dict of mode_key ->
-        ndarray, or ``None``), ``triad_labels`` (list, in registration
-        order).
+        (ndarray or ``None``), ``low_freq_power`` (ndarray or ``None``),
+        ``individual_slope`` (dict of mode_key -> ndarray, or ``None``),
+        ``triad_labels`` (list, in registration order).
 
     Other Parameters
     ----------------
@@ -98,8 +113,12 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
         even with every trajectory already cached, re-deriving the
         summary arrays from 45+ ``.npz`` loads is real but avoidable
         work. If given and the file exists, loaded directly (trajectories
-        are not touched). If given and missing, computed as usual and
-        then saved there. Same pattern as
+        are not touched) -- a cache written before
+        ``low_freq_period_cutoff_days`` existed simply has no
+        ``low_freq_power`` entry and this function returns ``None`` for
+        it rather than recomputing; delete the cache file to force a
+        fresh computation that includes it. If given and missing,
+        computed as usual and then saved there. Same pattern as
         ``rsw_sphere.plotting.wave_set_pmeasure.p_measure_sweep``'s own
         ``cache_path``. ``None`` (default): never cached at this level.
     """
@@ -115,6 +134,7 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
             'freq_by_triad': freq_by_triad,
             'energy_drift': data['energy_drift'],
             'efficiency': data['efficiency'] if 'efficiency' in data else None,
+            'low_freq_power': data['low_freq_power'] if 'low_freq_power' in data else None,
             'individual_slope': individual_slope,
             'triad_labels': triad_labels,
         }
@@ -142,6 +162,8 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
     freq_by_triad = {lbl: np.empty(n) for lbl in triad_labels}
     energy_drift = np.empty(n)
     efficiency = np.empty(n) if target_idx is not None else None
+    compute_low_freq = target_idx is not None and low_freq_period_cutoff_days is not None
+    low_freq_power = np.empty(n) if compute_low_freq else None
     individual_slope = {mk: np.empty(n) for mk in individual_mode_keys}
 
     for k, u in enumerate(u_values):
@@ -160,6 +182,11 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
             A_sq = np.real(Y[:, target_idx] * np.conj(Y[:, target_idx]))
             efficiency[k] = (A_sq.max() - A_sq.min()) / E_total.mean()
 
+            if compute_low_freq:
+                Q_target = A_sq / E_total
+                low_freq_power[k] = low_frequency_power(
+                    T_days, Q_target, period_cutoff_days=low_freq_period_cutoff_days)
+
         for t_idx, (i_sum, i_p, i_q) in enumerate(triad_indices):
             Phi = dynamical_phase(Y, T, ws.omega, i_sum, i_p, i_q, ws.delta[t_idx])
             freq_by_triad[triad_labels[t_idx]][k] = libration_diagnostics(Phi, T_days)['precession_freq']
@@ -173,6 +200,7 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
         'freq_by_triad': freq_by_triad,
         'energy_drift': energy_drift,
         'efficiency': efficiency,
+        'low_freq_power': low_freq_power,
         'individual_slope': individual_slope if individual_mode_keys else None,
         'triad_labels': triad_labels,
     }
@@ -183,6 +211,8 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
         save_kwargs.update({f'freq_{i}': freq_by_triad[lbl] for i, lbl in enumerate(triad_labels)})
         if efficiency is not None:
             save_kwargs['efficiency'] = efficiency
+        if low_freq_power is not None:
+            save_kwargs['low_freq_power'] = low_freq_power
         if individual_mode_keys:
             save_kwargs['individual_mode_keys'] = np.array(individual_mode_keys)
             save_kwargs.update({f'indiv_{mk}': individual_slope[mk] for mk in individual_mode_keys})
@@ -227,6 +257,7 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
     u_values = result['u_values']
     freq_by_triad = dict(result['freq_by_triad'])
     efficiency = result['efficiency']
+    low_freq_power = result.get('low_freq_power')
     labels = result['triad_labels']
 
     mode_str = {}
@@ -240,6 +271,8 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
         freq_by_triad = {lbl: v[mask] for lbl, v in freq_by_triad.items()}
         if efficiency is not None:
             efficiency = efficiency[mask]
+        if low_freq_power is not None:
+            low_freq_power = low_freq_power[mask]
 
     apply_house_style()
     markers = ['o', 's', '^', 'v']
@@ -256,17 +289,32 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
     ax.tick_params(axis='y', labelcolor='C0')
     ax.set_title(title)
 
+    lines1, labels1 = ax.get_legend_handles_labels()
+    all_lines, all_labels = list(lines1), list(labels1)
+
     if efficiency is not None:
         ax2 = ax.twinx()
         ax2.plot(u_values, 100 * efficiency, 'd-', ms=3, color='C3',
                  label=r'Efficiency $\mathcal{E}_{\mathrm{avg}}$')
         ax2.set_ylabel(r'Efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)', color='C3')
         ax2.tick_params(axis='y', labelcolor='C3')
-        lines1, labels1 = ax.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
-        ax.legend(lines1 + lines2, labels1 + labels2, fontsize=8, loc='best')
-    else:
-        ax.legend(fontsize=8)
+        all_lines += lines2
+        all_labels += labels2
+
+    if low_freq_power is not None:
+        # Only drawn when the caller actually requested this diagnostic
+        # (precession_frequency_efficiency's own low_freq_period_cutoff_days),
+        # so every existing (2-axis) figure this function already produces
+        # is pixel-unchanged.
+        ax3 = add_outward_twin_axis(ax, u_values, low_freq_power, marker_style='^-',
+                                     color='C2', ylabel='Low-freq. power (target mode)',
+                                     label='Low-freq. power')
+        lines3, labels3 = ax3.get_legend_handles_labels()
+        all_lines += lines3
+        all_labels += labels3
+
+    ax.legend(all_lines, all_labels, fontsize=8, loc='best')
 
     fig.tight_layout()
     if path:

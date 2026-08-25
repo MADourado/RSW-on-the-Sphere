@@ -51,6 +51,91 @@ from rsw_sphere.plotting.style import apply_house_style, mode_color
 from rsw_sphere.plotting.labels import _mode_label
 
 
+def _power_spectrum(t_days, E_j, max_period_days: float = None):
+    """Shared FFT prep for ``dominant_periods``/``low_frequency_power``:
+    detrend (subtract the mean), ``rfft``, drop the zero-frequency bin, and
+    exclude periods beyond ``max_period_days`` (default: the record
+    length -- a period longer than what was integrated cannot be
+    trusted).
+
+    Returns
+    -------
+    periods_days, power : ndarray
+        Periods (days, descending... actually ascending frequency order,
+        i.e. descending period) and spectral magnitude ``|rfft|`` at each.
+    """
+    t_days = np.asarray(t_days)
+    E_j = np.asarray(E_j)
+    n = len(t_days)
+    dt = t_days[1] - t_days[0]
+
+    if max_period_days is None:
+        max_period_days = t_days[-1] - t_days[0]
+
+    E_detrended = E_j - E_j.mean()
+    power_full = np.abs(np.fft.rfft(E_detrended))
+    freqs_full = np.fft.rfftfreq(n, d=dt)  # cycles/day
+
+    keep = (freqs_full > 0) & (1.0 / np.maximum(freqs_full, 1e-300) <= max_period_days)
+    freqs = freqs_full[keep]
+    power = power_full[keep]
+    periods_days = 1.0 / freqs
+    return periods_days, power
+
+
+def low_frequency_power(t_days, E_j, period_cutoff_days: float = 10.0, max_period_days: float = None):
+    """Integrated low-frequency spectral power of a kinetic-energy time
+    series -- Raphaldini et al. (2022)'s eq. 37 diagnostic
+    (``P(omega_tilde) = int_0^omega_tilde |A_hat_j(omega)|^2 domega``,
+    restricted there to periods longer than 10 days), used in their own
+    Figs. 2(c)/5(c)/8(c)/11(c) to show that the low-frequency power in a
+    target mode's kinetic energy tracks the precession-resonance
+    efficiency peak -- a claim distinct from (and not implied by) their
+    Fig. 3 individual-mode phase-reversal claim already checked in
+    ``examples/individual_mode_reversal_investigation.py``.
+
+    Same FFT convention as ``dominant_periods`` (kinetic-energy input,
+    mean removed, zero-frequency bin dropped, periods beyond the
+    resolvable horizon excluded) -- built on the same ``_power_spectrum``
+    helper so the two never drift apart.
+
+    Parameters
+    ----------
+    t_days : ndarray, shape (n,)
+        Uniformly-sampled time, in days.
+    E_j : ndarray, shape (n,)
+        Kinetic energy series ``|A_j(t)|^2`` for one mode.
+    period_cutoff_days : float, optional
+        Only periods >= this count as "low frequency" (matching
+        Raphaldini et al.'s own 10-day threshold, their eq. 37 caption).
+        Default ``10.0``.
+    max_period_days : float or None, optional
+        See ``_power_spectrum``. Default: the record length.
+
+    Returns
+    -------
+    float
+        ``sqrt(trapz(power[low-freq band]^2, freqs[low-freq band]))`` --
+        matches the quantity plotted (as ``sqrt(PSD)``) in Raphaldini et
+        al.'s own Figs. 2(c)/5(c)/8(c)/11(c); comparisons across different
+        driving amplitudes/scales within one experiment are meaningful
+        even though the absolute normalization is not calibrated to match
+        their own units exactly (a relative, not absolute, reproduction --
+        same caveat as ``examples/reproduce_raphaldini2022_fig2.py``'s own
+        "scale, not literal alpha" convention).
+    """
+    periods_days, power = _power_spectrum(t_days, E_j, max_period_days)
+    if len(power) == 0:
+        return 0.0
+    low = periods_days >= period_cutoff_days
+    if not np.any(low):
+        return 0.0
+    freqs_low = 1.0 / periods_days[low]
+    order = np.argsort(freqs_low)
+    integral = np.trapz(power[low][order] ** 2, freqs_low[order])
+    return float(np.sqrt(max(integral, 0.0)))
+
+
 def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_frac: float = 0.01):
     """Dominant period(s) of a kinetic-energy time series via FFT.
 
@@ -84,25 +169,9 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
         ``max_period_days``, i.e. likely an artifact of the finite
         integration window rather than a resolved periodicity).
     """
-    t_days = np.asarray(t_days)
-    E_j = np.asarray(E_j)
-    n = len(t_days)
-    dt = t_days[1] - t_days[0]
-
+    periods_days, power = _power_spectrum(t_days, E_j, max_period_days)
     if max_period_days is None:
         max_period_days = t_days[-1] - t_days[0]
-
-    E_detrended = E_j - E_j.mean()
-    power_full = np.abs(np.fft.rfft(E_detrended))
-    freqs_full = np.fft.rfftfreq(n, d=dt)  # cycles/day
-
-    # Drop the zero-frequency bin (mean already removed, but rfftfreq[0]==0
-    # bin can still carry residual power from windowing) and anything whose
-    # period exceeds the resolvable horizon.
-    keep = (freqs_full > 0) & (1.0 / np.maximum(freqs_full, 1e-300) <= max_period_days)
-    freqs = freqs_full[keep]
-    power = power_full[keep]
-    periods_days = 1.0 / freqs
 
     if len(power) == 0:
         return {'period_global': np.nan, 'period_local_max': None,
@@ -265,3 +334,13 @@ if __name__ == "__main__":
     assert r['period_local_max'] is not None and abs(r['period_local_max'] - 12.0) < 1.0, \
         "self-check FAILED: period_local_max"
     print("self-check OK")
+
+    # low_frequency_power: a signal with only long-period content should
+    # score higher than a pure short-period signal of the same amplitude.
+    E_low = (1.0 + 0.02 * np.cos(2 * np.pi * t / 20.0)) ** 2
+    E_high = (1.0 + 0.02 * np.cos(2 * np.pi * t / 2.0)) ** 2
+    p_low = low_frequency_power(t, E_low, period_cutoff_days=10.0)
+    p_high = low_frequency_power(t, E_high, period_cutoff_days=10.0)
+    print(f"\nlow_frequency_power: 20-day signal = {p_low:.4f}, 2-day signal = {p_high:.4f} (expect low >> high)")
+    assert p_low > 10 * p_high, "self-check FAILED: low_frequency_power did not discriminate"
+    print("low_frequency_power self-check OK")

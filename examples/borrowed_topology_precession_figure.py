@@ -46,7 +46,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from rsw_sphere.dynamics.dynamical_phase import libration_diagnostics
-from rsw_sphere.plotting.style import apply_house_style
+from rsw_sphere.plotting.style import apply_house_style, add_outward_twin_axis
 from rsw_sphere.physics import days_from_nondim_time
 
 import precession_resonance_phase_diagnostic as phase_diag
@@ -57,17 +57,32 @@ SCALES_RSW = np.geomspace(3e-3, 0.25, 20)
 
 
 def sweep(cache_path, scales_baro=SCALES_BARO, scales_rsw=SCALES_RSW,
-          t_f_baro=1500.0, t_f_rsw=1500.0):
+          t_f_baro=1500.0, t_f_rsw=1500.0, low_freq_period_cutoff_days=None):
     """Pure compute: run both curves and write them to ``cache_path``
     (.npz). Does no plotting. Re-running with an already-existing
     ``cache_path`` is a no-op -- delete the file first to force a
     recompute (required after this function's own signature change to
-    add ``efficiency_rsw``/``energy_drift_rsw``, since an old cache
-    predating them silently has neither array).
+    add ``efficiency_rsw``/``energy_drift_rsw``/``low_freq_power_rsw``,
+    since an old cache predating one silently lacks it).
+
+    Parameters
+    ----------
+    low_freq_period_cutoff_days : float or None, optional
+        If given, also compute the RSW target mode's integrated
+        low-frequency spectral power (Raphaldini et al. 2022's eq. 37
+        diagnostic -- distinct from their Fig. 3 individual-mode-reversal
+        claim), from the SAME RSW trajectory (see
+        ``precession_resonance_phase_diagnostic.rsw_phases_and_efficiency``'s
+        own ``low_freq_period_cutoff_days``). No barotropic-side
+        equivalent is computed (matching this module's own existing
+        efficiency-panel convention -- see ``plot_sweep``'s docstring).
+        ``None`` (default): not computed, and the cache carries no
+        ``low_freq_power_rsw`` array (unchanged from before this
+        parameter existed).
 
     Returns
     -------
-    scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw : ndarray
+    scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw, low_freq_power_rsw : ndarray
         ``efficiency_rsw``/``energy_drift_rsw`` are the RSW target mode's
         (RH(2,9)) own time-averaged-total-energy efficiency and the
         run's own energy drift (see
@@ -75,12 +90,14 @@ def sweep(cache_path, scales_baro=SCALES_BARO, scales_rsw=SCALES_RSW,
         from the SAME trajectory as ``f_rsw`` -- no extra integration.
         Barotropic energy is quadratic and exactly conserved by
         construction (paper §1), so no analogous drift-corrected
-        efficiency is needed on that side.
+        efficiency is needed on that side. ``low_freq_power_rsw`` is
+        ``None`` unless ``low_freq_period_cutoff_days`` is given.
     """
     if os.path.exists(cache_path):
         d = np.load(cache_path)
         return (d['scales_baro'], d['scales_rsw'], d['f_baro'], d['f_rsw'],
-                d['efficiency_rsw'], d['energy_drift_rsw'])
+                d['efficiency_rsw'], d['energy_drift_rsw'],
+                d['low_freq_power_rsw'] if 'low_freq_power_rsw' in d else None)
 
     f_baro = []
     for s in scales_baro:
@@ -92,18 +109,27 @@ def sweep(cache_path, scales_baro=SCALES_BARO, scales_rsw=SCALES_RSW,
     f_rsw = []
     efficiency_rsw = []
     energy_drift_rsw = []
+    low_freq_power_rsw = [] if low_freq_period_cutoff_days is not None else None
     for s in scales_rsw:
-        Phi1, _, T, eff, drift = phase_diag.rsw_phases_and_efficiency(ws, scale=s, t_f=t_f_rsw)
+        Phi1, _, T, eff, drift, lf = phase_diag.rsw_phases_and_efficiency(
+            ws, scale=s, t_f=t_f_rsw, low_freq_period_cutoff_days=low_freq_period_cutoff_days)
         days = days_from_nondim_time(T)
         f_rsw.append(libration_diagnostics(Phi1, days)['precession_freq'])
         efficiency_rsw.append(eff)
         energy_drift_rsw.append(drift)
+        if low_freq_power_rsw is not None:
+            low_freq_power_rsw.append(lf)
 
     f_baro, f_rsw = np.array(f_baro), np.array(f_rsw)
     efficiency_rsw, energy_drift_rsw = np.array(efficiency_rsw), np.array(energy_drift_rsw)
-    np.savez(cache_path, scales_baro=scales_baro, scales_rsw=scales_rsw, f_baro=f_baro, f_rsw=f_rsw,
-              efficiency_rsw=efficiency_rsw, energy_drift_rsw=energy_drift_rsw)
-    return scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw
+    save_kwargs = dict(scales_baro=scales_baro, scales_rsw=scales_rsw, f_baro=f_baro, f_rsw=f_rsw,
+                        efficiency_rsw=efficiency_rsw, energy_drift_rsw=energy_drift_rsw)
+    if low_freq_power_rsw is not None:
+        low_freq_power_rsw = np.array(low_freq_power_rsw)
+        save_kwargs['low_freq_power_rsw'] = low_freq_power_rsw
+    np.savez(cache_path, **save_kwargs)
+    return (scales_baro, scales_rsw, f_baro, f_rsw, efficiency_rsw, energy_drift_rsw,
+            low_freq_power_rsw)
 
 
 def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
@@ -125,6 +151,7 @@ def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
     d = np.load(cache_path)
     scales_baro, scales_rsw, f_baro, f_rsw = d['scales_baro'], d['scales_rsw'], d['f_baro'], d['f_rsw']
     efficiency_rsw = d['efficiency_rsw']
+    low_freq_power_rsw = d['low_freq_power_rsw'] if 'low_freq_power_rsw' in d else None
 
     if plot_scale_min is not None:
         mask_baro = scales_baro >= plot_scale_min
@@ -132,6 +159,8 @@ def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
         mask_rsw = scales_rsw >= plot_scale_min
         scales_rsw, f_rsw = scales_rsw[mask_rsw], f_rsw[mask_rsw]
         efficiency_rsw = efficiency_rsw[mask_rsw]
+        if low_freq_power_rsw is not None:
+            low_freq_power_rsw = low_freq_power_rsw[mask_rsw]
 
     apply_house_style()
     fig, ax = plt.subplots(figsize=(7, 4.5))
@@ -156,7 +185,22 @@ def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
 
     lines1, labels1 = ax.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
-    ax.legend(lines1 + lines2, labels1 + labels2, fontsize=8, loc='best')
+    all_lines, all_labels = lines1 + lines2, labels1 + labels2
+
+    if low_freq_power_rsw is not None:
+        # Only drawn when the cache actually has this array, so every
+        # existing (2-axis) figure this function already produces is
+        # pixel-unchanged. Deliberately linear scale (add_outward_twin_axis's
+        # own docstring): low_frequency_power can be exactly 0, which a log
+        # axis silently drops.
+        ax3 = add_outward_twin_axis(ax, scales_rsw, low_freq_power_rsw, marker_style='v-',
+                                     color='C2', ylabel='RSW low-freq. power (target mode)',
+                                     label='RSW low-freq. power')
+        lines3, labels3 = ax3.get_legend_handles_labels()
+        all_lines += lines3
+        all_labels += labels3
+
+    ax.legend(all_lines, all_labels, fontsize=8, loc='best')
 
     fig.tight_layout()
     if path:

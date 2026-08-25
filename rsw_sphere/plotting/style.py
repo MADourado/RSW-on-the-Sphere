@@ -64,6 +64,57 @@ def mode_color(m, n, alpha, default=GREY):
     return MODE_COLORS.get((int(m), int(n), int(alpha)), default)
 
 
+def add_outward_twin_axis(ax, x, y, marker_style='v-', color=GREEN, ylabel='', label=None, outward=60):
+    """Add a third y-axis to a figure that already has ``ax`` and one
+    ``ax.twinx()`` -- spine pushed outward so it doesn't overlap the
+    second axis' own ticks/label -- and plot one curve on it.
+
+    Factored out after the identical "third twin axis, spine pushed
+    outward, matching-color label" block was copy-pasted between
+    ``wave_set_precession.plot_dual_axis_frequency_efficiency`` and
+    ``examples/borrowed_topology_precession_figure.py``'s ``plot_sweep``
+    and had already drifted (one copy set a log y-scale, the other
+    didn't) -- see paper-nonlinear-interactions-SWE-sphere's own code
+    review, 2026-08-25.
+
+    **Deliberately always linear scale** -- do not set a log scale on the
+    returned axis for a quantity that can be exactly zero (e.g.
+    ``rsw_sphere.plotting.wave_set_periods.low_frequency_power``, which
+    returns exactly ``0.0`` when there is no low-frequency content):
+    matplotlib silently drops non-positive points on a log axis, which is
+    exactly the bug this refactor fixes.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        The figure's primary axis (already holding one ``twinx()``).
+    x, y : array_like
+        Data to plot on the new axis.
+    marker_style : str, optional
+        Matplotlib format string. Default ``'v-'``.
+    color : str, optional
+        Line/label/tick color. Default ``GREEN``.
+    ylabel : str, optional
+    label : str or None, optional
+        Legend label for this curve.
+    outward : float, optional
+        Spine offset in points. Default ``60``.
+
+    Returns
+    -------
+    matplotlib.axes.Axes
+        The new third axis, already plotted/labeled/styled -- call
+        ``ax3.get_legend_handles_labels()`` to fold its legend entry into
+        the figure's combined legend.
+    """
+    ax3 = ax.twinx()
+    ax3.spines['right'].set_position(('outward', outward))
+    ax3.plot(x, y, marker_style, ms=3, color=color, label=label)
+    ax3.set_ylabel(ylabel, color=color)
+    ax3.tick_params(axis='y', labelcolor=color)
+    return ax3
+
+
 def apply_house_style():
     """Apply the repo's shared figure style (serif 11pt, thin inward ticks).
 
