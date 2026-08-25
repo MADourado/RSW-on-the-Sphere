@@ -53,10 +53,11 @@ def wave_set_properties(spec, N: int = 10, deg: int = 300) -> dict:
     spec : rsw_sphere.dynamics.wave_set_specs.WaveSetSpec
     N, deg : int, optional
         See ``rsw_sphere.dynamics.wave_sets.WaveSet``. Default ``N=10,
-        deg=300`` -- matches §2.2's convention (not the legacy four/five-
-        wave scripts' ``N=30``; see
-        ``paper-nonlinear-interactions-SWE-sphere/.claude/HARVEST-section-3.md``
-        for why ``N=10`` was chosen instead).
+        deg=300`` -- matches §2.2's own convention; the legacy four-wave
+        scripts used ``N=30`` but with no documented convergence check
+        tying the result to that resolution, so ``N=10`` (already
+        established as sufficient at this ``deg`` in §2.2) was kept
+        instead.
 
     Returns
     -------

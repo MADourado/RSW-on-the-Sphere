@@ -323,8 +323,7 @@ ceiling) so a caption can state it rather than clip silently.
 **A negative-P (inhibition) region can be real but too small in magnitude
 to see by eye** against a color scale dominated by saturated color
 elsewhere in the domain — this exact mistake was made and caught twice in
-one session (see `paper-nonlinear-interactions-SWE-sphere/.claude/NUMBERS-CHECK-section-3.md`
-§0). **Always check `p_measure_sweep`'s returned array directly** (e.g.
+one session. **Always check `p_measure_sweep`'s returned array directly** (e.g.
 `(result['P'] < 0).mean()`) rather than answering "does this figure show
 inhibition" by looking at the rendered PNG.
 

@@ -8,9 +8,7 @@ module just loads it into typed, validated objects consumed by
 ``rsw_sphere.plotting.wave_set_*``.
 
 **Modes are listed explicitly** in each YAML entry, not referenced from
-the §2.2 triad registry by role key -- considered and rejected (see
-``paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-3.md``,
-Phase B2): most published quartets' reference triads aren't in the §2.2
+the §2.2 triad registry by role key -- considered and rejected: most published quartets' reference triads aren't in the §2.2
 registry at all, cross-file coupling would let a §2.2 edit silently move
 §3 figures, and explicit listing keeps the ``m_sum = m_p + m_q`` physical
 constraint visible and validatable at load time (done below).

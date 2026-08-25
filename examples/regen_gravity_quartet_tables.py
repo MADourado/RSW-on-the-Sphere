@@ -1,8 +1,6 @@
 """Regenerate Table cap42/cap43 (Quartet C/D coefficient tables,
 JFM-template.tex \\S sec: gravity) in Table cap41's own format --
-Mode/Freq/Period/Coeff.1/Coeff.2/Zonal/A0 -- per
-paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-3.3.md
-Phase 2.
+Mode/Freq/Period/Coeff.1/Coeff.2/Zonal/A0.
 
 `rsw_sphere.plotting.wave_set_table.wave_set_properties` already
 provides frequency/period/per-triad coefficients from the registry

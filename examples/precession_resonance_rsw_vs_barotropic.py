@@ -14,8 +14,7 @@ Same IC recipe and amplitude-scale-sweep methodology as the barotropic
 script (see that module's docstring for why "scale" is used instead of
 the paper's own unrecovered "alpha" units).
 
-Result (2026-08-12, see ``paper-nonlinear-interactions-SWE-sphere/
-.claude/INSPECT-phase-I0-I4-2026-08-12.md`` for the full writeup): the
+Result (2026-08-12): the
 RSW system's linear frequencies for this exact triad already sit close
 to the barotropic values (RSW's RH branch approaches the barotropic
 limit as h_e grows), and running this same sweep here reproduces the

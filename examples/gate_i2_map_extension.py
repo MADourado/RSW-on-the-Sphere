@@ -1,10 +1,7 @@
 """Gate I2 map extension (§Coupled Triads, S2 centerpiece) -- extends the
 2026-08-12 first pass (2 of 26 catalogue candidates: EG(1,1), EG(7,9)
-only) to the FULL Gate I3/I4 catalogue, per
-``paper-nonlinear-interactions-SWE-sphere/.claude/
-INSPECT-phase-I0-I4-2026-08-12.md``'s own "Open items" #3 ("Extend Gate
-I2's map figure to the full I3/I4 catalogue (26 rows, colored by the
-now-derived two-channel law) instead of the original 2-candidate stub").
+only) to the full 26-row Gate I3/I4 catalogue, colored by the
+now-derived two-channel law, instead of the original 2-candidate stub.
 
 Map definition, per ``PLAN-section-3-experiments.md`` Phase I2:
   x-axis: energy partition, fraction of total quadratic energy on the

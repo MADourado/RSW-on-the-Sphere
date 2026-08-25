@@ -4,7 +4,7 @@
 
 **HARD GATE for the §Multiple Triads rebuild**: no wave-set plotting module
 (``rsw_sphere.plotting.wave_set_*``) is written until this script prints
-all-pass. See ``paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-3.md``.
+all-pass.
 
 Checks (see each ``check_c*`` docstring for the precise claim and why it
 matters):

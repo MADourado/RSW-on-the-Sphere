@@ -32,9 +32,7 @@ zero net long-time drift) signals the triad's phase is *locked* by a
 neighbouring triad's coupling; **rotation** (steady secular drift) means
 it is not. This is a more direct, more literature-standard test than
 comparing energy/amplitude-error diagnostics computed over an arbitrary
-fixed time window (see ``paper-nonlinear-interactions-SWE-sphere/
-.claude/INSPECT-phase-I0-I4-2026-08-12.md``, Gate I4c/I4i, for the
-investigation that motivated writing this module -- a windowed RMS
+fixed time window -- a windowed RMS
 amplitude-error metric could not distinguish resonant from
 non-resonant configurations, since it conflates any resonance signal
 with the model's own smooth background scatter and the windows tested

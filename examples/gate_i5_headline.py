@@ -1,6 +1,5 @@
 """Gate I5 (§Coupled Triads, S4) -- the headline number the paper
-currently lacks, per ``paper-nonlinear-interactions-SWE-sphere/.claude/
-PLAN-section-3-experiments.md`` Phase I5: "Filtering the gravity mode
+currently lacks: "Filtering the gravity mode
 from this configuration produces an X% amplitude error and a Y-day
 phase error in the Rossby field after Z days," in physical units.
 
@@ -17,9 +16,8 @@ modes, d=EG(1,1) starting at rest) -- this is exactly Gate I0's own F1
 scenario (drop-mode filtering error, d(0)=0 so "drop vs. drop-and-
 rescale" is moot, per the 2026-08-12 finding).
 
-**Corrected 2026-08-13 (Opus review caught two real problems in the
-first version -- see `.claude/INSPECT-phase-I0-I4-2026-08-12.md`,
-"Gate I5 correction" section, for the full story):**
+**Corrected 2026-08-13 (an independent review caught two real problems
+in the first version):**
 
 1. The Hilbert-transform phase-lag sign was inverted (fixed below --
    negative `phase_lag_days` is now correctly labelled "lag", not

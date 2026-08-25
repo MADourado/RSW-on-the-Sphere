@@ -135,8 +135,7 @@ def velocity_to_amplitude(u_target, u_component, h_e, g=9.8):
     (mode, velocity) pairs matched the published value to ~4-5 significant
     figures only with this factor included, and was consistently exactly
     2x too large without it. All velocity-labeled §2.2 figures/captions
-    were regenerated after this fix (see
-    ``paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-2.2.md``);
+    were regenerated after this fix;
     the underlying mode frequencies, periods, coupling coefficients and
     mismatches are entirely unaffected (they don't depend on amplitude).
 

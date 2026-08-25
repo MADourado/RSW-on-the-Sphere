@@ -12,9 +12,7 @@ truncation -- see the paper's eq. 11/Fjortoft's theorem), a genuinely
 different governing equation from this repository's shallow-water/RSW
 system (cubic energy, not conserved under truncation -- see
 ``rsw_sphere.dynamics.wave_sets``'s own module docstring). Written to
-verify that distinction matters in practice, per
-``paper-nonlinear-interactions-SWE-sphere/.claude/INSPECT-phase-I0-I4-
-2026-08-12.md`` (search 2026-08-12): an extensive same-day search for
+verify that distinction matters in practice: an extensive same-day search for
 precession resonance in the RSW quartet system found no full
 phase-locking, and the open question was whether the barotropic (not
 RSW) setting was where the original mechanism actually lives. This

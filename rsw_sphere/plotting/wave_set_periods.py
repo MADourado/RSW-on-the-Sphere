@@ -3,8 +3,8 @@ kinetic-energy time series -- §3/§4's ``fig: domper``/``fig: power*``
 figures, modernized.
 
 Two differences from the legacy ``four_waves_2.py``/``five_waves.py``
-implementations (both used the same copy-pasted block, reproduced in
-``paper-nonlinear-interactions-SWE-sphere/.claude/HARVEST-section-3.md``):
+implementations (both now deleted, replaced by ``WaveSet`` -- both used
+the same copy-pasted FFT block):
 
 1. **Input is the kinetic-energy series** ``|A_j(t)|^2`` **, not the raw
    complex amplitude.** The paper's own captions describe "the Fourier

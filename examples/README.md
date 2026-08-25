@@ -17,8 +17,8 @@ python run_dynamics.py --config examples/table_2_1_quasi_resonant.yaml
 Each writes its figures under its own `OUTPUT_PATH` (subfolders of
 `outputs/figures/`) so they don't overwrite each other or the default run.
 
-See `docs/code_guide.md` and `.claude/THESIS_FIGURES.md` for the full
-thesis-figure-to-code map these were drawn from.
+See `docs/code_guide.md` for the thesis-figure-to-code map these were
+drawn from.
 
 ## Triad registry
 
@@ -41,8 +41,7 @@ edited entry must pass before any figure is trusted.
 ## Precession resonance (2026-08-12)
 
 Two standalone scripts from the same-day precession-resonance
-investigation (see `paper-nonlinear-interactions-SWE-sphere/.claude/
-INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
+investigation:
 
 - `reproduce_raphaldini2022_fig2.py` — direct, dependency-free
   reproduction of Raphaldini, Peixoto, Teruya, Raupp & Bustamante (2022,
@@ -84,9 +83,7 @@ INSPECT-phase-I0-I4-2026-08-12.md` for the full writeup):
   `WG(5,3)` and the `EG(1,1)`/`WG(1,1)` "fifth test" pair are genuine,
   valid modes and stand independently, but the three-pattern hypothesis
   they were framed against (built on the now-invalid WG(3,1)/WG(4,2)
-  results) needs new framing if revisited. Full correction and what
-  survives: paper repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`,
-  "CORRECTION (2026-08-13, later same day)" section near the top.
+  results) needs new framing if revisited.
 
 ## Gate I2/I5/I6 and the short-gravity/long-Rossby search (2026-08-13)
 
@@ -115,16 +112,13 @@ Continuation of the same-day inspection work above, per
   parabolic interpolation; prominence-filtered peaks) both give <=0.1%.
   The 2026-08-11 request remains unresolved.
 
-See the paper repo's `.claude/INSPECT-phase-I0-I4-2026-08-12.md`,
-"CORRECTION (2026-08-13, later same day)" section, for the full story
-on both retractions above, what independently re-verified as solid
-(the air-density work, the Gate I2 catalogue itself, the two-channel
-law's shape), and the punch list for the next session.
+Both retractions above were part of a same-day review that also
+independently re-verified the air-density work, the Gate I2 catalogue
+itself, and the two-channel law's shape as solid.
 
 ## §3.3 rewrite (2026-08-14)
 
-Executes `paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-section-3.3.md`
-(the §3.3 "Gravity-Rossby quartets" execution plan). Closes the one real
+Executes the §3.3 "Gravity-Rossby quartets" execution plan. Closes the one real
 gap the plan identified — the Gate I4b two-channel law had no saved
 script, only prose — and uses that same integration pass to calibrate
 the Gate I2 map's previously-uncalibrated `d1_proxy`.

@@ -69,9 +69,7 @@ table and figure titles. The four currently registered:
 To add or edit a triad, edit the YAML — no Python changes needed. The
 initial velocities (`u`) in the shipped file are illustrative starting
 points, not yet re-verified against the specific efficiency-maximizing
-values reported in the dissertation for every triad (see
-`paper-nonlinear-interactions-SWE-sphere/.claude/NUMBERS-CHECK-section-2.2.md`
-for what has and hasn't been cross-checked so far). **Velocity ranges**:
+values reported in the dissertation for every triad. **Velocity ranges**:
 Rossby (RH) mode velocities/sweep bounds go up to 100 m/s; gravity (EG/WG)
 mode velocities are capped at 50 m/s (see `triad_efficiency.
 default_velocity_range`) — realistic Kelvin/inertia-gravity wind-anomaly

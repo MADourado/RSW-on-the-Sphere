@@ -3,7 +3,7 @@
 # (~1e-4-1e-5), so run_dynamics.py should show almost no energy exchange
 # between the three modes -- useful as a sanity check that TRIAD's coupling
 # coefficient correctly comes out near-zero for these mode triples.
-# See docs/code_guide.md and .claude/THESIS_FIGURES.md for details.
+# See docs/code_guide.md for details.
 #
 # Initial zonal velocities are placeholders (25 m/s each, not from the
 # thesis table) -- feel free to tune them.

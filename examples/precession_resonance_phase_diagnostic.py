@@ -3,10 +3,7 @@
 efficiency sweeps built earlier (``examples/reproduce_raphaldini2022_fig2.py``
 for the barotropic reproduction, ``examples/precession_resonance_rsw_vs_
 barotropic.py`` for the RSW comparison), at their own respective peak/dip
-scales -- the check flagged as not-yet-done in
-``paper-nonlinear-interactions-SWE-sphere/.claude/
-INSPECT-phase-I0-I4-2026-08-12.md`` ("What reproducing this doesn't yet
-include"). Only the energy-efficiency metric had been checked so far;
+scales. Only the energy-efficiency metric had been checked so far;
 this tests whether the efficiency peak actually corresponds to genuine
 phase-locking (bounded Phi, near-zero precession frequency), mirroring
 the paper's own Fig. 3, rather than just an amplitude bump.

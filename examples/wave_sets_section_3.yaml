@@ -5,10 +5,9 @@
 # WaveSetSpec objects, which feed rsw-waveset-table / rsw-waveset /
 # rsw-waveset-pmeasure / rsw-waveset-periods.
 #
-# See paper-nonlinear-interactions-SWE-sphere/.claude/HARVEST-section-3.md
-# for where each mode set/velocity came from (the six legacy scripts'
-# EXAMPLES blocks and the dissertation's own published tables) and what
-# was NOT trusted from the harvest (the legacy scripts' own A_0 values --
+# Mode sets/velocities below draw on the six (now-deleted) legacy scripts'
+# EXAMPLES blocks and the dissertation's own published tables. NOT trusted
+# from that harvest: the legacy scripts' own A_0 values --
 # not traceable to any specific published figure; and four_waves_79.py's
 # inconsistent h_e). Velocities below are chosen fresh, within the
 # established realistic caps, not copied from either source blindly.

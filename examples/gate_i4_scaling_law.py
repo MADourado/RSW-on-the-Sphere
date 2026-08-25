@@ -1,16 +1,14 @@
 """Gate I4/I4b scaling law (S3, "the mechanism") -- gives the
 2026-08-12 investigation's own two-channel law a reproducible script for
-the first time, per ``paper-nonlinear-interactions-SWE-sphere/.claude/
-PLAN-section-3.3.md`` Phase 0.
+the first time.
 
 Background: the law
 
     F2 ~ sqrt(alpha_2s^2 + alpha_2p^2) * sqrt(x*(1-x)) / delta_2
 
 (derived by two-timescale averaging for a_d(0)!=0, i.e. the gravity mode
-d starts with its OWN share x of the total energy -- see
-``.claude/INSPECT-phase-I0-I4-2026-08-12.md``, "Gate I4, resolved" /
-"Gate I4b" sections) was fit and verified there (R^2=0.982, 156 points)
+d starts with its OWN share x of the total energy) was fit and
+verified previously (R^2=0.982, 156 points)
 but the fit itself was never saved as a script -- only prose. This
 module redoes that fit from scratch, against the paper's own §3.1
 diagnostic $\\mathcal{F}_2$ (eq: F2, relative RMS amplitude error of the

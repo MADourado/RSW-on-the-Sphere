@@ -1,6 +1,6 @@
 # Reproduces thesis Table 2.3 / Fig. 2.7: energy flow from Rossby-Haurwitz
 # to eastward gravity modes, via the Kelvin wave (1,1,EIG).
-# See docs/code_guide.md and .claude/THESIS_FIGURES.md for details.
+# See docs/code_guide.md for details.
 
 OUTPUT_PATH: 'outputs/figures/table_2_3_kelvin_rh_energy_flow'
 
