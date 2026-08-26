@@ -1,7 +1,9 @@
 """Loop a diagnostic over a LIST of wave-set variants (which mode fills
-one slot), orthogonal to run_sweep.py's IC sweep -- generalizes the
-hand-rolled candidate-mode catalogues in examples_legacy/gate_i2_map_extension.py
-and friends. One point per candidate, at the base wave set's own
+one slot), orthogonal to run_sweep.py's IC sweep -- generalizes the kind
+of hand-rolled candidate-mode catalogue enumeration that used to live in
+one-off scripts (e.g. the now-deleted examples_legacy/special_runs/
+gate_i2_map_extension.py's own find_catalogue()). One point per candidate,
+at the base wave set's own
 registered velocities, unless candidate_velocity overrides the
 candidate slot's own velocity (not swept either way).
 

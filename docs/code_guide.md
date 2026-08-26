@@ -133,8 +133,10 @@ reported. One point per candidate (own registered velocities, unless
 `candidate_velocity` overrides the candidate slot's own velocity -- needed
 for `frequency_shift`, which a passively/weakly excited candidate won't
 resolvably shift), parallel across candidates, writes a CSV (`table:`).
-Generalizes the hand-rolled catalogues in
-`examples_legacy/gate_i2_map_extension.py` and similar.
+Generalizes the kind of hand-rolled candidate-mode catalogue enumeration
+that used to live in one-off scripts (e.g. the now-deleted
+`examples_legacy/special_runs/gate_i2_map_extension.py`'s own
+`find_catalogue()`).
 
     python run_sweep_sets.py --config examples/candidates_quartet_rossby_kelvin.yaml
 

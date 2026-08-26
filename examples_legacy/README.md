@@ -84,12 +84,17 @@ fits/R², dual-estimator agreement checks, tf-convergence studies).
 `catalogue_wide_tracking.py` were DELETED** -- the paper sections they
 backed (`JFM-template.tex` §4.3.3-4.3.7, and Appendix C's full
 catalogue table) were removed from the paper per the user's own
-in-source instruction. `gate_i5_headline.py`/`section33_headline_numbers.py`/
-`gate_i4_scaling_law.py` survive (they back §4.3.1/§4.3.2's headline
-numbers and the now-commented-out-but-retained Appendix C, respectively).
-The narrative below is left as a historical record of that
-investigation; git history has the deleted scripts themselves if
-ever needed again.
+in-source instruction. **`gate_i4_scaling_law.py` was ALSO deleted**
+(same day, on review) -- it was first kept on the mistaken assumption
+that Appendix C's own "regenerate" comment (citing it for the raw
+26-row catalogue table) meant the whole script was still needed, but
+the script's actual purpose is fitting/verifying the two-channel
+scaling law itself (`F2 ~ sqrt(alpha_2s^2+alpha_2p^2)*sqrt(x(1-x))/delta_2`)
+-- exactly the deleted §4.3.4 content, not just catalogue-table
+plumbing. `gate_i5_headline.py`/`section33_headline_numbers.py` survive
+(they back §4.3.1/§4.3.2's own headline numbers, both still-live
+sections). The narrative below is left as a historical record of that
+investigation; git history has every deleted script if ever needed again.
 
 Continuation of the same-day inspection work above, per
 `PLAN-section-3-experiments.md` Phases I2/I5/I6:
