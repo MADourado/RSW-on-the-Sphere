@@ -71,7 +71,7 @@ def add_outward_twin_axis(ax, x, y, marker_style='v-', color=GREEN, ylabel='', l
 
     Factored out after the identical "third twin axis, spine pushed
     outward, matching-color label" block was copy-pasted between
-    ``wave_set_precession.plot_dual_axis_frequency_efficiency`` and
+    ``precession_plot.plot_dual_axis_frequency_efficiency`` and
     ``examples/borrowed_topology_precession_figure.py``'s ``plot_sweep``
     and had already drifted (one copy set a log y-scale, the other
     didn't) -- see paper-nonlinear-interactions-SWE-sphere's own code
@@ -113,6 +113,15 @@ def add_outward_twin_axis(ax, x, y, marker_style='v-', color=GREEN, ylabel='', l
     ax3.set_ylabel(ylabel, color=color)
     ax3.tick_params(axis='y', labelcolor=color)
     return ax3
+
+
+def save_or_show(fig, path):
+    """Save fig to path (dpi=200, tight bbox) and close it, or show() if path is None."""
+    if path:
+        fig.savefig(path, dpi=200, bbox_inches='tight')
+        plt.close(fig)
+    else:
+        plt.show()
 
 
 def apply_house_style():

@@ -1,5 +1,14 @@
 # Quartet/quintet ("wave set") tools
 
+**Driver interface note (2026-08-25 refactor):** `run_sweep.py`'s
+diagnostic switch is now `sweep.diagnostics: [...]` (values: `p_measure`,
+`filtering_error`, `frequency_shift`, `efficiency`, `low_frequency_energy`
+for a 2D sweep; `precession` for 1D) -- the `diagnostic: quartet_diagnostics`
+config key mentioned below no longer exists. See `docs/code_guide.md`'s
+"Entry points" and `examples/README.md` for the current driver interface;
+the per-script sections below (§1-§6) still correctly describe the
+underlying compute/plot functions each driver calls.
+
 Five scripts in `rsw_sphere/plotting/` compute and visualize coupled
 multi-triad interactions (quartets, quintets, and — as a degenerate case —
 single triads) — built on `rsw_sphere.dynamics.wave_sets.WaveSet`, a
@@ -13,10 +22,10 @@ reference implementation `WaveSet` is checked against (see §0 below).
 | Script | Shows |
 |--------|-------|
 | `rsw_sphere/plotting/wave_set_table.py` | Batch table: per-mode frequency/period, one coupling-coefficient column per constituent triad, per-triad mismatch `δ` and pump mode |
-| `rsw_sphere/plotting/wave_set_dynamics.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
-| `rsw_sphere/plotting/wave_set_periods.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
-| `rsw_sphere/plotting/wave_set_pmeasure.py` | P-measure (%) and filtering error ($\mathcal{F}_2^a$): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value or a 2D sweep over two initial velocities. Both diagnostics share one sweep loop (`wave_set_diagnostics_sweep`) so computing both costs one integration pass, not two |
-| `rsw_sphere/plotting/wave_set_precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity, with every swept trajectory cached (§6) |
+| `rsw_sphere/plotting/energy_evolution.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
+| `rsw_sphere/plotting/period_panel.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
+| `rsw_sphere/utilities/pmeasure.py` | P-measure (%) and filtering error ($\mathcal{F}_2^a$): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value or a 2D sweep over two initial velocities. Both diagnostics share one sweep loop (`wave_set_diagnostics_sweep`) so computing both costs one integration pass, not two |
+| `rsw_sphere/utilities/precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity, with every swept trajectory cached (§6) |
 
 `run_sweep.py` (repo root, §6.1) is a thin YAML-driven dispatcher over
 these scripts' own sweep functions — prefer it over calling a
@@ -27,8 +36,8 @@ P-measure + $\mathcal{F}_2^a$ panel.
 
 All five load their wave sets from a **registry YAML** rather than
 hardcoding mode numbers — by default
-[`examples/wave_sets_section_3.yaml`](../examples/wave_sets_section_3.yaml),
-via `rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs()`. Pass
+[`wave_sets_default.yaml`](../wave_sets_default.yaml), via
+`rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs()`. Pass
 `--specs path/to/other.yaml` to point any of the five scripts at a
 different registry.
 
@@ -47,7 +56,7 @@ Output convention: every script defaults to printing/showing (`stdout` or
 tell it to — by convention `outputs/figures/wave_sets/` (gitignored).
 **None of these scripts ever write into the paper repository**; copying a
 finished figure into `paper-nonlinear-interactions-SWE-sphere/Figures/` is
-a separate, manual step (`examples/make_section3_figures.py`, §7, prints
+a separate, manual step (`examples_legacy/make_section3_figures.py`, §7, prints
 the exact `cp` commands it needs rather than performing the copy itself).
 
 ---
@@ -125,9 +134,9 @@ wavenumber constraint for you.
 |---|---|
 | `modes` | one entry per Hough mode, each with `m`, `n`, `alpha`, `u` (initial zonal velocity, m/s) |
 | `triads` | list of constituent triads; each names `sum` + `members` by mode letter, plus an optional `display_label` and documentary `triad_key` (pointing at a §2.2 triad registry role-key, if this constituent triad happens to also be independently registered there — not resolved automatically) |
-| `reference_triad` | index into `triads` — the default P-measure denominator for a mode that belongs to it (see `wave_set_pmeasure.py`'s module docstring for the full per-mode rule) |
+| `reference_triad` | index into `triads` — the default P-measure denominator for a mode that belongs to it (see `rsw_sphere/utilities/pmeasure.py`'s module docstring for the full per-mode rule) |
 | `h_e` | equivalent height, m |
-| `settings` | per-wave-set `tf_days`/`h`/`n_grid`, read by `examples/make_section3_figures.py` — the single source of truth for how long/finely to integrate this particular configuration, not a shared default |
+| `settings` | per-wave-set `tf_days`/`h`/`n_grid`, read by `examples_legacy/make_section3_figures.py` — the single source of truth for how long/finely to integrate this particular configuration, not a shared default |
 
 **Velocity caps** (same convention as the §2.2 triad registry): Rossby
 (RH) mode velocities up to 100 m/s, gravity (EG/WG) mode velocities up to
@@ -136,7 +145,7 @@ reused here rather than forked).
 
 ### Adding a new quartet or quintet
 
-1. Add an entry to `examples/wave_sets_section_3.yaml` (or your own YAML —
+1. Add an entry to `wave_sets_default.yaml` (or your own YAML —
    `--specs` works everywhere). No Python changes needed.
 2. Run the physics gate on it (§0) — `python examples/check_wave_set_physics.py --wave-set your_new_key`.
    Fix any hard-check failure before proceeding; read the C6 report even
@@ -148,7 +157,7 @@ reused here rather than forked).
    triad registry; the same risk applies here).
 4. Regenerate its table (§2) and figures (§3-5) in isolation first
    (`--wave-set your_new_key`) before adding it to
-   `examples/make_section3_figures.py`'s `PMEASURE_WAVE_SETS` dict or any
+   `examples_legacy/make_section3_figures.py`'s `PMEASURE_WAVE_SETS` dict or any
    paper composite.
 
 ### Testing a triad, quartet, or quintet that isn't in any registry at all
@@ -207,14 +216,14 @@ Console script: `rsw-waveset-table`. Full flags: `rsw-waveset-table --help`.
 
 ---
 
-## 3. `wave_set_dynamics.py` — energy integration
+## 3. `energy_evolution.py` — energy integration
 
 ```bash
 # one wave set's own energy trajectory
-python rsw_sphere/plotting/wave_set_dynamics.py outputs/figures/wave_sets/quartet_gravity_kelvin_energy.png --wave-set quartet_gravity_kelvin
+python rsw_sphere/plotting/energy_evolution.py outputs/figures/wave_sets/quartet_gravity_kelvin_energy.png --wave-set quartet_gravity_kelvin
 
 # "triad 1 / triad 2 [/ triad 3] / wave set" comparison row
-python rsw_sphere/plotting/wave_set_dynamics.py outputs/figures/wave_sets/quartet_gravity_kelvin_panel.png --wave-set quartet_gravity_kelvin --panel
+python rsw_sphere/plotting/energy_evolution.py outputs/figures/wave_sets/quartet_gravity_kelvin_panel.png --wave-set quartet_gravity_kelvin --panel
 ```
 
 Console script: `rsw-waveset`. `--wave-set` selects a role key from the
@@ -247,10 +256,10 @@ erroring; **extend the dict, don't fork it**.
 
 ---
 
-## 4. `wave_set_periods.py` — dominant-period analysis
+## 4. `period_panel.py` — dominant-period analysis
 
 ```bash
-python rsw_sphere/plotting/wave_set_periods.py outputs/figures/wave_sets/quartet_gravity_kelvin_periods.png --wave-set quartet_gravity_kelvin
+python rsw_sphere/plotting/period_panel.py outputs/figures/wave_sets/quartet_gravity_kelvin_periods.png --wave-set quartet_gravity_kelvin
 ```
 
 Console script: `rsw-waveset-periods`. Same `--wave-set`/`--tf`/`--h`
@@ -280,7 +289,7 @@ registry-independent synthetic self-check instead of the registry CLI.
 
 ---
 
-## 5. `wave_set_pmeasure.py` — P-measure and filtering error ($\mathcal{F}_2^a$)
+## 5. `rsw_sphere/utilities/pmeasure.py` — P-measure and filtering error ($\mathcal{F}_2^a$)
 
 Two per-target diagnostics live here, both comparing one target mode's
 own trajectory in the full wave set against its trajectory in one
@@ -304,7 +313,7 @@ print(p_measure(spec.modes, triads, spec.velocities, h_e=spec.h_e,
 "
 
 # full 2D sweep + plot (expensive -- see the runtime note below)
-python rsw_sphere/plotting/wave_set_pmeasure.py outputs/figures/wave_sets/quartet_gravity_kelvin_pmeasure.png --wave-set quartet_gravity_kelvin --n-grid 10
+python rsw_sphere/utilities/pmeasure.py outputs/figures/wave_sets/quartet_gravity_kelvin_pmeasure.png --wave-set quartet_gravity_kelvin --n-grid 10
 ```
 
 Console script: `rsw-waveset-pmeasure`. Full flags: `rsw-waveset-pmeasure --help`.
@@ -370,13 +379,13 @@ the P-measure's diverging one — $\mathcal{F}_2^a \geq 0$ by construction,
 so there is no zero-crossing to preserve. $\mathcal{F}_{max}^a$ (paper eq.
 `Fmax`, signed, dimensional) is not implemented yet; add it as a new
 entry to `_DIAGNOSTIC_ARRAY_KEYS`/the per-point branch in
-`wave_set_diagnostics_sweep` (both in `wave_set_pmeasure.py`) — it would
+`wave_set_diagnostics_sweep` (both in `rsw_sphere/utilities/pmeasure.py`) — it would
 read the same `E_full`/`amp_sub` already computed per grid point, no new
 integration.
 
 ---
 
-## 6. `wave_set_precession.py` — precession-frequency + efficiency sweep
+## 6. `precession.py` — precession-frequency + efficiency sweep
 
 Sweeps one mode's driving velocity for a registered wave set, reporting
 every constituent triad's dynamical-phase (`Φ`, `rsw_sphere.dynamics.dynamical_phase`)
@@ -400,7 +409,7 @@ velocity) can additionally be cached at the sweep level via
 from 45+ trajectory loads.
 
 ```bash
-python rsw_sphere/plotting/wave_set_precession.py outputs/figures/wave_sets/quartet_rh_preference_precession.png --wave-set quartet_rh_preference --sweep-mode d --target c
+python rsw_sphere/utilities/precession.py outputs/figures/wave_sets/quartet_rh_preference_precession.png --wave-set quartet_rh_preference --sweep-mode d --target c
 ```
 
 Console script: `rsw-waveset-precession`. Full flags:
@@ -484,12 +493,12 @@ same reuse). Pass an explicit `label` instead of `velocities` when a run
 is driven by something other than per-mode velocities (e.g. a single
 overall amplitude scale — see `examples/precession_resonance_phase_diagnostic.py`'s
 own comment on this). Any script computing a `WaveSet` trajectory that
-might be revisited should go through this rather than calling `RK33`
+might be revisited should go through this rather than calling `RK44`
 directly.
 
 ---
 
-## 7. `examples/make_section3_figures.py` — paper composite figures
+## 7. `examples_legacy/make_section3_figures.py` — paper composite figures
 
 Builds, per registered wave set: a comparison panel (§3), a period panel
 (§4), and — for the wave sets listed in `PMEASURE_WAVE_SETS` — a P-measure
@@ -499,19 +508,19 @@ commands rather than copying itself).
 
 ```bash
 # everything, current tuned settings
-python examples/make_section3_figures.py
+python examples_legacy/make_section3_figures.py
 
 # fast/coarse look while iterating
-python examples/make_section3_figures.py --n-grid 5 --tf-scale 0.5
+python examples_legacy/make_section3_figures.py --n-grid 5 --tf-scale 0.5
 
 # just one wave set
-python examples/make_section3_figures.py --wave-set quartet_gravity_kelvin
+python examples_legacy/make_section3_figures.py --wave-set quartet_gravity_kelvin
 
 # skip the (expensive) P-measure sweeps entirely
-python examples/make_section3_figures.py --skip-pmeasure
+python examples_legacy/make_section3_figures.py --skip-pmeasure
 ```
 
-Full flags: `python examples/make_section3_figures.py --help`.
+Full flags: `python examples_legacy/make_section3_figures.py --help`.
 
 The Quartet A/B precession-frequency figure (JFM-template.tex
 `fig: precession_frequency`) has no analogous composite script: it is two

@@ -10,7 +10,7 @@ interactions-SWE-sphere/util/conteudo/Chapter2.tex, eq: ``ham``/``328``).
 For one constituent triad (sum mode s, members p, q; mismatch
 ``delta = -omega_s + omega_p + omega_q``, matching
 ``WaveSet.delta``'s own sign convention), write each mode's *raw*
-simulated amplitude ``A_j(t)`` (as returned directly by ``RK33`` on a
+simulated amplitude ``A_j(t)`` (as returned directly by ``RK44`` on a
 ``WaveSet`` -- linear rotation NOT yet removed) in the interaction
 picture, ``a_j(t) = A_j(t) * exp(i*omega_j*t)``. Substituting into
 ``WaveSet.f``'s equations of motion shows
@@ -39,7 +39,7 @@ with the model's own smooth background scatter and the windows tested
 were too short for a slow near-commensurate beat to develop).
 
 Run as a quick self-check (verifies the derivation against the
-independent ``WaveSet``/``RK33`` machinery on a toy triad):
+independent ``WaveSet``/``RK44`` machinery on a toy triad):
 
     python -m rsw_sphere.dynamics.dynamical_phase
 """
@@ -55,15 +55,15 @@ import numpy as np
 
 def dynamical_phase(Y, T, omega, i_sum, i_p, i_q, delta):
     """Dynamical phase ``Phi(t)`` of one constituent triad, from a
-    ``WaveSet``/``RK33`` trajectory.
+    ``WaveSet``/``RK44`` trajectory.
 
     Parameters
     ----------
     Y : ndarray, shape (n_times, n_modes), complex
-        Raw trajectory as returned by ``RK33(wave_set, ...)`` -- linear
+        Raw trajectory as returned by ``RK44(wave_set, ...)`` -- linear
         rotation NOT removed.
     T : ndarray, shape (n_times,)
-        Nondimensional time points matching ``Y`` (``RK33``'s own
+        Nondimensional time points matching ``Y`` (``RK44``'s own
         second return value).
     omega : ndarray, shape (n_modes,)
         ``WaveSet.omega``.
@@ -130,7 +130,7 @@ def individual_phase(Y, j):
     (their Fig. 3, Section III.A), NOT the combined-triad ``Phi`` this
     module's own ``dynamical_phase`` computes.
 
-    Only valid as-is for a raw ``WaveSet``/``RK33`` trajectory: ``Y[:, j]``
+    Only valid as-is for a raw ``WaveSet``/``RK44`` trajectory: ``Y[:, j]``
     already has linear rotation NOT removed (this module's own docstring
     above), which already *is* Raphaldini's lab-frame ``phi_j~`` -- no
     correction term needed. In the linear (uncoupled) limit this reduces to
@@ -148,7 +148,7 @@ def individual_phase(Y, j):
     Parameters
     ----------
     Y : ndarray, shape (n_times, n_modes), complex
-        Raw trajectory (``RK33``'s own first return value).
+        Raw trajectory (``RK44``'s own first return value).
     j : int
         Mode index.
 
@@ -162,7 +162,7 @@ def individual_phase(Y, j):
 
 if __name__ == "__main__":
     from rsw_sphere.physics import gamma_from_he, days_from_nondim_time
-    from rsw_sphere.dynamics.integrators import RK33
+    from rsw_sphere.dynamics.integrators import RK44
     from rsw_sphere.dynamics.wave_sets import WaveSet
 
     G, H_E = 9.8, 10000.0
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     ws = WaveSet(gamma, modes, [(0, 1, 2)], N=10, deg=300)
     A0 = ws.amplitudes_from_velocities([30.0, 30.0, 30.0], H_E, g=G)
     t_f = 60 * 4 * np.pi
-    Y, T = RK33(ws, 0, t_f, 0.01, A0)
+    Y, T = RK44(ws, 0, t_f, 0.01, A0)
 
     i_sum, i_p, i_q = ws.triads[0]
     Phi = dynamical_phase(Y, T, ws.omega, i_sum, i_p, i_q, ws.delta[0])
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     # straight line of slope -omega_j.
     A0_linear = np.zeros(3, dtype=complex)
     A0_linear[0] = 1e-6
-    Y_lin, T_lin = RK33(ws, 0, t_f, 0.01, A0_linear)
+    Y_lin, T_lin = RK44(ws, 0, t_f, 0.01, A0_linear)
     phi0 = individual_phase(Y_lin, 0)
     slope = np.polyfit(T_lin, phi0, 1)[0]
     print(f"\nindividual_phase linear-limit check: slope={slope:.6f}, "

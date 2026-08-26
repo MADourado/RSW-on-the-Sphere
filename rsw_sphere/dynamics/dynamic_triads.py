@@ -98,9 +98,9 @@ RUNGE KUTTA 33
 '''
 # Moved to rsw_sphere.dynamics.integrators (2026-08-11) so quartet/quintet
 # code (rsw_sphere.dynamics.wave_sets) can reuse it without a fourth copy --
-# RK33 only ever calls Triad.f(state), so it was already arity-agnostic.
+# RK44 only ever calls Triad.f(state), so it was already arity-agnostic.
 # Re-exported here under the same name so no call site anywhere changes.
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44
 
 
 def Energy_0(Triad, A_0):
@@ -117,7 +117,7 @@ def Triad_dynamics(Triad, A_0, t_0, t_f, h, path = None):
     E_02, E_03 = Energy_0(Triad, A_0)
     E_0 = E_02 + E_03
     
-    Y, T = RK33(Triad, t_0, t_f, h, A_0)
+    Y, T = RK44(Triad, t_0, t_f, h, A_0)
     
     Y_a = Y[:,0] # mode a
     Y_b = Y[:,1] # mode b
@@ -168,7 +168,7 @@ def Triad_dynamics(Triad, A_0, t_0, t_f, h, path = None):
 #
 # Triad_Precession is superseded by rsw_sphere.plotting.triad_efficiency
 # (efficiency_sweep + plot_efficiency_map), which splits the same 10x10
-# RK33 sweep computed here from its plotting, adds an .npz cache (this
+# RK44 sweep computed here from its plotting, adds an .npz cache (this
 # sweep is ~1e7 RK steps and must not be re-run just to restyle a figure),
 # and fixes the mis-reported "linha i/20" progress print (10 rows, not 20).
 #
@@ -217,7 +217,7 @@ def Triad_dynamics(Triad, A_0, t_0, t_f, h, path = None):
 #             E_02, E_03 = Energy_0(Triad, A_0)
 #             E_0 = E_02 + E_03
 #
-#             Y, T = RK33(Triad, t_0, t_f, h, A_0)
+#             Y, T = RK44(Triad, t_0, t_f, h, A_0)
 #
 #             Y_a = Y[:,0] # mode a
 #             Y_b = Y[:,1] # mode b

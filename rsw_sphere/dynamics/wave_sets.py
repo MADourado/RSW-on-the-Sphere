@@ -238,7 +238,7 @@ class WaveSet:
         AMP : ndarray, shape (..., n_modes)
             Complex amplitudes. Mode index is the **last** axis; any
             number of leading batch dimensions is supported (e.g. for
-            integrating an entire parameter-sweep grid in one ``RK33``
+            integrating an entire parameter-sweep grid in one ``RK44``
             call) -- every operation below is elementwise/broadcasting
             over those leading axes.
 

@@ -48,7 +48,7 @@ from rsw_sphere.dynamics.integrators import RK33
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache
 from rsw_sphere.physics import days_from_nondim_time
-from rsw_sphere.plotting.wave_set_periods import low_frequency_power
+from rsw_sphere.utilities.periods import low_frequency_power
 
 import reproduce_raphaldini2022_fig2 as baro
 import precession_resonance_rsw_vs_barotropic as rsw_comp

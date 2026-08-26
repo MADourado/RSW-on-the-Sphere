@@ -1,7 +1,7 @@
 import scipy
 import numpy as np
 import matplotlib.pyplot as plt
-from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33
+from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK44
 from rsw_sphere.hough_harmonics.normalization import norm_component
 from rsw_sphere.dynamics.dynamic_triads import Energy_0
 
@@ -161,7 +161,7 @@ def Triad_dynamics_T(Triad, A_0, t_0, t_f, h):
     E_02, E_03 = Energy_0(Triad, A_0)
     E_0 = E_02 + E_03
     
-    Y, T = RK33(Triad, t_0, t_f, h, A_0)
+    Y, T = RK44(Triad, t_0, t_f, h, A_0)
     
     Y_a = Y[:,0] # mode a
     Y_b = Y[:,1] # mode b

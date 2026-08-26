@@ -2,7 +2,7 @@
 "Resonant Triads").
 
 Integrates the three-wave amplitude equations (``TRIAD.f`` /
-``RK33``, ``rsw_sphere.dynamics.dynamic_triads``) forward in time from
+``RK44``, ``rsw_sphere.dynamics.dynamic_triads``) forward in time from
 given initial zonal velocities and plots the normalized kinetic energy of
 each mode plus the (conserved) total energy.
 
@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 
 from rsw_sphere.physics import gamma_from_he
 from rsw_sphere.hough_harmonics.normalization import velocity_to_amplitude
-from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33, Energy_0
+from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK44, Energy_0
 from rsw_sphere.plotting.style import mode_color, TOTAL_ENERGY_COLOR
 from rsw_sphere.plotting.labels import _mode_label
 
@@ -74,7 +74,7 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
         ``rsw_sphere.dynamics.dynamic_triads.Triad_dynamics`` and
         ``run_dynamics.py``). Default ``10``.
     h : float, optional
-        RK33 step size (nondimensional time). Default ``0.001``.
+        RK44 step size (nondimensional time). Default ``0.001``.
     target : int or None, optional
         Index (0/1/2, i.e. a/b/c) of the target mode -- the one whose
         efficiency is the point of the figure. If given, its curve is
@@ -120,7 +120,7 @@ def triad_energy_evolution(modes, velocities, h_e: float = 10000,
     E_02, E_03 = Energy_0(Triad, A_0)
     E_0 = E_02 + E_03
 
-    Y, T = RK33(Triad, t0, t_f, h, A_0)
+    Y, T = RK44(Triad, t0, t_f, h, A_0)
     Y_a, Y_b, Y_c = Y[:, 0], Y[:, 1], Y[:, 2]
 
     Z = np.array([Y_a, Y_b, Y_c])
@@ -206,7 +206,7 @@ def main():
         help="final integration time, in days (default: 10).")
     parser.add_argument(
         "--h", type=float, default=0.001,
-        help="RK33 step size, nondimensional time (default: 0.001).")
+        help="RK44 step size, nondimensional time (default: 0.001).")
     args = parser.parse_args()
 
     specs = load_triad_specs(args.specs)

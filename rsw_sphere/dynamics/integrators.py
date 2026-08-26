@@ -1,7 +1,7 @@
 """Shared time integrator for amplitude-equation systems (triads, quartets,
 quintets, ...).
 
-``RK33`` was previously copy-pasted, byte-identical apart from the parameter
+``RK44`` was previously copy-pasted, byte-identical apart from the parameter
 name, into ``dynamic_triads.py`` and all six legacy four/five-wave scripts.
 It only ever calls ``X.f(state)``, so it is arity-agnostic: any object with
 an ``f(AMP) -> dAMP/dt`` method works, whether ``AMP`` has 3, 4 or 5
@@ -14,8 +14,8 @@ Run as a quick sanity check:
 import numpy as np
 
 
-def RK33(system, t_0, t_f, h, A_0):
-    """Fixed-step, 3-stage (4th-order-accurate) Runge-Kutta integration.
+def RK44(system, t_0, t_f, h, A_0):
+    """Fixed-step, classical 4-stage, 4th-order-accurate Runge-Kutta integration.
 
     Parameters
     ----------
@@ -41,7 +41,7 @@ def RK33(system, t_0, t_f, h, A_0):
     --------
     >>> class Decay:
     ...     def f(self, A): return -A
-    >>> Y, T = RK33(Decay(), 0, 1, 0.1, np.array([1.0]))
+    >>> Y, T = RK44(Decay(), 0, 1, 0.1, np.array([1.0]))
     >>> round(float(Y[-1][0]), 4)
     0.3679
     """
@@ -70,4 +70,4 @@ if __name__ == "__main__":
     import doctest
     failures, _ = doctest.testmod()
     if failures == 0:
-        print("RK33 doctest OK")
+        print("RK44 doctest OK")

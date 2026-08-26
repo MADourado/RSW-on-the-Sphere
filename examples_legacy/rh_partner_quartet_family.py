@@ -6,29 +6,21 @@ builds the genuine four-wave quartet RH(4,5)+RH(1,2)+RH(3,4)+RH(3,n)
 swept as the second private member) and reports the P-measure (paper eq.
 Pa) for target RH(3,n): how much the presence of the competing RH(3,4)
 partner enhances or inhibits RH(3,n)'s own energy capture, relative to
-RH(3,n) captured in isolation (rsw_sphere.plotting.wave_set_pmeasure).
+RH(3,n) captured in isolation (rsw_sphere.utilities.pmeasure).
 
 n=4 is excluded from the sweep (it IS the fixed partner, not a target).
 
 Each (n, run) is fully independent -- built and integrated as its own
 process via concurrent.futures.ProcessPoolExecutor, one worker per n.
 
-P-measure is ill-conditioned whenever the isolated-triad ΔEK denominator
-is itself ~0 (see wave_set_pmeasure.py's own docstring on this): n=14, 16
-were confirmed (rh_partner_family.py's own family, cross-checked bit-for-bit
-flat from t_f=30d to t_f=12000d, a 400x span -- see
-examples/rh_partner_family_long_tf_check.py) to have genuinely negligible
-isolated-triad efficiency, not an under-integration artifact. This function
-does NOT itself guard against the resulting
-blow-up: p_measure()'s own NaN guard only fires on an EXACTLY zero
-denominator (wave_set_pmeasure.py:165), and dEK_triad here is tiny but
-strictly positive, so n=14/16 return large-but-finite, reproducible
-percentages (P~20630% at n=14, ~2601% at n=16 at the settings below) --
-not NaN. Excluding them from the paper's own table is an editorial
-judgement made in the LaTeX text (the ratio is numerically well-defined
-but not physically informative once both numerator and denominator are
-noise-floor-scale), not something this script or p_measure() detects or
-suppresses automatically.
+P-measure is ill-conditioned whenever the isolated-triad dEK denominator
+is near-zero -- n=14, 16 were confirmed (rh_partner_family.py's own
+family, cross-checked bit-for-bit flat from t_f=30d to t_f=12000d, a 400x
+span -- see examples/rh_partner_family_long_tf_check.py) to have
+genuinely negligible isolated-triad efficiency, not an under-integration
+artifact. p_measure()'s own MIN_REFERENCE_DEK gate (rsw_sphere.utilities.pmeasure)
+now returns NaN for these -- re-verify this script's own n=14/16 numbers
+against that gate before quoting them.
 
 Run:
 
@@ -49,7 +41,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import numpy as np
 
 from rsw_sphere.physics import gamma_from_he, G
-from rsw_sphere.plotting.wave_set_pmeasure import p_measure
+from rsw_sphere.utilities.pmeasure import p_measure
 
 #: Driving pair, shared across every quartet (matches Table cap41 / rhfamily).
 MODE_A = (4, 5, 3)   # RH(4,5), sum mode of both constituent triads

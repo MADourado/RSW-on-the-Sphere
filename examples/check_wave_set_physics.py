@@ -21,7 +21,7 @@ matters):
         (advisory -- flags loudly, does not hard-fail)
     C7  reproduce the dissertation's hand-typed quartet tables, flag
         discrepancies to NUMBERS-CHECK-section-3.md (advisory)
-    C8  batched WaveSet.f/RK33 == looped scalar calls
+    C8  batched WaveSet.f/RK44 == looped scalar calls
 
 Every check is a standalone function taking explicit ``(modes, triads,
 gamma, N, deg, ...)`` -- never only a registry key -- so it can be run on
@@ -59,7 +59,7 @@ import numpy as np
 
 from rsw_sphere.physics import gamma_from_he
 from rsw_sphere.dynamics.dynamic_triads import TRIAD
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 
 H_E = 10000.0
@@ -182,7 +182,7 @@ def check_c2(case, gamma, N, deg, rtol=1e-12):
 
 def check_c3(case, gamma, N, deg, t_f=20.0, h=0.01, rtol=1e-10):
     """For a 1-triad ``WaveSet``, the full trajectory (all time points)
-    equals ``RK33(TRIAD, ...)`` from the same initial amplitudes. This is
+    equals ``RK44(TRIAD, ...)`` from the same initial amplitudes. This is
     the end-to-end proof that a wave set's numerator and a TRIAD's
     denominator (as used by the P-measure, Phase C) share a convention --
     C1 alone only proves the coefficients agree at t=0.
@@ -195,8 +195,8 @@ def check_c3(case, gamma, N, deg, t_f=20.0, h=0.01, rtol=1e-10):
     i_p, i_q, i_sum = ws.sub_triad_local_indices(0)
     A0_ws = np.empty(3, dtype=complex)
     A0_ws[i_p], A0_ws[i_q], A0_ws[i_sum] = A0_local
-    Y_ws, T_ws = RK33(ws, 0, t_f, h, A0_ws)
-    Y_T, T_T = RK33(T, 0, t_f, h, A0_local)
+    Y_ws, T_ws = RK44(ws, 0, t_f, h, A0_ws)
+    Y_T, T_T = RK44(T, 0, t_f, h, A0_local)
     Y_ws_reordered = np.stack([Y_ws[:, i_p], Y_ws[:, i_q], Y_ws[:, i_sum]], axis=-1)
     if not np.allclose(Y_ws_reordered, Y_T, rtol=rtol, atol=1e-12):
         max_diff = np.max(np.abs(Y_ws_reordered - Y_T))
@@ -260,8 +260,8 @@ def check_c4(case, gamma, N, deg, t_f=20.0, h=0.01, rtol=1e-10):
     A0_sym = _synthetic_amplitudes(ws_sym.n_modes, seed=2)
     A0_off = s * A0_sym
 
-    Y_sym, _ = RK33(ws_sym, 0, t_f, h, A0_sym)
-    Y_off, _ = RK33(ws_off, 0, t_f, h, A0_off)
+    Y_sym, _ = RK44(ws_sym, 0, t_f, h, A0_sym)
+    Y_off, _ = RK44(ws_off, 0, t_f, h, A0_off)
 
     Y_off_ungauged = Y_off / s  # should reproduce Y_sym exactly if the gauge is correct
     if not np.allclose(Y_off_ungauged, Y_sym, rtol=rtol, atol=1e-12):
@@ -304,7 +304,7 @@ def check_c6(case, gamma, N, deg, t_f=40.0, h=0.01):
     """
     ws = _build(case, gamma, N, deg)
     A0 = _synthetic_amplitudes(ws.n_modes, seed=3)
-    Y, T = RK33(ws, 0, t_f, h, A0)
+    Y, T = RK44(ws, 0, t_f, h, A0)
     E2, E3 = ws.energy(Y)
     E_T = E2 + E3
     drift = np.max(np.abs(E_T - E_T[0])) / np.abs(E_T[0])
@@ -350,13 +350,13 @@ def check_c8(case, gamma, N, deg, rtol=1e-12):
         max_diff = np.max(np.abs(f_batched - f_looped))
         return False, f"batched vs looped f() differ, max abs diff = {max_diff:.3e}"
 
-    # Also check a short batched RK33 integration matches per-row scalar runs.
-    Y_batched, _ = RK33(ws, 0, 2.0, 0.01, batch)
-    Y_looped = np.stack([RK33(ws, 0, 2.0, 0.01, batch[k])[0] for k in range(batch.shape[0])], axis=1)
+    # Also check a short batched RK44 integration matches per-row scalar runs.
+    Y_batched, _ = RK44(ws, 0, 2.0, 0.01, batch)
+    Y_looped = np.stack([RK44(ws, 0, 2.0, 0.01, batch[k])[0] for k in range(batch.shape[0])], axis=1)
     if not np.allclose(Y_batched, Y_looped, rtol=rtol, atol=1e-12):
         max_diff = np.max(np.abs(Y_batched - Y_looped))
-        return False, f"batched vs looped RK33 differ, max abs diff = {max_diff:.3e}"
-    return True, "OK (batched f() and RK33 match looped scalar calls exactly)"
+        return False, f"batched vs looped RK44 differ, max abs diff = {max_diff:.3e}"
+    return True, "OK (batched f() and RK44 match looped scalar calls exactly)"
 
 
 CHECKS = {
@@ -367,7 +367,7 @@ CHECKS = {
     "C5": ("per-triad energy-conservation residual", check_c5, True),
     "C6": ("energy-drift validity (advisory)", check_c6, False),
     "C7": ("reproduce published tables (advisory)", lambda *a, **k: check_c7(), False),
-    "C8": ("batched vs scalar f()/RK33", check_c8, True),
+    "C8": ("batched vs scalar f()/RK44", check_c8, True),
 }
 
 

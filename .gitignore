@@ -9,6 +9,9 @@ build/
 
 # Generated figures / outputs (regenerate via main.py and the plotting scripts)
 outputs/
+# Pre-driver-refactor backup of outputs/ (see .claude/PLAN-driver-refactor-2026-08-25.md
+# Phase 0) -- temporary, removable once Phase B+C's regression diffs pass.
+outputs_legacy/
 *.png
 *.gif
 *.npy

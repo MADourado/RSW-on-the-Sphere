@@ -98,7 +98,7 @@ def air_density_from_equivalent_depth(h_e: float, g: float = G, p_s: float = P_S
 def days_from_nondim_time(t):
     """Convert nondimensional triad-dynamics time to days.
 
-    The triad ODEs (``TRIAD.f`` / ``RK33`` in
+    The triad ODEs (``TRIAD.f`` / ``RK44`` in
     ``rsw_sphere.dynamics.dynamic_triads``) are integrated in units of
     ``1/(2*Omega)``; this is the convention already used in
     ``Triad_dynamics`` (``t = np.linspace(0, t_f/(4*np.pi), len(T))``).

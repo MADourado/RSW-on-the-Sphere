@@ -18,7 +18,7 @@ Three checks, reusing already-cached trajectories where available (Phase
    (same explicit scale-based label, both share this cache entry).
 3. Quartet A, RSW -- reuses the trajectories cached under
    ``outputs/trajectories/quartets/`` by
-   ``rsw_sphere.plotting.wave_set_precession`` (the confirmed lock at
+   ``rsw_sphere.utilities.precession`` (the confirmed lock at
    u~83-92) -- automatically, since ``run_and_cache``'s own label is now
    built from every mode's own initial condition
    (``rsw_sphere.dynamics.trajectory_cache.ic_label``), not a
@@ -42,7 +42,7 @@ if _REPO not in sys.path:
 import numpy as np
 
 from rsw_sphere.physics import days_from_nondim_time
-from rsw_sphere.plotting.wave_set_periods import low_frequency_power
+from rsw_sphere.utilities.periods import low_frequency_power
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
 

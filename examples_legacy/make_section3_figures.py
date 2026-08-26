@@ -33,7 +33,7 @@ CALIBRATION NOTES
 - P-measure sweeps are expensive: a single (swept-axis-1, swept-axis-2)
   sweep costs roughly `n_grid^2` full-wave-set integrations plus, for each
   target mode, up to `n_grid^2` (or `n_grid`, once row-caching applies --
-  see `wave_set_pmeasure.p_measure_sweep`'s docstring) sub-triad
+  see `pmeasure.p_measure_sweep`'s docstring) sub-triad
   integrations. At the dissertation's own 50x50 resolution this is tens of
   minutes per wave set even before accounting for `WaveSet` vs. `TRIAD`'s
   relative cost. **Default `n_grid` here is deliberately coarse (8)** --
@@ -57,9 +57,10 @@ import matplotlib.pyplot as plt
 
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
 from rsw_sphere.plotting.style import apply_house_style
-from rsw_sphere.plotting.wave_set_dynamics import wave_set_comparison_panel_from_spec
-from rsw_sphere.plotting.wave_set_periods import wave_set_period_panel
-from rsw_sphere.plotting.wave_set_pmeasure import p_measure_sweep, plot_p_measure_map
+from rsw_sphere.plotting.energy_evolution import wave_set_comparison_panel_from_spec
+from rsw_sphere.plotting.period_panel import wave_set_period_panel
+from rsw_sphere.utilities.pmeasure import p_measure_sweep
+from rsw_sphere.plotting.pmeasure_map import plot_p_measure_map
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.plotting.sweeps import wave_set_cache_key_hash
 
@@ -150,7 +151,7 @@ def make_comparison_and_period_panels(key, spec, settings, clear_cache=False):
     print(f"  [{key}] period panel -> {period_path}")
     apply_house_style()
     fig, ax = plt.subplots(figsize=(6.5, 4.5))
-    period_results = wave_set_period_panel(
+    _, _, period_results = wave_set_period_panel(
         r_full['t'], r_full['E'], r_full['labels'], list(spec.modes), ax=ax)
     ax.set_title(spec.display_label)
     fig.savefig(period_path, dpi=200, bbox_inches='tight')
@@ -207,7 +208,7 @@ def make_pmeasure_panel(key, spec, settings, pconfig, clear_cache=False):
     if len(target_indices) == 1:
         axes = [axes]
     for k, ax in enumerate(axes):
-        cs, n_clipped = plot_p_measure_map(
+        _, _, cs, n_clipped = plot_p_measure_map(
             result['U1'], result['U2'], result['P'][..., k],
             xlabel=f'{label1} - zonal velocity (m/s)',
             ylabel=f'{label2} - zonal velocity (m/s)',

@@ -1,0 +1,14 @@
+# Config for run_sweep.py. Quartet C's draft analysis panel. Swept axes
+# default to registered ranges for c=RH(1,2)/d=EG(1,1); shared modes
+# a=RH(4,5)/b=RH(3,4) stay fixed at their own registered 30 m/s.
+wave_set: quartet_gravity_kelvin
+specs_path: wave_sets_default.yaml
+sweep:
+  axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
+  n_grid: 10
+  diagnostics: [p_measure, filtering_error]
+tf_days: 20
+h: 0.01
+plot:
+  title: "Quartet C -- draft analysis panel"
+output: outputs/figures/wave_sets/quartet_gravity_kelvin_diagnostics.png

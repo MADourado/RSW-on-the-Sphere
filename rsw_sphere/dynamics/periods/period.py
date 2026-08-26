@@ -1,7 +1,7 @@
 import scipy
 import numpy as np
 import matplotlib.pyplot as plt
-from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33
+from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK44
 from rsw_sphere.hough_harmonics.normalization import norm_component
 
 def Hamiltonian(A_0):
@@ -144,7 +144,7 @@ print()
 Energy_0  = (A_a * np.conj(A_a) + A_b * np.conj(A_b) + A_c * np.conj(A_c) )
 Energy_0 += (2*np.real(np.conj(A_a) * np.conj(A_b) * A_c) * Triad.Sabc)
 
-Y, T = RK33(Triad, t_0, t_f, h, A_max)  
+Y, T = RK44(Triad, t_0, t_f, h, A_max)  
 
 Y_a = Y[:,0]
 Y_b = Y[:,1]

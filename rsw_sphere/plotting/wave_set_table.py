@@ -4,7 +4,7 @@ paper's merged §Coupled Triads section.
 Mirrors ``rsw_sphere.plotting.triad_table`` (§2.2's master table) but for
 ``WaveSet`` (``rsw_sphere.dynamics.wave_sets``) instead of ``TRIAD``:
 batch-computes, for each ``WaveSetSpec`` in the registry (loaded from
-``examples/wave_sets_section_3.yaml`` via
+``wave_sets_default.yaml`` via
 ``rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs``), every mode's
 frequency and linear period, and -- since a wave set couples through
 *multiple* constituent triads -- one coupling-coefficient column per

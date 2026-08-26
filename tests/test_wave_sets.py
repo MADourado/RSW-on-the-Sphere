@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from rsw_sphere.physics import gamma_from_he
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 
 G, H_E = 9.8, 10000.0
@@ -32,7 +32,7 @@ def test_triad_energy_conservation():
     A0 = ws.amplitudes_from_velocities([30.0, 20.0, 25.0], H_E, g=G)
 
     t_f = 5 * 4 * np.pi
-    Y, T = RK33(ws, 0, t_f, 0.01, A0)
+    Y, T = RK44(ws, 0, t_f, 0.01, A0)
     E2, E3 = ws.energy(Y)
     E_total = np.real(E2 + E3)
 

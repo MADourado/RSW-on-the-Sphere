@@ -1,0 +1,126 @@
+# Registry of quartet/quintet examples loaded by
+# rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs() into
+# WaveSetSpec objects
+#
+#
+# alpha convention : 
+# 1 = EIG/EG (eastward inertia-gravity),
+# 2 = WIG/WG (westward inertia-gravity), 
+# 3 = RH (Rossby-Haurwitz).
+#
+# Mode keys follows:
+# 'a' is always a triad's "sum" mode, m_a = m_b + m_c (and, for a quartet,
+# also m_a = m_b + m_d -- both constituent triads share the sum mode).
+# Validated at load: m_sum == m_p + m_q for every triad.
+#
+# Velocity caps: Rossby (RH) mode velocities up to
+# 100 m/s; gravity (EG/WG) mode velocities up to 50 m/s. 
+#
+quartet_rh_preference:
+  label: "RH(1,2)+RH(4,5) choosing between RH(3,4) and RH(3,6)"
+  display_label: "Quartet A"
+  role: >-
+    All-Rossby quartet: tests whether
+    RH(4,5)+RH(1,2) prefer to exchange energy with RH(3,4) or RH(3,6).
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 40.0}
+    b: {m: 1, n: 2, alpha: 3, u: 40.0}
+    c: {m: 3, n: 4, alpha: 3, u: 0.0}
+    d: {m: 3, n: 6, alpha: 3, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 30
+    h: 0.01
+    n_grid: 10
+
+quartet_rh_alt_partner:
+  label: "RH(1,2)+RH(4,5) with RH(3,4) and RH(3,8)"
+  display_label: "Quartet A with RH(3,8) instead of RH(3,6)"   
+  role: >-
+    Second all-Rossby quartet on the same shared edge as quartet_rh_preference
+    (RH(4,5)+RH(1,2)), with RH(3,6) replaced by RH(3,8) -- the other
+    well-coupled member of the RH(3,n) family.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 40.0}
+    b: {m: 1, n: 2, alpha: 3, u: 40.0}
+    c: {m: 3, n: 4, alpha: 3, u: 0.0}
+    d: {m: 3, n: 8, alpha: 3, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 30
+    h: 0.01
+    n_grid: 10
+
+quartet_gravity_kelvin:
+  label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
+  display_label: "Quartet C"
+  role: >-
+    Rossby triad coupled with Kelvin mode. Tests how the gravity mode
+    changes the RH-only triad's dynamics.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 1, n: 1, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+    n_grid: 10
+
+quartet_gravity_79:
+  label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"
+  display_label: "Quartet D"
+  role: >-
+    Rossby triad coupled with gravity mode. Tests how the gravity mode
+    changes the RH-only triad's dynamics.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 7, n: 9, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: d, members: [a, b], display_label: "Triad 2 (with EG(7,9))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 10
+    h: 0.01
+    n_grid: 10
+
+quintet_gravity_star:
+  label: "RH(4,5)+RH(1,2)+RH(3,4) with both EG(1,1) and EG(7,9)"
+  display_label: "Quintet A"
+  role: >-
+    Star topology (3 constituent triads sharing the edge RH(4,5)+RH(1,2)),
+    matching what five_waves.py's FIVE_WAVES class actually computes. Union of
+    Quartet C and Quartet D's gravity modes on the same RH-only triad.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 1, n: 1, alpha: 1, u: 0.0}
+    e: {m: 7, n: 9, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
+    - {sum: e, members: [a, b], display_label: "Triad 3 (with EG(7,9))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 10
+    h: 0.01
+    n_grid: 8

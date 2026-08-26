@@ -7,7 +7,13 @@ Code accompanying the MSc dissertation
 > Science, University of São Paulo (IME-USP), 2025.
 > Advisor: Prof. Dr. Pedro da Silva Peixoto · Co-advisor: Prof. Dr. Breno Raphaldini.
 
-**Author:** Marco Antonio Dourado.
+and paper:
+
+> **Non-linear interactions between slow and fast atmospheric waves on the Sphere **
+> Peixoto, Raphaldini, Dourado, Teruya.
+
+
+**Code Authors:** Marco Antonio Dourado and Pedro da Silva Peixoto
 
 ## What this is about
 
@@ -27,19 +33,15 @@ The main physical questions explored (see the thesis for full detail):
   of resonant / quasi-resonant triads.
 - How a single gravity wave alters the kinetic-energy fields and the periods of
   energy exchange of Rossby-Haurwitz waves in **coupled triads** (four- and
-  five-wave configurations) — relevant to whether filtering gravity waves out of
-  forecast models is justified.
+  five-wave configurations).
 
 ## Current content
 
-The code covers the material of Chapters 1–3 of the thesis — the triadic part
-(Ch. 1–2) and the coupled-triad quartet/quintet part (Ch. 3) — plus the
-plotting/driver infrastructure:
 
 - **Hough harmonics & dispersion relation** — assembly and diagonalization of the
   tidal-equation eigenvalue problem, the normalized normal-mode fields
   `(u, v, h)` and their latitudinal derivatives, and the dispersion diagram of
-  the three wave families.
+  the three wave families. See [`docs/dispersion_relation.md`](docs/dispersion_relation.md).
 - **Hough mode visualization** — latitudinal profiles/derivatives of a single
   mode, and its full spatial pattern (`h` contour + `(u, v)` quiver) on a
   world map. See [`docs/hough_modes.md`](docs/hough_modes.md).
@@ -47,30 +49,36 @@ plotting/driver infrastructure:
   frequency mismatch, the amplitude equations, their time integration
   (Runge-Kutta), energy/efficiency diagnostics, and analytic-period
   diagnostics (`rsw_sphere/dynamics/`).
-- Three YAML-configured root drivers: `run_diagnostics.py` (dispersion
-  relation + per-mode Hough plots, no dynamics) and `run_dynamics.py`
-  (triad/wave-set amplitude-equation integration) read the same
-  `configs.yaml`; `run_sweep.py` (a general parameter-sweep driver over
-  the registered quartet/quintet tools) takes its own `--config` YAML per
-  invocation.
+- Four root drivers, all selecting from the single `wave_sets_default.yaml`
+  registry: `run_linear_modes.py` (dispersion relation + per-mode Hough
+  plots, `--wave-set KEY`/`--run-all`); `run_dynamics.py`, `run_sweep.py`,
+  `run_sweep_sets.py` (integration, IC sweeps, and candidate-mode
+  screening, sharing one config class,
+  `rsw_sphere.dynamics.run_config.RunConfig`), each taking their own YAML
+  per invocation. A triad is just the registry's 1-triad case, so the
+  same registry covers triads, quartets and quintets. See
+  `docs/code_guide.md`'s "Entry points".
 
 ## Repository layout
 
 ```
 rsw_sphere/                 # the installable package
     hough_harmonics/        # eigenvalue problem, normal modes, inner products
-    dynamics/                # triad/wave-set amplitude dynamics, trajectory cache
+    dynamics/                # WaveSet/TRIAD, integrator, trajectory cache, RunConfig
         periods/              # analytic-period / Hamiltonian diagnostics
-    plotting/                # dispersion relation, Hough mode and wave-set plots
+    utilities/               # diagnostics compute (pmeasure, periods, precession,
+                              # efficiency, functional) + the diagnostic registry
+    plotting/                # rendering only -- dispersion, Hough, wave-set maps
 docs/                      # thesis PDF, code guide, per-topic documentation
-examples/                  # named configs reproducing thesis/paper figures
-    legacy/                  # scripts superseded by a later reorganization, kept for now
+examples/                  # registries + driver configs (see examples/README.md)
+examples_legacy/           # scripts predating the driver refactor, still runnable
 outputs/                   # generated figures + cached trajectories (gitignored, reproducible)
 tests/                     # pytest suite (structural/exact invariants)
-run_diagnostics.py         # dispersion relation + per-mode Hough plots
-run_dynamics.py            # triad/wave-set amplitude-equation integration
-run_sweep.py               # general YAML-configured parameter-sweep driver
-configs.yaml                # shared config for run_diagnostics.py/run_dynamics.py
+run_linear_modes.py         # dispersion relation + per-mode Hough plots
+run_dynamics.py            # integrate a wave set (full + sub-triads), cached
+run_sweep.py               # IC sweep (1-2 modes) + diagnostics
+run_sweep_sets.py          # loop a diagnostic over candidate-mode variants
+wave_sets_default.yaml     # default WaveSet registry (triads, quartets, quintets) -- all four drivers
 pyproject.toml             # pip install -e . / console scripts
 ```
 
@@ -93,37 +101,59 @@ source .venv/bin/activate
 pip install -e .
 ```
 
+For pytests usage do: 
+```bash
+pip install -e ".[dev]"    # add [dev] to also get pytest for tests/
+```
+
 Dependencies are pinned for API compatibility (`numpy<2.0`, `scipy<1.15`,
-`matplotlib`, `pyyaml`, `cartopy`) and declared in both `pyproject.toml` and
-`requirements.txt`.
+`matplotlib`, `pyyaml`, `cartopy`) and declared in `pyproject.toml`
+(`requirements.txt` mirrors the same pins for non-editable installs).
+
+If `.venv` was created against a base Python that's since changed (e.g. a
+conda base-env upgrade), imports may break with an `undefined symbol`/ABI
+error from a compiled dependency (scipy, cartopy). Recreate it:
+
+```bash
+rm -rf .venv
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+```
 
 ## Usage
 
-Both drivers read the same `configs.yaml` and write into `OUTPUT_PATH`
-(default `outputs/figures/`), each acting only on the section relevant to it:
-
 ```bash
 # dispersion relation + per-mode Hough harmonic plots (no dynamics)
-python run_diagnostics.py --config configs.yaml
+python run_linear_modes.py --wave-set triad_kelvin_rossby_flow
+python run_linear_modes.py --run-all
 
-# integrate the triad amplitude equations and plot the energy exchange
-python run_dynamics.py --config configs.yaml
+# integrate a registered wave set (a triad on its own, or a quartet/quintet
+# plus each sub-triad, each cached and plotted separately)
+python run_dynamics.py --wave-set quartet_gravity_kelvin
+
+# sweep 1-2 modes' initial velocities + diagnostics (P-measure, filtering
+# error, frequency shift, efficiency, low-frequency energy, precession)
+python run_sweep.py --config examples/sweep_quartet_gravity_kelvin_diagnostics.yaml
+
+# screen a list of candidate modes filling one slot of a registered wave set
+python run_sweep_sets.py --config examples/candidates_quartet_gravity_kelvin.yaml
 ```
 
-`run_diagnostics.py` plots the dispersion relation (if `dispersion_relation:
-true`) and each triad mode's Hough harmonic + derivatives (per-mode
-`show_mode: true`). `run_dynamics.py` integrates the triad dynamics (if
-`Dynamics.show_dynamics: true`) and plots the energy exchange time series.
-Both also accept `--wave-set KEY [--specs path.yaml]` to act on a
-registered quartet/quintet instead of `configs.yaml`'s single triad (a
-plain triad is the degenerate 3-modes/1-triad case of a wave set) — see
+All four drivers select from the same `wave_sets_default.yaml` registry
+(`--wave-set KEY [--specs path.yaml]`, or `--run-all`/a `RunConfig`
+sweeping every wave set). `run_dynamics.py`/`run_sweep.py`/`run_sweep_sets.py`
+additionally share one config class (`rsw_sphere.dynamics.run_config.RunConfig`)
+— a registry key + `specs_path`, or an inline wave set. See
 `docs/code_guide.md`'s "Entry points" section.
 
-Edit `configs.yaml` to change the equivalent height `h_e`, the three modes
-`(m, n, alpha)` of the triad (with `alpha`: 1 = EIG, 2 = WIG, 3 = RH), their
-initial zonal velocities, and the time-integration parameters. See
-[`examples/`](examples/) for named config variants reproducing specific
-thesis figures/tables.
+To add a triad/quartet/quintet, add an entry to `wave_sets_default.yaml`
+(equivalent height `h_e`, modes `(m, n, alpha)` with `alpha`: 1 = EIG,
+2 = WIG, 3 = RH, initial zonal velocities, and the constituent triad(s))
+— no separate config file needed, a triad is just the registry's own
+1-triad case. See [`examples/`](examples/) for `run_sweep.py`/
+`run_sweep_sets.py` config variants reproducing specific thesis
+figures/tables.
 
 `run_sweep.py --config path.yaml` is a general driver for parameter sweeps
 over a registered wave set (precession frequency, P-measure, or

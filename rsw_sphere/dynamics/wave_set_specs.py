@@ -2,16 +2,10 @@
 §Coupled Triads section (formerly §Multiple Triads / §Inertia-Gravity
 Waves / §Five-Wave model).
 
-Mirrors ``rsw_sphere.dynamics.triad_specs`` (the §2.2 triad registry):
-YAML is the source of truth (``examples/wave_sets_section_3.yaml``), this
+Mirrors ``rsw_sphere.dynamics.triad_specs`` :
+YAML is the source of truth (``wave_sets_default.yaml``), this
 module just loads it into typed, validated objects consumed by
 ``rsw_sphere.plotting.wave_set_*``.
-
-**Modes are listed explicitly** in each YAML entry, not referenced from
-the §2.2 triad registry by role key -- considered and rejected: most published quartets' reference triads aren't in the §2.2
-registry at all, cross-file coupling would let a §2.2 edit silently move
-§3 figures, and explicit listing keeps the ``m_sum = m_p + m_q`` physical
-constraint visible and validatable at load time (done below).
 
 Each wave set names its modes with **symbolic keys** (``a``, ``b``, ``c``,
 ...) matching the paper's own lettering (``eq :4sys1``: mode ``a`` is
@@ -35,7 +29,7 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 #: Default registry YAML, relative to the repo root.
-DEFAULT_WAVESETS_PATH = os.path.join(_ROOT, "examples", "wave_sets_section_3.yaml")
+DEFAULT_WAVESETS_PATH = os.path.join(_ROOT, "wave_sets_default.yaml")
 
 
 @dataclass(frozen=True)
@@ -50,16 +44,9 @@ class TriadRef:
     member_keys : tuple of 2 str
         The other two modes' keys, in either order.
     display_label : str
-        E.g. "Triad 1"/"Triad 2" -- how the paper refers to a quartet's
-        constituent triads (distinct from §2.2's "Triad A"/"B"/"C"/"D",
-        which name whole registered *triads*, not a sub-component).
+        E.g. "Triad 1"/"Triad 2" 
     triad_key : str or None
-        Optional, purely documentary link to a role key in
-        ``examples/triads_section_2_2.yaml`` when this constituent triad
-        happens to also be independently registered there (e.g.
-        ``triad_kelvin_rossby_flow``). Not resolved or cross-checked
-        automatically -- see the module docstring for why this registry
-        doesn't couple to that one at load time.
+        Optional, purely documentary link
     """
     sum_key: str
     member_keys: tuple
@@ -119,6 +106,10 @@ class WaveSetSpec:
 
     def n_triads(self) -> int:
         return len(self.triads)
+
+    def has_subtriads(self) -> bool:
+        """True for a quartet/quintet (n_triads() > 1); False for a plain triad."""
+        return self.n_triads() > 1
 
     def index(self, mode_key: str) -> int:
         """Integer index of a symbolic mode key into ``modes``/``velocities``."""
@@ -192,7 +183,7 @@ def load_wave_set_specs(yaml_path: str = DEFAULT_WAVESETS_PATH) -> dict:
     Parameters
     ----------
     yaml_path : str, optional
-        Default: ``examples/wave_sets_section_3.yaml``.
+        Default: ``wave_sets_default.yaml`` (repo root).
 
     Returns
     -------

@@ -1,4 +1,4 @@
-"""Raw ODE-trajectory caching for ``WaveSet``/``RK33`` runs.
+"""Raw ODE-trajectory caching for ``WaveSet``/``RK44`` runs.
 
 Every sweep-style script in this repository (``examples/quartet_precession_sweep.py``,
 ``examples/precession_sweep_figure.py``, the ``wave_set_*`` sweep modules)
@@ -42,7 +42,7 @@ if _ROOT not in sys.path:
 
 import numpy as np
 
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44
 
 #: Cache subfolder per wave-set size -- extend this, not a hardcoded
 #: "triads"/"quartets" branch, if a larger topology (e.g. a 6-mode
@@ -106,7 +106,7 @@ def run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajecto
     A0 : ndarray
         Initial complex amplitudes (``ws.amplitudes_from_velocities(...)``).
     t_f, h : float
-        Nondimensional integration horizon / step (``RK33``'s own args).
+        Nondimensional integration horizon / step (``RK44``'s own args).
     velocities : sequence of float or None, optional
         Initial zonal velocities (m/s), one per mode, in ``ws.modes``'s
         own order -- the same array ``A0`` was built from. Used to build
@@ -143,7 +143,7 @@ def run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajecto
         data = np.load(path)
         return data['Y'], data['T'], path
 
-    Y, T = RK33(ws, 0, t_f, h, A0)
+    Y, T = RK44(ws, 0, t_f, h, A0)
 
     os.makedirs(out_dir, exist_ok=True)
     np.savez(path, Y=Y, T=T, omega=ws.omega, delta=ws.delta, alpha=ws.alpha,

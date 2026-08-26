@@ -148,7 +148,7 @@ python rsw_sphere/plotting/triad_dynamics.py outputs/figures/triads/triad_gravit
 
 Console script: `rsw-triad`. `--triad` selects a role key from the
 registry (default `triad_gravity_with_rossby_catalyst`); `--tf` is the
-integration horizon in days, `--h` the RK33 step (nondimensional time).
+integration horizon in days, `--h` the RK44 step (nondimensional time).
 Full flags: `rsw-triad --help`.
 
 Each mode is drawn in a persistent color regardless of which triad/panel
@@ -164,7 +164,7 @@ Sweeps the initial zonal velocities of the two non-target modes over a
 grid (target mode held at rest, see "Target mode" above), integrates each
 combination, and records the efficiency of the target mode (`max − min` of
 its normalized kinetic energy). This is the expensive one — a 40×40 grid
-is ~1.6×10⁶ RK33 steps at the defaults (~10⁷ at the dissertation's own
+is ~1.6×10⁶ RK44 steps at the defaults (~10⁷ at the dissertation's own
 100×100 grid) — so the compute (`efficiency_sweep`) is split from the
 plotting (`plot_efficiency_map`) and **cached to `.npz`**: the first run
 computes and saves, every subsequent run with the same `--cache` path just

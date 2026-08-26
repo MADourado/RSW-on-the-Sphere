@@ -18,7 +18,7 @@ figure/paper prose):
    points across that script's own established scale range (1e-4..10).
 3. Quartet A, RSW -- the paper's own native quartet
    (``quartet_rh_preference``), via
-   ``rsw_sphere.plotting.wave_set_precession.precession_frequency_efficiency``,
+   ``rsw_sphere.utilities.precession.precession_frequency_efficiency``,
    at u=10,50,80,85,90,120 (spanning before/at/after the confirmed lock
    at u~83-92) -- every constituent mode's own phase slope, not just the
    driven one.
@@ -43,7 +43,7 @@ from rsw_sphere.dynamics.dynamical_phase import individual_phase
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache
 from rsw_sphere.physics import days_from_nondim_time
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
-from rsw_sphere.plotting.wave_set_precession import precession_frequency_efficiency
+from rsw_sphere.utilities.precession import precession_frequency_efficiency
 
 import reproduce_raphaldini2022_fig2 as baro
 import precession_resonance_rsw_vs_barotropic as rsw_b

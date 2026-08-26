@@ -3,10 +3,10 @@
 # entry (see examples/legacy/precession_sweep_figure.py, superseded by
 # this config + run_sweep.py + rsw_sphere/plotting/wave_set_precession.py).
 wave_set: quartet_rh_alt_partner
-diagnostic: precession
 sweep:
-  mode: d
-  values: {min: 10.0, max: 150.0, n: 30}
+  axes: [{mode: d, min: 10.0, max: 150.0}]
+  n_grid: 30
+  diagnostics: [precession]
 target_mode: c
 plot_triad: 0
 tf_days: 150.0

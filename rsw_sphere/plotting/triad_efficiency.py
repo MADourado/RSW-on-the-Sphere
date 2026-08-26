@@ -7,7 +7,7 @@ measured: it is held at rest (zero initial zonal velocity) while the
 *other two* modes are swept over a velocity grid, and the efficiency (max -
 min of normalized kinetic energy, eq. "effor" in the dissertation) of the
 target mode itself is recorded. This is a compute-heavy sweep (a 40x40 grid
-takes ~1.6e6 RK33 steps at the defaults, ~1e7 at the dissertation's
+takes ~1.6e6 RK44 steps at the defaults, ~1e7 at the dissertation's
 100x100/t_f=100/h=0.001 settings), so the compute (``efficiency_sweep``) is
 split from the plotting (``plot_efficiency_map``) and cached to ``.npz``
 -- figure styling can then be iterated without re-running the sweep.
@@ -38,7 +38,7 @@ from matplotlib.colors import PowerNorm
 
 from rsw_sphere.physics import gamma_from_he
 from rsw_sphere.hough_harmonics.normalization import norm_component
-from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK33, Energy_0
+from rsw_sphere.dynamics.dynamic_triads import TRIAD, RK44, Energy_0
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.plotting.sweeps import cache_key_hash
 
@@ -111,7 +111,7 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=None, u2_range=None,
         Integration horizon, nondimensional time. Default ``100`` (the
         dissertation's ``Triad_Precession`` value).
     h : float, optional
-        RK33 step size, nondimensional time. Default ``0.001``.
+        RK44 step size, nondimensional time. Default ``0.001``.
     N, deg : int, optional
         Hough-mode truncation / quadrature degree; ``deg`` must match
         ``norm_Hough``'s. Default ``10``/``300``.
@@ -120,7 +120,7 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=None, u2_range=None,
         of recomputed. If given and the file does not exist, the result is
         computed and then saved there. If ``None``, no caching is done.
         Essential in practice: at ``n_grid=40, t_f=100, h=0.001`` this
-        sweep is ~1.6e7 RK33 steps and can take minutes. Callers that want
+        sweep is ~1.6e7 RK44 steps and can take minutes. Callers that want
         the cache to auto-invalidate on parameter changes should build
         ``cache_path`` from ``cache_key_hash(...)`` rather than a bare
         triad name (see that function's docstring).
@@ -202,7 +202,7 @@ def efficiency_sweep(modes, h_e: float = 10000, u1_range=None, u2_range=None,
                 EFF[i, j] = 0.0
                 continue
 
-            Y, T = RK33(Triad, 0, t_f, h, A0)
+            Y, T = RK44(Triad, 0, t_f, h, A0)
             Y_t = Y[:, target] * np.conj(Y[:, target]) / E_0
             Y_t = np.real(Y_t)
             EFF[i, j] = Y_t.max() - Y_t.min()
@@ -391,7 +391,7 @@ def main():
         help="integration horizon, nondimensional time (default: 100).")
     parser.add_argument(
         "--h", type=float, default=0.001,
-        help="RK33 step size, nondimensional time (default: 0.001).")
+        help="RK44 step size, nondimensional time (default: 0.001).")
     parser.add_argument(
         "--cache", dest="cache_path", default=None,
         help="path to an .npz cache file (computed once, reloaded after).")
