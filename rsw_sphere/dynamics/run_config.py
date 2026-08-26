@@ -150,7 +150,7 @@ def _load_inline_spec(cfg) -> WaveSetSpec:
 
 
 if __name__ == "__main__":
-    spec = load_wave_set_specs()["quartet_gravity_kelvin"]
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     config = RunConfig.from_wave_set(spec)
     assert config.tf_days == spec.settings["tf_days"]
     assert config.h == spec.settings["h"]

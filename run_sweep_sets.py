@@ -7,7 +7,7 @@ candidate slot's own velocity (not swept either way).
 
 Config:
 
-    base_wave_set: quartet_gravity_kelvin
+    base_wave_set: quartet_rossby_kelvin
     specs_path: wave_sets_default.yaml
     candidate_slot: d                          # mode key swapped per candidate
     candidate_velocity: 30.0                   # optional: drive the candidate at
@@ -24,13 +24,13 @@ Config:
     diagnostics: [p_measure, filtering_error]   # subset of registry.ALL_2D
     tf_days: 20
     h: 0.01
-    table: outputs/tables/quartet_gravity_kelvin_candidates.csv
-    output: outputs/figures/wave_sets/quartet_gravity_kelvin_candidates.png
+    table: outputs/tables/quartet_rossby_kelvin_candidates.csv
+    output: outputs/figures/wave_sets/quartet_rossby_kelvin_candidates.png
     output_root: outputs
 
 Run:
 
-    python run_sweep_sets.py --config examples/candidates_quartet_gravity_kelvin.yaml
+    python run_sweep_sets.py --config examples/candidates_quartet_rossby_kelvin.yaml
 """
 import argparse
 import csv

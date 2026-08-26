@@ -10,7 +10,7 @@ a triad is just the 1-triad case of a wave set, so there is no separate
 plain-Triad: config path anymore. Every mode of one --wave-set is plotted:
 
     python run_linear_modes.py --wave-set triad_kelvin_rossby_flow
-    python run_linear_modes.py --wave-set quartet_gravity_kelvin --specs examples/wave_sets_custom.yaml
+    python run_linear_modes.py --wave-set quartet_rossby_kelvin --specs examples/wave_sets_custom.yaml
 
 Pass --run-all instead of --wave-set to plot every mode of every wave set
 in the registry (--specs), shared modes plotted once:

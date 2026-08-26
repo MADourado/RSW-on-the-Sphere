@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     print("=" * 20, "Table cap42 (Quartet C, EG(1,1))", "=" * 20)
     tex42 = build_table(
-        specs['quartet_gravity_kelvin'],
+        specs['quartet_rossby_kelvin'],
         "Four-wave configuration containing the Kelvin-like gravity mode EG(1,1) "
         "(Quartet C, Figure \\ref{fig: topology_overview}c): each mode's frequency "
         "$\\omega$, linear period (days), zonal velocity (m/s) and amplitude $A_0$ "

@@ -1,7 +1,7 @@
 # Screens EG/WG candidates filling Quartet C's own slot d (m=1, inferred
 # from the triad {sum: a, members: [b, d]} selection rule), reporting
 # each candidate's effect on target b=RH(3,4).
-base_wave_set: quartet_gravity_kelvin
+base_wave_set: quartet_rossby_kelvin
 specs_path: wave_sets_default.yaml
 candidate_slot: d
 target_mode: b
@@ -9,4 +9,4 @@ candidates_from: {max_n: 9}
 diagnostics: [p_measure, filtering_error]
 tf_days: 20
 h: 0.01
-table: outputs/tables/quartet_gravity_kelvin_candidates.csv
+table: outputs/tables/quartet_rossby_kelvin_candidates.csv

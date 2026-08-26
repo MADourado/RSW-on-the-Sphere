@@ -19,7 +19,7 @@ from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.utilities.efficiency import default_velocity_range
-from rsw_sphere.utilities.periods import fft_period_parabolic, prominence_period
+from rsw_sphere.utilities.periods import fft_period_parabolic, prominence_period, novel_frequency_content
 
 G = 9.8
 
@@ -239,7 +239,7 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
 #: Registered diagnostics for wave_set_diagnostics_sweep. Add an entry
 #: here (not a new sweep loop) for a further per-target diagnostic.
 _DIAGNOSTIC_ARRAY_KEYS = {"p_measure": "P", "filtering_error": "F2", "frequency_shift": "FreqShift",
-                          "fmax": "Fmax"}
+                          "fmax": "Fmax", "novelty_period": "NoveltyPeriod"}
 
 
 #: Above this absolute difference (percentage points) between the two
@@ -291,19 +291,73 @@ def _frequency_shift(T_days, amp_full, amp_sub, dEK_sub):
     return shift_fft, agree
 
 
+def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = 0.20,
+                     min_prominence: float = 0.03):
+    """(dominant novel period in days, its relevance %) -- see
+    ``rsw_sphere.utilities.periods.novel_frequency_content`` for the
+    algorithm (2026-08-26 design: excludes only the sub-triad's own
+    dominant peak, not a "how much did the dominant period shift"
+    comparison). NaN/0 if dEK_sub is too small, or if nothing survives
+    the prominence threshold.
+    """
+    if dEK_sub <= MIN_REFERENCE_DEK:
+        return np.nan, 0.0
+    E_full, E_sub = amp_full ** 2, amp_sub ** 2
+    result = novel_frequency_content(T_days, E_full, T_days, E_sub,
+                                      exclusion_frac=exclusion_frac, min_prominence=min_prominence)
+    if not result['novel_peaks']:
+        return np.nan, 0.0
+    dominant = result['novel_peaks'][0]
+    return dominant['period_days'], dominant['relevance_pct']
+
+
+def pairwise_target_diagnostics(T_days, amp_full, amp_sub,
+                                 novelty_exclusion_frac: float = 0.20,
+                                 novelty_min_prominence: float = 0.03) -> dict:
+    """Every pairwise (full wave set vs. one sub-triad) diagnostic for a
+    SINGLE already-integrated target-mode comparison -- reuses the exact
+    same per-grid-point formulas ``wave_set_diagnostics_sweep`` computes
+    at each cell, just for one point rather than a swept grid (single-run
+    reporting, e.g. ``run_dynamics.py --diagnostics``).
+
+    amp_full, amp_sub : |A_target(t)|, full wave set / one sub-triad
+        alone, on the SAME time grid (same tf_days/h for both).
+    """
+    E_full, E_sub = amp_full ** 2, amp_sub ** 2
+    dEK_full = E_full.max() - E_full.min()
+    dEK_sub = E_sub.max() - E_sub.min()
+    p = 100 * (dEK_full - dEK_sub) / dEK_sub if dEK_sub > MIN_REFERENCE_DEK else np.nan
+    f2 = _f2(amp_full, amp_sub, dEK_sub)
+    fmax = _fmax(E_full, E_sub, dEK_sub)
+    freq_shift, freq_shift_agree = _frequency_shift(T_days, amp_full, amp_sub, dEK_sub)
+    novelty_period, novelty_relevance = _novelty_period(
+        T_days, amp_full, amp_sub, dEK_sub,
+        exclusion_frac=novelty_exclusion_frac, min_prominence=novelty_min_prominence)
+    return {
+        'p_measure': p, 'filtering_error': f2, 'fmax': fmax,
+        'frequency_shift': freq_shift, 'frequency_shift_agree': freq_shift_agree,
+        'novelty_period': novelty_period, 'novelty_relevance': novelty_relevance,
+    }
+
+
 def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: dict,
                                 target_indices, diagnostics=("p_measure", "filtering_error"),
                                 u1_range=None, u2_range=None,
                                 reference_triad: int = 0, triad_index=None,
                                 n_grid: int = 40, tf_days: float = 10, h: float = 0.01,
                                 N: int = 10, deg: int = 300, cache_path: str = None,
-                                verbose: bool = False, progress_label: str = ""):
+                                verbose: bool = False, progress_label: str = "",
+                                novelty_exclusion_frac: float = 0.20,
+                                novelty_min_prominence: float = 0.03):
     """2D sweep computing several per-target diagnostics from one shared
     pass (one full-wave-set integration + one row-cached reference-triad
     integration per grid point), instead of one pass per diagnostic.
 
     Parameters as p_measure_sweep, plus:
     diagnostics : subset of _DIAGNOSTIC_ARRAY_KEYS.
+    novelty_exclusion_frac, novelty_min_prominence : only used if
+        "novelty_period" is requested -- passed straight through to
+        ``periods.novel_frequency_content``.
 
     Returns
     -------
@@ -311,6 +365,8 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
         U1, U2, drift, labels, plus one array per requested diagnostic.
         If "frequency_shift" is requested, also FreqShiftAgree (bool array,
         same shape as FreqShift) -- advisory only, see _frequency_shift.
+        If "novelty_period" is requested, also NoveltyRelevance (%, same
+        shape as NoveltyPeriod) -- see _novelty_period.
     """
     unknown = set(diagnostics) - set(_DIAGNOSTIC_ARRAY_KEYS)
     if unknown:
@@ -327,6 +383,9 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
     need_freq_shift = "frequency_shift" in diagnostics
     if need_freq_shift:
         array_keys = array_keys + ["FreqShiftAgree"]
+    need_novelty = "novelty_period" in diagnostics
+    if need_novelty:
+        array_keys = array_keys + ["NoveltyRelevance"]
     if cache_path and os.path.exists(cache_path):
         data = np.load(cache_path)
         out = {'U1': data['U1'], 'U2': data['U2'], 'drift': data['drift'],
@@ -378,7 +437,7 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
             E2, E3 = ws.energy(Y)
             E_total = np.real(E2 + E3)
             DRIFT[i, j] = np.max(np.abs(E_total - E_total[0])) / np.maximum(np.abs(E_total[0]), 1e-300)
-            T_days = days_from_nondim_time(T) if need_freq_shift else None
+            T_days = days_from_nondim_time(T) if (need_freq_shift or need_novelty) else None
 
             for k, tgt in enumerate(target_indices):
                 t_idx = t_idx_for_target[k]
@@ -408,6 +467,11 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
                 if need_freq_shift:
                     results["FreqShift"][i, j, k], results["FreqShiftAgree"][i, j, k] = \
                         _frequency_shift(T_days, amp_full, amp_sub, dEK_sub)
+                if need_novelty:
+                    results["NoveltyPeriod"][i, j, k], results["NoveltyRelevance"][i, j, k] = \
+                        _novelty_period(T_days, amp_full, amp_sub, dEK_sub,
+                                        exclusion_frac=novelty_exclusion_frac,
+                                        min_prominence=novelty_min_prominence)
 
         if verbose:
             done_rows = i + 1
@@ -427,7 +491,7 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
 
 if __name__ == "__main__":
     from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
-    spec = load_wave_set_specs()["quartet_gravity_kelvin"]
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
     result = p_measure(spec.modes, triads, spec.velocities, h_e=spec.h_e,
                         reference_triad=spec.reference_triad, tf_days=5, h=0.02)

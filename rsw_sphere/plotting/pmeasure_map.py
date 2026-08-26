@@ -4,7 +4,7 @@ Compute lives in rsw_sphere.utilities.pmeasure; this module only draws.
 
 Run from the command line (output under outputs/figures/wave_sets/):
 
-    python rsw_sphere/plotting/pmeasure_map.py outputs/figures/wave_sets/quartet_gravity_kelvin_pmeasure.png --wave-set quartet_gravity_kelvin
+    python rsw_sphere/plotting/pmeasure_map.py outputs/figures/wave_sets/quartet_rossby_kelvin_pmeasure.png --wave-set quartet_rossby_kelvin
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -175,6 +175,48 @@ def plot_fmax_map(U1, U2, Fmax, xlabel: str = None, ylabel: str = None,
     return fig, ax, cs
 
 
+def plot_novelty_period_map(U1, U2, NoveltyPeriod, xlabel: str = None, ylabel: str = None,
+                             title: str = None, vmax: float = None,
+                             path: str = None, ax=None):
+    """Sequential-colormap novelty-period map (period in days, always
+    positive -- see rsw_sphere.utilities.periods.novel_frequency_content).
+
+    Blank cells: dEK_sub too small (MIN_REFERENCE_DEK gate), or no novel
+    frequency survived the prominence threshold at that grid point --
+    both cases leave NoveltyPeriod NaN, same convention as F2/FreqShift.
+    NoveltyRelevance (companion array from wave_set_diagnostics_sweep,
+    same shape) is not drawn here by default -- available for a caller to
+    overlay (e.g. as a contour or alpha channel) if wanted.
+
+    Returns (fig, ax, cs).
+    """
+    own_fig = ax is None
+    if own_fig:
+        from rsw_sphere.plotting.style import apply_house_style
+        apply_house_style()
+        fig, ax = plt.subplots(figsize=(6, 5))
+    else:
+        fig = ax.figure
+
+    finite = np.isfinite(NoveltyPeriod)
+    if vmax is None:
+        vmax = float(np.nanmax(NoveltyPeriod)) if np.any(finite) else 1.0
+
+    cs = ax.contourf(U1, U2, np.ma.masked_invalid(NoveltyPeriod), levels=np.linspace(0, vmax, 101),
+                      cmap='viridis')
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+    fig.colorbar(cs, ax=ax, label='Novelty period (days)')
+
+    if own_fig:
+        save_or_show(fig, path)
+    return fig, ax, cs
+
+
 def main():
     import argparse
     from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
@@ -186,7 +228,7 @@ def main():
     parser.add_argument("path", nargs="?", default=None)
     parser.add_argument("--specs", default=DEFAULT_WAVESETS_PATH)
     parser.add_argument("--wave-set", choices=list(load_wave_set_specs(DEFAULT_WAVESETS_PATH)),
-                         default="quartet_gravity_kelvin")
+                         default="quartet_rossby_kelvin")
     parser.add_argument("--swept", nargs=2, type=str, default=None,
                          help="two mode keys to sweep; default: auto-detected.")
     parser.add_argument("--target", nargs="+", type=str, default=None,

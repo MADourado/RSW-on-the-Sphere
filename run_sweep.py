@@ -14,10 +14,10 @@ requested diagnostic as its own figure:
 
 Run, if the wave set's own registry entry already carries its own
 sweep:/tf_days/h/plot/output/target_mode/plot_triad keys (see
-wave_sets_default.yaml's quartet_gravity_kelvin/quartet_rh_preference
+wave_sets_default.yaml's quartet_rossby_kelvin/quartet_rh_preference
 entries), no separate config file is needed:
 
-    python run_sweep.py --wave-set quartet_gravity_kelvin
+    python run_sweep.py --wave-set quartet_rossby_kelvin
 
 or point at a standalone RunConfig YAML for an ad-hoc/one-off sweep not
 worth adding to the registry:
@@ -117,7 +117,7 @@ def _run_sweep_2d(config: RunConfig, output: str, plot_cfg: dict):
     diagnostics = config.sweep.diagnostics or ("p_measure", "filtering_error")
 
     triad_indices = [spec.triad_indices(i) for i in range(spec.n_triads())]
-    cache_dir = os.path.join(config.output_root, "figures", "wave_sets")
+    cache_dir = os.path.join(config.output_root, "figures", "wave_sets", spec.key)
     os.makedirs(cache_dir, exist_ok=True)
 
     result = sweep_2d(
@@ -216,7 +216,7 @@ def main():
         with open(args.specs) as f:
             raw = yaml.safe_load(f)[args.wave_set]
         config = RunConfig.from_registry_entry(args.wave_set, args.specs)
-        default_output = f"outputs/figures/wave_sets/{args.wave_set}_sweep.png"
+        default_output = f"outputs/figures/wave_sets/{args.wave_set}/sweep.png"
     else:
         with open(args.config) as f:
             raw = yaml.safe_load(f)

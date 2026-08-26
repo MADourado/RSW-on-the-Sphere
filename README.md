@@ -140,16 +140,16 @@ python run_linear_modes.py --run-all
 
 # integrate a registered wave set (a triad on its own, or a quartet/quintet
 # plus each sub-triad, each cached and plotted separately)
-python run_dynamics.py --wave-set quartet_gravity_kelvin
+python run_dynamics.py --wave-set quartet_rossby_kelvin
 
 # sweep 1-2 modes' initial velocities + diagnostics (P-measure, filtering
 # error, frequency shift, efficiency, low-frequency energy, precession) --
 # reads the wave set's own registry entry; --config path.yaml for an
 # ad-hoc sweep not worth registering
-python run_sweep.py --wave-set quartet_gravity_kelvin
+python run_sweep.py --wave-set quartet_rossby_kelvin
 
 # screen a list of candidate modes filling one slot of a registered wave set
-python run_sweep_sets.py --config examples/candidates_quartet_gravity_kelvin.yaml
+python run_sweep_sets.py --config examples/candidates_quartet_rossby_kelvin.yaml
 ```
 
 All four drivers select from the same `wave_sets_default.yaml` registry

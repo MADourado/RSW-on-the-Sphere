@@ -114,7 +114,7 @@ if __name__ == "__main__":
         ws_baseline = WaveSet(gamma, [A_MODE, B_MODE, C_MODE], [(0, 1, 2)], N=10, deg=300)
     A0_base = ws_baseline.amplitudes_from_velocities([30.0, 30.0, 30.0], H_E, g=G)
     e_tot = np.sum(np.real(A0_base * np.conj(A0_base)))
-    print(f"E_tot (quartet_gravity_kelvin IC, a=b=c=30 m/s) = {e_tot:.6e}\n")
+    print(f"E_tot (quartet_rossby_kelvin IC, a=b=c=30 m/s) = {e_tot:.6e}\n")
 
     # --- Horizon choice (PLAN-section-3.3.md Decision 1 / Phase 0):
     # F2 grows with tf rather than saturating quickly (checked directly
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # together with its own tf; it is not, in general, tf-independent").
     # Rather than chase asymptotic convergence per candidate (expensive:
     # the 26x8 grid at tf=80d would take ~30 min), this script fixes
-    # tf_days=20 -- matching quartet_gravity_kelvin's OWN registered
+    # tf_days=20 -- matching quartet_rossby_kelvin's OWN registered
     # horizon, so the catalogue's F2 values are directly comparable to
     # S3.3.1's headline number -- and reports the law as horizon-
     # qualified, consistent with the paper's own stated discipline, not

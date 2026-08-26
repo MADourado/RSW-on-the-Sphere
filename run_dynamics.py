@@ -7,7 +7,7 @@ separately
 
 Run:
 
-    python run_dynamics.py --wave-set quartet_gravity_kelvin
+    python run_dynamics.py --wave-set quartet_rossby_kelvin
 
 or import and call it from another script (e.g. run_sweep.py):
 
@@ -24,29 +24,40 @@ import numpy as np
 from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.integrators import RK44
-from rsw_sphere.dynamics.trajectory_cache import run_and_cache
+from rsw_sphere.dynamics.trajectory_cache import run_and_cache, _mode_slug
 from rsw_sphere.dynamics.run_config import RunConfig
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.plotting.energy_evolution import plot_energy_evolution
+from rsw_sphere.utilities.periods import dominant_periods
 from rsw_sphere.utilities.tables import dynamics_summary_rows, write_csv
 
 
 def _build_units(spec):
     """(name, modes, triads, velocities, title) per topology unit: the
-    full wave set, plus each constituent triad if spec.has_subtriads()."""
+    full wave set, plus each constituent triad if spec.has_subtriads().
+
+    A sub-triad's own name is built from its two MEMBER modes' own
+    filesystem-safe slugs (e.g. ``triad_rh34_rh45``) -- not a generic
+    ``triad0``/``triad1`` index -- so it stays meaningful on its own (as
+    a dict key, a figure filename, a table row) without needing the
+    registry's own display_label for context. The shared sum mode is
+    left out of the slug since it's often common to every constituent
+    triad in a quartet/quintet and wouldn't help distinguish them."""
     units = [("full", spec.modes, [spec.triad_indices(i) for i in range(spec.n_triads())],
               spec.velocities, spec.display_label or spec.key)]
     if spec.has_subtriads():
         for i, t in enumerate(spec.triads):
-            units.append((f"triad{i}", spec.sub_triad_modes(i), [(2, 0, 1)],
+            member_p, member_q, _sum = spec.sub_triad_modes(i)
+            name = f"triad_{_mode_slug(*member_p)}_{_mode_slug(*member_q)}"
+            units.append((name, spec.sub_triad_modes(i), [(2, 0, 1)],
                           spec.sub_triad_velocities(i), t.display_label or f"Triad {i + 1}"))
     return units
 
 
 def _integrate_and_plot_unit(args):
     """Worker (module-level so it's picklable for ProcessPoolExecutor)."""
-    name, modes, triads, velocities, title, h_e, tf_days, h, output_root, plot = args
+    name, modes, triads, velocities, title, h_e, tf_days, h, output_root, plot, wave_set_key = args
 
     gamma = gamma_from_he(h_e, g=G)[1]
     ws = WaveSet(gamma, list(modes), triads, N=10, deg=300)
@@ -68,9 +79,7 @@ def _integrate_and_plot_unit(args):
     if plot:
         import matplotlib.pyplot as plt
         from rsw_sphere.plotting.style import apply_house_style
-        rel = os.path.relpath(traj_path, traj_root)
-        fig_path = os.path.join(output_root, "figures", "dynamics",
-                                 os.path.splitext(rel)[0] + ".png")
+        fig_path = os.path.join(output_root, "figures", "dynamics", wave_set_key, f"{name}.png")
         os.makedirs(os.path.dirname(fig_path), exist_ok=True)
 
         apply_house_style()
@@ -94,13 +103,13 @@ def run_dynamics(config: RunConfig, write_table: bool = True) -> dict:
         False when called once per grid point (e.g. run_sweep.py's own
         per-point pass).
 
-    Returns dict: unit name ('full', 'triad0', 'triad1', ...) -> result
+    Returns dict: unit name ('full', 'triad_<member1>_<member2>', ...) -> result
     dict (t, E, E_total, labels, drift, dEK, trajectory_path, figure_path, title).
     """
     spec = config.wave_set_spec
     units = _build_units(spec)
     args = [(name, modes, triads, velocities, title, spec.h_e, config.tf_days, config.h,
-             config.output_root, config.plot)
+             config.output_root, config.plot, spec.key)
             for name, modes, triads, velocities, title in units]
 
     if config.parallel and len(units) > 1:
@@ -129,6 +138,16 @@ def main():
                          help="override the wave set's own registered step size")
     parser.add_argument("--no-plot", action="store_true", help="compute/cache only, skip figures")
     parser.add_argument("--no-parallel", action="store_true", help="force serial execution")
+    parser.add_argument("--diagnostics", action="store_true",
+                         help="also compute/print every pairwise diagnostic (p_measure, "
+                              "filtering_error, fmax, frequency_shift, novelty_period) for every "
+                              "target mode against every sub-triad that contains it, and write "
+                              "the novelty-frequency spectrum figures (rsw_sphere.plotting.novelty_panel)")
+    parser.add_argument("--novelty-exclusion-frac", type=float, default=0.20,
+                         help="novelty_period: +/- period window excluded around each "
+                              "sub-triad's own dominant peak")
+    parser.add_argument("--novelty-min-prominence", type=float, default=0.03,
+                         help="novelty_period: minimum find_peaks prominence to report a novel peak")
     args = parser.parse_args()
 
     specs = load_wave_set_specs(args.specs)
@@ -143,9 +162,57 @@ def main():
     for name, r in results.items():
         print(f"[{name}] {r['title']}: Energy drift={r['drift']:.3e}, "
               f"dEK={dict(zip(r['labels'], r['dEK']))}")
+        periods = {lbl: round(float(dominant_periods(r['t'], r['E'][:, j])['period_global']), 3)
+                   for j, lbl in enumerate(r['labels'])}
+        print(f"  periods (days, dominant FFT peak): {periods}")
         print(f"  trajectory -> {r['trajectory_path']}")
         if r['figure_path']:
             print(f"  figure -> {r['figure_path']}")
+
+    if args.diagnostics:
+        import numpy as np
+        from rsw_sphere.utilities.pmeasure import pairwise_target_diagnostics
+        from rsw_sphere.plotting.novelty_panel import novelty_frequency_figures
+
+        spec = specs[args.wave_set]
+        full = results["full"]
+        print("\n=== pairwise diagnostics (full wave set vs. each containing sub-triad) ===")
+        rows = []
+        for j, label in enumerate(full["labels"]):
+            amp_full = np.sqrt(full["E"][:, j])
+            for name, r in results.items():
+                if name == "full" or label not in r["labels"]:
+                    continue
+                j_sub = r["labels"].index(label)
+                amp_sub = np.sqrt(r["E"][:, j_sub])
+                d = pairwise_target_diagnostics(
+                    full["t"], amp_full, amp_sub,
+                    novelty_exclusion_frac=args.novelty_exclusion_frac,
+                    novelty_min_prominence=args.novelty_min_prominence)
+                novelty_str = (f"{d['novelty_period']:.4f}d ({d['novelty_relevance']:.2f}%)"
+                               if np.isfinite(d['novelty_period']) else "none detected")
+                rows.append([
+                    label, name, f"{d['p_measure']:.2f}%", f"{d['filtering_error']:.4f}",
+                    f"{d['fmax']:.2f}%", f"{d['frequency_shift']:.2f}%", str(d['frequency_shift_agree']),
+                    novelty_str,
+                ])
+
+        headers = ["mode", "vs.", "p_measure", "filt_err", "fmax", "freq_shift", "agree", "novelty_period (%)"]
+        widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h)
+                  for i, h in enumerate(headers)]
+        row_fmt = "  ".join(f"{{:<{w}}}" for w in widths)
+        print(row_fmt.format(*headers))
+        print(row_fmt.format(*["-" * w for w in widths]))
+        for r in rows:
+            print(row_fmt.format(*r))
+
+        novelty_dir = os.path.join(config.output_root, "figures", "dynamics", spec.key)
+        novelty_paths = novelty_frequency_figures(
+            results, novelty_dir, min_prominence=args.novelty_min_prominence,
+            exclusion_frac=args.novelty_exclusion_frac)
+        print(f"\n=== novelty-frequency spectrum figures ({len(novelty_paths)}) ===")
+        for p in novelty_paths:
+            print(f"  {p}")
 
 
 if __name__ == "__main__":

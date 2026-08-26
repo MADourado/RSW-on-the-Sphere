@@ -26,7 +26,7 @@ Fast, coarse look (useful while iterating on layout):
 
 Regenerate only one wave set:
 
-    python examples/make_section3_figures.py --wave-set quartet_gravity_kelvin
+    python examples/make_section3_figures.py --wave-set quartet_rossby_kelvin
 
 CALIBRATION NOTES
 -----------------
@@ -75,7 +75,7 @@ OUT_DIR = os.path.join(_ROOT, "outputs", "figures", "wave_sets")
 #: excluded; its own story (RH(3,4) vs RH(3,6) preference) is fully told by
 #: the comparison panel alone.
 PMEASURE_WAVE_SETS = {
-    "quartet_gravity_kelvin": dict(swept=("c", "d"), targets=("a", "b"), n_grid=8),
+    "quartet_rossby_kelvin": dict(swept=("c", "d"), targets=("a", "b"), n_grid=8),
     "quartet_gravity_79":     dict(swept=("c", "d"), targets=("a", "b"), n_grid=8),
     "quintet_gravity_star":   dict(swept=("c", "d"), targets=("a", "b"), n_grid=6),
 }
@@ -101,7 +101,7 @@ HIGHLIGHT_WAVE_SETS = {
     # absent from this sub-triad" as "no highlight" rather than a
     # mistake -- caught only by looking at the rendered figure.)
     "quartet_rh_preference": {"Triad 1": "c", "Triad 2": "d"},
-    "quartet_gravity_kelvin": "d",
+    "quartet_rossby_kelvin": "d",
     "quartet_gravity_79": "d",
     "quintet_gravity_star": {"Triad 1 (RH-only)": None, "Triad 2 (with EG(1,1))": "d",
                               "Triad 3 (with EG(7,9))": "e"},

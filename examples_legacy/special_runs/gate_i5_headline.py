@@ -10,7 +10,7 @@ this was blocked on `eq: enerA`'s air density `rho`, now resolved
 (2026-08-13, see `rsw_sphere.physics.air_density_from_equivalent_depth`)
 via `rho = p_s/(g*h_e)`.
 
-Uses the registered ``quartet_gravity_kelvin`` (Quartet B, matching
+Uses the registered ``quartet_rossby_kelvin`` (Quartet B, matching
 dissertation `tab: cap42`) at its own registered IC (a=b=c=30 m/s RH
 modes, d=EG(1,1) starting at rest) -- this is exactly Gate I0's own F1
 scenario (drop-mode filtering error, d(0)=0 so "drop vs. drop-and-
@@ -50,7 +50,7 @@ modeller can act on":
    positive = quartet's phase leads, negative = quartet's phase lags
    (its peaks fall later in time than the triad-only's own).
 
-Uses the registered ``quartet_gravity_kelvin`` (Quartet B, matching
+Uses the registered ``quartet_rossby_kelvin`` (Quartet B, matching
 dissertation `tab: cap42`) at its own registered IC (a=b=c=30 m/s RH
 modes, d=EG(1,1) starting at rest) -- this is exactly Gate I0's own F1
 scenario (drop-mode filtering error, d(0)=0 so "drop vs. drop-and-
@@ -93,7 +93,7 @@ def build(spec, gamma):
 
 if __name__ == "__main__":
     specs = load_wave_set_specs()
-    spec = specs['quartet_gravity_kelvin']
+    spec = specs['quartet_rossby_kelvin']
     gamma = gamma_from_he(spec.h_e, g=G)[1]
     ws_full, ws_triad1 = build(spec, gamma)
 

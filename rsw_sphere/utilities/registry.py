@@ -13,10 +13,11 @@ from rsw_sphere.utilities.pmeasure import (
 from rsw_sphere.utilities.functional import (
     functional_diagnostics_sweep, _DIAGNOSTIC_ARRAY_KEYS as _FUNCTIONAL_KEYS)
 from rsw_sphere.plotting.pmeasure_map import (
-    plot_p_measure_map, plot_filtering_error_map, plot_frequency_shift_map, plot_fmax_map)
+    plot_p_measure_map, plot_filtering_error_map, plot_frequency_shift_map, plot_fmax_map,
+    plot_novelty_period_map)
 from rsw_sphere.plotting.functional_map import plot_efficiency_map, plot_low_frequency_energy_map
 
-PAIRWISE = frozenset(_PAIRWISE_KEYS)  # {"p_measure", "filtering_error", "frequency_shift", "fmax"}
+PAIRWISE = frozenset(_PAIRWISE_KEYS)  # {"p_measure", "filtering_error", "frequency_shift", "fmax", "novelty_period"}
 FUNCTIONAL = frozenset(_FUNCTIONAL_KEYS)  # {"efficiency", "low_frequency_energy"}
 ALL_2D = PAIRWISE | FUNCTIONAL
 
@@ -27,6 +28,7 @@ DIAGNOSTIC_PLOT_FNS = {
     "filtering_error": plot_filtering_error_map,
     "frequency_shift": plot_frequency_shift_map,
     "fmax": plot_fmax_map,
+    "novelty_period": plot_novelty_period_map,
     "efficiency": plot_efficiency_map,
     "low_frequency_energy": plot_low_frequency_energy_map,
 }
@@ -38,7 +40,8 @@ def sweep_2d(modes, triads, h_e, swept_indices, fixed_velocities, target_indices
              drift_max: float = 0.1, low_freq_period_cutoff_days: float = 10.0,
              n_grid: int = 40, tf_days: float = 10, h: float = 0.01,
              N: int = 10, deg: int = 300, cache_dir: str = None,
-             verbose: bool = False, progress_label: str = ""):
+             verbose: bool = False, progress_label: str = "",
+             novelty_exclusion_frac: float = 0.20, novelty_min_prominence: float = 0.03):
     """Compute every requested 2D diagnostic, dispatching to the pairwise
     and/or functional sweep engine(s) as needed and merging their output.
 
@@ -70,7 +73,8 @@ def sweep_2d(modes, triads, h_e, swept_indices, fixed_velocities, target_indices
             diagnostics=tuple(pairwise), u1_range=u1_range, u2_range=u2_range,
             reference_triad=reference_triad, triad_index=triad_index,
             n_grid=n_grid, tf_days=tf_days, h=h, N=N, deg=deg,
-            cache_path=cache_path, verbose=verbose, progress_label=progress_label)
+            cache_path=cache_path, verbose=verbose, progress_label=progress_label,
+            novelty_exclusion_frac=novelty_exclusion_frac, novelty_min_prominence=novelty_min_prominence)
         out = dict(r)
 
     if functional:

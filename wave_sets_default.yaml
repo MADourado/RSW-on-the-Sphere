@@ -164,7 +164,7 @@ quartet_rh_preference:
     xlabel: "RH(3,6) driving velocity $u$ (m/s)"
     title: "Quartet A (this paper)"
     plot_u_max: 120.0
-  output: outputs/figures/quartet_a_rh36_precession.png
+  output: outputs/figures/wave_sets/quartet_rh_preference/precession.png
 
 quartet_rh_alt_partner:
   label: "RH(1,2)+RH(4,5) with RH(3,4) and RH(3,8)"
@@ -197,7 +197,7 @@ quartet_rh_alt_partner:
   plot:
     xlabel: "RH(3,8) driving velocity $u$ (m/s)"
     title: "RH(3,8) variant (this paper)"
-  output: outputs/figures/quartet_a_rh38_precession.png
+  output: outputs/figures/wave_sets/quartet_rh_alt_partner/precession.png
 
 quartet_rh_borrowed_topology:
   label: "RH(1,3)+RH(3,7) edge (Raphaldini et al. 2022's own topology) with target RH(2,9)"
@@ -223,7 +223,7 @@ quartet_rh_borrowed_topology:
     h: 0.01
     n_grid: 10
 
-quartet_gravity_kelvin:
+quartet_rossby_kelvin:
   label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
   display_label: "Quartet C"
   role: >-
@@ -234,7 +234,7 @@ quartet_gravity_kelvin:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}
     b: {m: 3, n: 4, alpha: 3, u: 30.0}
     c: {m: 1, n: 2, alpha: 3, u: 30.0}
-    d: {m: 1, n: 1, alpha: 1, u: 0.0}
+    d: {m: 1, n: 1, alpha: 1, u: 30.0}
   triads:
     - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
     - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
@@ -249,7 +249,7 @@ quartet_gravity_kelvin:
     diagnostics: [p_measure, filtering_error]
   plot:
     title: "Quartet C -- draft analysis panel"
-  output: outputs/figures/wave_sets/quartet_gravity_kelvin_diagnostics.png
+  output: outputs/figures/wave_sets/quartet_rossby_kelvin/diagnostics.png
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"
@@ -273,11 +273,40 @@ quartet_gravity_79:
     n_grid: 10
 
 
+quartet_rossby_gravity_influence:
+  label: "RH(3,4)+RH(4,5) and WG(3,9)+RH(4,5), both closed by WG(7,9) as the shared sum mode"
+  display_label: "Quartet D (WG(7,9)-sum, draft)"
+  role: >-
+    Novelty-period metric example. Two triads share both a member
+    (RH(4,5)) and their own sum mode (WG(7,9)), not a member-member edge.
+  h_e: 10000
+  modes:
+    a: {m: 7, n: 9, alpha: 2, u: 50.0}
+    b: {m: 4, n: 5, alpha: 3, u: 80.0}
+    c: {m: 3, n: 4, alpha: 3, u: 50.0}
+    d: {m: 3, n: 9, alpha: 2, u: 50.0}
+  triads:
+    - {sum: a, members: [c, b], display_label: "Triad 1 (RH(3,4)+RH(4,5))", triad_key: null}
+    - {sum: a, members: [d, b], display_label: "Triad 2 (WG(3,9)+RH(4,5))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+    n_grid: 10
+  sweep:
+    axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 100.0}]
+    n_grid: 10
+    diagnostics: [novelty_period, p_measure, filtering_error]
+  plot:
+    title: "Quartet D (WG(7,9)-sum, draft) -- novelty-period vs. p_measure/filtering_error"
+  output: outputs/figures/wave_sets/quartet_rossby_gravity_influence/diagnostics.png
+
+
 quartet_gravity_wg11:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + westward gravity mode WG(1,1)"
   display_label: "Quartet C (westward variant)"
   role: >-
-    Same RH-only triad and topology as quartet_gravity_kelvin (EG(1,1)),
+    Same RH-only triad and topology as quartet_rossby_kelvin (EG(1,1)),
     with the eastward Kelvin mode replaced by its westward counterpart
     WG(1,1) -- one of only two candidates on the RH(4,5)+RH(3,4) edge
     that PASSED a Stage-1 screen (cross-checked FFT/prominence period
@@ -308,10 +337,10 @@ quartet_gravity_wg11:
   sweep:
     diagnostics: [frequency_shift, p_measure]
     n_grid: 10
-  output: outputs/figures/wave_sets/quartet_gravity_wg11_diagnostics.png
+  output: outputs/figures/wave_sets/quartet_gravity_wg11/diagnostics.png
 
 quartet_dual_gravity_edge:
-  label: "EG(1,1)+EG(5,7) edge coupling RH(4,5) and EG(6,8)"
+  label: "WG(1,1)+EG(5,7) edge coupling RH(4,5) and RH(3,4)"
   display_label: "Quartet E"
   role: >-
     Gravity-dominated quartet.
@@ -332,7 +361,7 @@ quartet_dual_gravity_edge:
   sweep:
     diagnostics: [p_measure, filtering_error]
     n_grid: 10
-  output: outputs/figures/wave_sets/quartet_dual_gravity_edge_diagnostics.png
+  output: outputs/figures/wave_sets/quartet_dual_gravity_edge/diagnostics.png
 
 quintet_gravity_star:
   label: "RH(4,5)+RH(1,2)+RH(3,4) with both EG(1,1) and EG(7,9)"

@@ -6,7 +6,7 @@ Run as a quick self-check (synthetic two-tone signal):
     python -m rsw_sphere.utilities.periods
 """
 import numpy as np
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, peak_widths
 
 
 def _power_spectrum(t_days, E_j, max_period_days: float = None):
@@ -147,6 +147,120 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
     }
 
 
+def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = 3.0,
+                                   min_prominence: float = 0.03, exclusion_frac: float = 0.20,
+                                   n_grid: int = 4000):
+    """"Novelty" frequency content of a full wave-set trajectory relative
+    to EVERY sub-triad that contains the same target mode at once
+    (2026-08-26 design, arrived at empirically -- see PLAN-paper-4.2-
+    audit-and-freqshift-redesign-2026-08-26.md item 4 and
+    novel_frequency_content's own history below).
+
+    Deliberately NOT "how much did the dominant period shift": a naive
+    argmax of a (full - sub) difference spectrum picks up a dipole
+    artifact from any small shift in a sub-triad's own tall, narrow peak
+    (dwarfing genuinely new but smaller spectral content) rather than
+    real novel content. Instead: at every period, compare the full
+    spectrum against the BEST explanation any single sub-triad offers
+    (elementwise max of every sub-triad's own peak-normalized spectrum --
+    a mode already well-explained by ONE of its constituent triads isn't
+    "novel" just because a DIFFERENT triad doesn't also contain it),
+    excluding a +/-`exclusion_frac` window around EACH sub-triad's own
+    dominant peak (never the full spectrum's own peak -- excluding that
+    too breaks detection whenever the full spectrum's dominant peak IS
+    the genuine novel content, since a small shift already keeps the two
+    peaks within the same sub-only window when that's the artifact case).
+    Local maxima of what remains are the candidate novel peaks.
+
+    Parameters
+    ----------
+    t_full, E_full : full wave-set trajectory (KE = |A_target|^2).
+    subs : sequence of (t_sub, E_sub) pairs, one per sub-triad containing
+        the same target mode (length 1 for a private mode; 2+ for a mode
+        shared across triads, member or sum role alike).
+    xmax : upper period (days) considered.
+    min_prominence : `scipy.signal.find_peaks` prominence threshold on the
+        peak-normalized difference spectrum (0-1ish scale) -- a candidate
+        novel peak below this is treated as noise, not reported.
+    exclusion_frac : half-width of the excluded window around each
+        sub-triad's own dominant peak, as a fraction of that peak's period.
+
+    Returns
+    -------
+    dict
+        periods_days, power_diff (NaN inside the excluded window),
+        excluded (bool mask, union across every sub), novel_peaks (list
+        of dicts: period_days, prominence, band_days (peak_widths
+        half-max band), relevance_pct (that band's share of the FULL
+        spectrum's own total raw power) -- sorted dominant (highest
+        relevance_pct) first, empty if nothing survives min_prominence).
+    """
+    p_full_raw, pow_full_raw = _power_spectrum(t_full, E_full)
+    peak_full = pow_full_raw.max() if len(pow_full_raw) else 1.0
+    pow_full_n = pow_full_raw / peak_full if peak_full > 0 else pow_full_raw
+
+    common_periods = np.linspace(0.01, xmax, n_grid)
+    interp_full = np.interp(common_periods, p_full_raw[::-1], pow_full_n[::-1])
+    interp_full_raw = np.interp(common_periods, p_full_raw[::-1], pow_full_raw[::-1])
+    total_power_full = np.trapz(interp_full_raw, common_periods)
+
+    envelope = np.zeros_like(common_periods)
+    excluded = np.zeros_like(common_periods, dtype=bool)
+    for t_sub, E_sub in subs:
+        p_sub_raw, pow_sub_raw = _power_spectrum(t_sub, E_sub)
+        peak_sub = pow_sub_raw.max() if len(pow_sub_raw) else 1.0
+        pow_sub_n = pow_sub_raw / peak_sub if peak_sub > 0 else pow_sub_raw
+        interp_sub = np.interp(common_periods, p_sub_raw[::-1], pow_sub_n[::-1])
+        envelope = np.maximum(envelope, interp_sub)
+
+        sub_dominant_period = dominant_periods(t_sub, E_sub)['period_global']
+        if np.isfinite(sub_dominant_period):
+            lo = sub_dominant_period * (1 - exclusion_frac)
+            hi = sub_dominant_period * (1 + exclusion_frac)
+            excluded |= (common_periods >= lo) & (common_periods <= hi)
+
+    diff = interp_full - envelope
+
+    search = diff.copy()
+    search[excluded] = 0.0  # zeroed (not NaN) so find_peaks sees a valid, flat region there
+    peak_idx, props = find_peaks(search, prominence=min_prominence)
+
+    novel_peaks = []
+    for idx, prom in zip(peak_idx, props['prominences']):
+        period = common_periods[idx]
+        widths, width_heights, left_ips, right_ips = peak_widths(search, [idx], rel_height=0.5)
+        lo_i = np.interp(left_ips[0], np.arange(len(common_periods)), common_periods)
+        hi_i = np.interp(right_ips[0], np.arange(len(common_periods)), common_periods)
+        band_mask = (common_periods >= lo_i) & (common_periods <= hi_i)
+        band_power = np.trapz(interp_full_raw[band_mask], common_periods[band_mask]) \
+            if band_mask.sum() > 1 else 0.0
+        relevance_pct = 100 * band_power / total_power_full if total_power_full > 0 else 0.0
+        novel_peaks.append({
+            'period_days': float(period), 'prominence': float(prom),
+            'band_days': (float(lo_i), float(hi_i)), 'relevance_pct': float(relevance_pct),
+        })
+    novel_peaks.sort(key=lambda d: -d['relevance_pct'])
+
+    diff_masked = diff.copy()
+    diff_masked[excluded] = np.nan
+    return {
+        'periods_days': common_periods, 'power_diff': diff_masked, 'excluded': excluded,
+        'novel_peaks': novel_peaks,
+    }
+
+
+def novel_frequency_content(t_full, E_full, t_sub, E_sub, **kwargs):
+    """Single-sub-triad case of ``novel_frequency_content_multi`` (exactly
+    equivalent -- an envelope of one spectrum is just that spectrum, and
+    the excluded window is just that one sub-triad's own). Kept as its
+    own name since most callers only ever have one sub-triad in hand
+    (e.g. the ``sweep_2d``/``pmeasure.py`` per-grid-point diagnostic,
+    which -- like every other pairwise diagnostic there -- compares
+    against one reference triad per target, not every containing triad).
+    """
+    return novel_frequency_content_multi(t_full, E_full, [(t_sub, E_sub)], **kwargs)
+
+
 if __name__ == "__main__":
     # 4-day + 12-day tone: expect period_global~4, period_local_max~12.
     t = np.linspace(0, 60, 4000)
@@ -162,4 +276,25 @@ if __name__ == "__main__":
     p_low = low_frequency_power(t, E_low, period_cutoff_days=10.0)
     p_high = low_frequency_power(t, E_high, period_cutoff_days=10.0)
     assert p_low > 10 * p_high, "self-check FAILED: low_frequency_power did not discriminate"
+
+    # novel_frequency_content: E_sub a clean 4-day tone; E_full the SAME
+    # tone plus a smaller, genuinely new 12-day tone -- expect it detected
+    # with a sane relevance %, and nothing when the two signals are equal.
+    t2 = np.linspace(0, 60, 4000)
+    A_sub = 1.0 + 0.02 * np.cos(2 * np.pi * t2 / 4.0)
+    E_sub2 = A_sub ** 2
+    A_full = A_sub + 0.008 * np.cos(2 * np.pi * t2 / 12.0)
+    E_full2 = A_full ** 2
+
+    r_novel = novel_frequency_content(t2, E_full2, t2, E_sub2, xmax=20.0)
+    assert r_novel['novel_peaks'], "self-check FAILED: novel_frequency_content found nothing"
+    dominant = r_novel['novel_peaks'][0]
+    assert abs(dominant['period_days'] - 12.0) < 1.0, \
+        f"self-check FAILED: novelty period {dominant['period_days']} != ~12d"
+    assert 0 < dominant['relevance_pct'] < 100, \
+        f"self-check FAILED: relevance_pct {dominant['relevance_pct']} out of range"
+
+    r_null = novel_frequency_content(t2, E_sub2, t2, E_sub2, xmax=20.0)
+    assert not r_null['novel_peaks'], "self-check FAILED: identical signals reported a novel peak"
+
     print("periods self-check OK")

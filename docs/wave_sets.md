@@ -82,7 +82,7 @@ generated from it:
 python rsw_sphere/utilities/check_wave_set_physics.py
 
 # one registered wave set, a subset of checks
-python rsw_sphere/utilities/check_wave_set_physics.py --wave-set quartet_gravity_kelvin --check C1,C2,C4,C5,C8
+python rsw_sphere/utilities/check_wave_set_physics.py --wave-set quartet_rossby_kelvin --check C1,C2,C4,C5,C8
 
 # an AD-HOC configuration not in any registry -- e.g. a new quintet idea
 python rsw_sphere/utilities/check_wave_set_physics.py \
@@ -113,7 +113,7 @@ proves (not just what it computes).
 ## 1. The registry YAML
 
 ```yaml
-quartet_gravity_kelvin:
+quartet_rossby_kelvin:
   label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
   display_label: "Quartet C"
   role: "..."          # one-line note on why this wave set is included
@@ -199,7 +199,7 @@ means anything.
 ```bash
 python rsw_sphere/plotting/wave_set_table.py outputs/figures/wave_sets/table.tex
 python rsw_sphere/plotting/wave_set_table.py outputs/figures/wave_sets/table.csv --fmt csv
-python -m rsw_sphere.plotting.wave_set_table outputs/figures/wave_sets/table.md --fmt markdown --wave-set quartet_gravity_kelvin
+python -m rsw_sphere.plotting.wave_set_table outputs/figures/wave_sets/table.md --fmt markdown --wave-set quartet_rossby_kelvin
 ```
 
 or from Python:
@@ -209,7 +209,7 @@ from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 from rsw_sphere.plotting.wave_set_table import wave_set_properties, wave_set_table
 
 specs = load_wave_set_specs()
-props = wave_set_properties(specs['quartet_gravity_kelvin'])   # single wave set, as a dict
+props = wave_set_properties(specs['quartet_rossby_kelvin'])   # single wave set, as a dict
 wave_set_table(specs, fmt='latex', path='outputs/figures/wave_sets/table.tex')  # full registry
 ```
 
@@ -229,10 +229,10 @@ Console script: `rsw-waveset-table`. Full flags: `rsw-waveset-table --help`.
 
 ```bash
 # one wave set's own energy trajectory
-python rsw_sphere/plotting/energy_evolution.py outputs/figures/wave_sets/quartet_gravity_kelvin_energy.png --wave-set quartet_gravity_kelvin
+python rsw_sphere/plotting/energy_evolution.py outputs/figures/wave_sets/quartet_rossby_kelvin_energy.png --wave-set quartet_rossby_kelvin
 
 # "triad 1 / triad 2 [/ triad 3] / wave set" comparison row
-python rsw_sphere/plotting/energy_evolution.py outputs/figures/wave_sets/quartet_gravity_kelvin_panel.png --wave-set quartet_gravity_kelvin --panel
+python rsw_sphere/plotting/energy_evolution.py outputs/figures/wave_sets/quartet_rossby_kelvin_panel.png --wave-set quartet_rossby_kelvin --panel
 ```
 
 Console script: `rsw-waveset`. `--wave-set` selects a role key from the
@@ -267,7 +267,7 @@ erroring; **extend the dict, don't fork it**.
 ## 4. `period_panel.py` — dominant-period analysis
 
 ```bash
-python rsw_sphere/plotting/period_panel.py outputs/figures/wave_sets/quartet_gravity_kelvin_periods.png --wave-set quartet_gravity_kelvin
+python rsw_sphere/plotting/period_panel.py outputs/figures/wave_sets/quartet_rossby_kelvin_periods.png --wave-set quartet_rossby_kelvin
 ```
 
 Console script: `rsw-waveset-periods`. Same `--wave-set`/`--tf`/`--h`
@@ -312,14 +312,14 @@ amplitude trajectories directly and is unsigned: `F2 = RMS_t(|A_full(t)| -
 python -c "
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 from rsw_sphere.utilities.pmeasure import p_measure
-spec = load_wave_set_specs()['quartet_gravity_kelvin']
+spec = load_wave_set_specs()['quartet_rossby_kelvin']
 triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
 print(p_measure(spec.modes, triads, spec.velocities, h_e=spec.h_e,
                  reference_triad=spec.reference_triad, tf_days=20, h=0.01))
 "
 
 # full 2D sweep + plot (expensive -- see the runtime note below)
-python rsw_sphere/plotting/pmeasure_map.py outputs/figures/wave_sets/quartet_gravity_kelvin_pmeasure.png --wave-set quartet_gravity_kelvin --n-grid 10
+python rsw_sphere/plotting/pmeasure_map.py outputs/figures/wave_sets/quartet_rossby_kelvin_pmeasure.png --wave-set quartet_rossby_kelvin --n-grid 10
 ```
 
 Console script: `rsw-waveset-pmeasure`. Full flags: `rsw-waveset-pmeasure --help`.
@@ -372,7 +372,7 @@ is for a new combined-panel use case, not a drop-in replacement.
 python -c "
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 from rsw_sphere.utilities.pmeasure import wave_set_diagnostics_sweep
-spec = load_wave_set_specs()['quartet_gravity_kelvin']
+spec = load_wave_set_specs()['quartet_rossby_kelvin']
 triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
 result = wave_set_diagnostics_sweep(spec.modes, triads, spec.h_e, (2, 3),
                                      {0: 30.0, 1: 30.0}, [2, 3], n_grid=5, tf_days=20, h=0.01)
@@ -498,15 +498,15 @@ velocity; a mode private to exactly one triad is a swept axis/target),
 so an ordinary quartet needs no `axes` at all:
 
 ```yaml
-# inside wave_sets_default.yaml's own quartet_gravity_kelvin entry:
+# inside wave_sets_default.yaml's own quartet_rossby_kelvin entry:
 sweep:
   diagnostics: [p_measure, filtering_error]
   n_grid: 10
-output: outputs/figures/wave_sets/quartet_gravity_kelvin_diagnostics.png
+output: outputs/figures/wave_sets/quartet_rossby_kelvin_diagnostics.png
 ```
 
 ```bash
-python run_sweep.py --wave-set quartet_gravity_kelvin
+python run_sweep.py --wave-set quartet_rossby_kelvin
 ```
 
 Only the 2-private-mode case (an ordinary quartet) auto-derives --
@@ -569,7 +569,7 @@ python examples_legacy/make_section3_figures.py
 python examples_legacy/make_section3_figures.py --n-grid 5 --tf-scale 0.5
 
 # just one wave set
-python examples_legacy/make_section3_figures.py --wave-set quartet_gravity_kelvin
+python examples_legacy/make_section3_figures.py --wave-set quartet_rossby_kelvin
 
 # skip the (expensive) P-measure sweeps entirely
 python examples_legacy/make_section3_figures.py --skip-pmeasure

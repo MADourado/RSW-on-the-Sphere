@@ -22,7 +22,7 @@ Two primitives cover every topology in this repository:
 Cheap by default: only the wavenumber selection rule (m_sum = m_p + m_q)
 and meridional-symmetry parity (rsw_sphere.hough_harmonics...symetry) --
 both O(1), no Hough/eigenvalue computation. Verified empirically
-(2026-08-26, quartet_gravity_kelvin's own edge) that an odd count of
+(2026-08-26, quartet_rossby_kelvin's own edge) that an odd count of
 equatorially-antisymmetric modes among the three always gives exactly
 zero coupling -- a real second selection rule, not just TRIAD's `fat`
 sign convention (see wave_sets.py's own docstring on that distinction).

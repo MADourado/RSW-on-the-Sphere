@@ -78,6 +78,19 @@ equally not reducible to a `run_sweep.py`/`run_sweep_sets.py` config --
 Hilbert-transform phase lag, physical-Joules conversion, power-law
 fits/R², dual-estimator agreement checks, tf-convergence studies).
 
+**2026-08-26: `gate_i2_map_extension.py`, `gate_i2_map_recalibrate.py`,
+`frequency_shift_catalogue_search.py`, `frequency_shift_stage2.py`,
+`frequency_amplitude_companion.py`, `alternate_topology_probe.py`, and
+`catalogue_wide_tracking.py` were DELETED** -- the paper sections they
+backed (`JFM-template.tex` §4.3.3-4.3.7, and Appendix C's full
+catalogue table) were removed from the paper per the user's own
+in-source instruction. `gate_i5_headline.py`/`section33_headline_numbers.py`/
+`gate_i4_scaling_law.py` survive (they back §4.3.1/§4.3.2's headline
+numbers and the now-commented-out-but-retained Appendix C, respectively).
+The narrative below is left as a historical record of that
+investigation; git history has the deleted scripts themselves if
+ever needed again.
+
 Continuation of the same-day inspection work above, per
 `PLAN-section-3-experiments.md` Phases I2/I5/I6:
 
@@ -91,9 +104,11 @@ Continuation of the same-day inspection work above, per
 - `gate_i5_headline.py` — the S4 headline number, corrected 2026-08-13
   after a review caught an inverted phase-lag sign and a wrong
   "D1 doesn't saturate" claim (it saturates near 19% by day ~320-400).
-  Current, correct headline: **+0.83% period lengthening, +1.0%
-  peak-KE difference (1.88e19 J)**, both tf-independent, on the
-  registered `quartet_gravity_kelvin`.
+  Current headline (re-run 2026-08-26 after `quartet_rossby_kelvin`'s
+  own EG(1,1) IC changed from rest to 30 m/s): target period 1.387d
+  (quartet) vs. 4.141d (RH-only triad), **+14.6% peak-KE difference**,
+  both tf-independent, D1 reaching 17.1% at tf=20d and saturating near
+  19% by day ~350.
 - `short_gravity_long_rossby_example.py` — searched for a short-period
   gravity mode demonstrating both amplitude AND frequency effects on a
   Rossby target (2026-08-11 user request). **The originally-reported
@@ -102,7 +117,7 @@ Continuation of the same-day inspection work above, per
   smoothing window) — window-independent estimators (FFT with
   parabolic interpolation; prominence-filtered peaks) both give <=0.1%.
   Of the two candidates that passed `frequency_shift_catalogue_search.py`'s
-  Stage-1 screen (EG(1,1), already registered as `quartet_gravity_kelvin`;
+  Stage-1 screen (EG(1,1), already registered as `quartet_rossby_kelvin`;
   WG(1,1)), only WG(1,1) was missing a registry entry — now added as
   `quartet_gravity_wg11` (2026-08-26), migrating this script off its own
   retracted claim. Stage 2 (x-sweep + tf-convergence quantification) was
@@ -123,7 +138,7 @@ the Gate I2 map's previously-uncalibrated `d1_proxy`.
 - `gate_i4_scaling_law.py` — direct, brute-force integration (not the
   analytic proxy) of $\mathcal{F}_2$ across the full 26-candidate x 8
   energy-fraction grid (208 points), target mode b=RH(3,4), $t_f=20$d
-  (matching `quartet_gravity_kelvin`'s own registered horizon).
+  (matching `quartet_rossby_kelvin`'s own registered horizon).
   Re-derives and re-verifies the two-channel law
   `F2 ~ sqrt(alpha_2s^2+alpha_2p^2)*sqrt(x(1-x))/delta_2` from scratch:
   **R^2=0.9955** (vs. the 2026-08-12 investigation's own R^2=0.982),
@@ -297,3 +312,22 @@ reasoning stated explicitly rather than silently dropped.
 All numbers in `JFM-template.tex` §3.3.6 independently verified against
 these scripts' own saved output before writing (not hand-copied from
 memory). Compiles clean, 43 pages.
+
+## Item 4 frequency-shift/novelty-period exploration (2026-08-26)
+
+`freqshift_novelty_exploration/` (`draft_spectra.py`, `draft_spectra_amp_vs_ke.py`,
+`rh45_frequency_comparison.py`, `target_frequency_comparison.py`) -- the
+interactive exploration that designed the "novelty-period" metric
+(PLAN-paper-4.2-audit-and-freqshift-redesign-2026-08-26.md item 4):
+drafted per-mode spectra, settled the KE-vs-amplitude-envelope question
+(no difference observed, KE kept for consistency with every other
+diagnostic here), and worked through the naive-argmax dipole-artifact
+problem on `RH(4,5)`/`RH(3,4)` in `quartet_rossby_gravity_influence`
+before arriving at the validated design (exclude only each sub-triad's
+own dominant peak, not the full spectrum's). That design now lives in
+`rsw_sphere.utilities.periods.novel_frequency_content_multi` +
+`rsw_sphere.utilities.novelty_frequency` + `rsw_sphere.plotting.novelty_frequency_panel`,
+wired as the `novelty_period` sweep diagnostic and `run_dynamics.py --diagnostics`.
+These four scripts' own job (deciding the design) is done -- kept for the
+exploration history, not as current tools. `examples/freqshift_novelty/novelty_detection.py`
+is the current one, a thin CLI wrapper around the promoted code.

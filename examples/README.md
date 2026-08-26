@@ -23,7 +23,7 @@ block (`--wave-set KEY`); a standalone `RunConfig`-shaped YAML (`--config
 path.yaml`) is only for an ad-hoc/one-off sweep not worth registering.
 
 ```bash
-python run_sweep.py --wave-set quartet_gravity_kelvin
+python run_sweep.py --wave-set quartet_rossby_kelvin
 python run_sweep.py --wave-set quartet_rh_preference
 python run_linear_modes.py --wave-set triad_kelvin_rossby_flow
 ```
@@ -34,14 +34,23 @@ python run_linear_modes.py --wave-set triad_kelvin_rossby_flow
 physics gate -- run on any new/edited wave set before trusting a figure
 from it (see `docs/wave_sets.md` §0).
 
-## Not yet populated
+## `tables/`/`figures/`
 
-`tables/`/`figures/` (small scripts that call a driver for its cached
-data and format/compose a paper table or panel on top) is not yet built
--- Table cap41/cap42/cap43 and Figs cap4ex1/power1/quintetpanel are
-already reproducible directly via `wave_set_table.py`/`make_section3_figures.py`
-(see their own regenerate-comments in `JFM-template.tex`), just not yet
-wrapped as named `examples/tables/`/`examples/figures/` scripts.
+Small scripts that call a driver (or a standalone `rsw_sphere/plotting/*.py`
+module) for its own data and format/compose one paper table or figure on
+top, named `paper_table<NN>_<name>.py`/`paper_figure<NNN>_<name>.py` (the
+LaTeX `\label{tab: ...}`/`\label{fig: ...}` number/name, cross-referenced
+against the paper's own numbering, plus a stable descriptive name since
+LaTeX numbering drifts). Populated so far for everything through §4.2
+"Rossby-only quartet" (JFM-template.tex, `sec: quartet_rh`) -- see each
+script's own module docstring for exactly which `\label{...}` it
+reproduces. §4.3 "Gravity-Rossby quartets" (`sec: gravity`) onward is not
+yet covered here (mid-redesign elsewhere); Table `precession_comparison`
+and Figure `borrowed_topology_precession` (Quartet B, §4.2.2) are also not
+covered -- both depend on `examples_legacy/raphaldini2022_compare/`'s
+bespoke comparison against Raphaldini et al. (2022)'s own barotropic
+vorticity-equation system, which has no `WaveSet`/registry representation
+in this repo and so isn't reproducible via the current drivers alone.
 
 `examples_legacy/special_runs/` (2026-08-26): the 10-script cluster whose
 core computation isn't reducible to a `run_sweep.py`/`run_sweep_sets.py`

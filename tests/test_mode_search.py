@@ -5,12 +5,12 @@ import pytest
 
 from rsw_sphere.utilities.mode_search import edge_completions, pivot_completions
 
-A_MODE, B_MODE = (4, 5, 3), (3, 4, 3)  # quartet_gravity_kelvin's own edge
+A_MODE, B_MODE = (4, 5, 3), (3, 4, 3)  # quartet_rossby_kelvin's own edge
 
 
 @pytest.mark.slow
-def test_member_role_matches_quartet_gravity_kelvin():
-    # d=EG(1,1) is quartet_gravity_kelvin's own registered member-role
+def test_member_role_matches_quartet_rossby_kelvin():
+    # d=EG(1,1) is quartet_rossby_kelvin's own registered member-role
     # completion of this edge -- locks each mode's own coupling value
     # against the already-validated 2026-08-26 session result. A_MODE
     # (m=4) is the pump here (bigger than B_MODE's m=3).

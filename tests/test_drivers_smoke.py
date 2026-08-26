@@ -74,12 +74,12 @@ def test_run_linear_modes_requires_wave_set_or_run_all(tmp_path):
 
 @pytest.mark.slow
 def test_run_dynamics_smoke(tmp_path):
-    spec = load_wave_set_specs()["quartet_gravity_kelvin"]
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05,
                                       output_root=str(tmp_path), plot=True, parallel=False)
     from run_dynamics import run_dynamics
     result = run_dynamics(config)
-    assert set(result) == {"full", "triad0", "triad1"}
+    assert set(result) == {"full", "triad_rh34_rh12", "triad_rh34_eg11"}
     assert all(np.isfinite(r["drift"]) for r in result.values())
     assert all(os.path.exists(r["trajectory_path"]) for r in result.values())
     assert all(os.path.exists(r["figure_path"]) for r in result.values())
@@ -102,7 +102,7 @@ def test_run_sweep_1d_smoke(tmp_path):
 
 @pytest.mark.slow
 def test_run_sweep_2d_smoke(tmp_path):
-    spec = load_wave_set_specs()["quartet_gravity_kelvin"]
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=0.0, max=20.0),
                                SweepAxis(mode="d", min=0.0, max=10.0)),
                          n_grid=2, diagnostics=("p_measure",), save_point_figures=False)
@@ -158,7 +158,7 @@ def test_run_sweep_requires_config_or_wave_set(tmp_path):
 def test_run_sweep_sets_smoke():
     import run_sweep_sets as rss
     config = {
-        "base_wave_set": "quartet_gravity_kelvin",
+        "base_wave_set": "quartet_rossby_kelvin",
         "candidate_slot": "d",
         "target_mode": "b",
         "candidates": [{"m": 1, "n": 1, "alpha": 1}, {"m": 1, "n": 1, "alpha": 2}],

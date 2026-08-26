@@ -223,7 +223,7 @@ quartet_rh_borrowed_topology:
     h: 0.01
     n_grid: 10
 
-quartet_gravity_kelvin:
+quartet_rossby_kelvin:
   label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
   display_label: "Quartet C"
   role: >-
@@ -249,7 +249,7 @@ quartet_gravity_kelvin:
     diagnostics: [p_measure, filtering_error]
   plot:
     title: "Quartet C -- draft analysis panel"
-  output: outputs/figures/wave_sets/quartet_gravity_kelvin_diagnostics.png
+  output: outputs/figures/wave_sets/quartet_rossby_kelvin_diagnostics.png
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"

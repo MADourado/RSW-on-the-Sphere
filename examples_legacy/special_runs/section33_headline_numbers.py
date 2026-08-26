@@ -86,7 +86,7 @@ def headline(spec, label, tf_days_check=(20, 40)):
 
 if __name__ == "__main__":
     specs = load_wave_set_specs()
-    r_c = headline(specs['quartet_gravity_kelvin'], "Quartet C (EG(1,1))")
+    r_c = headline(specs['quartet_rossby_kelvin'], "Quartet C (EG(1,1))")
     r_d = headline(specs['quartet_gravity_79'], "Quartet D (EG(7,9))")
 
     print("\n=== Comparison ===")
