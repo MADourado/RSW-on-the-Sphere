@@ -100,7 +100,7 @@ count). `run_dynamics(config) -> dict` is directly importable --
 prints every pairwise diagnostic (`rsw_sphere.utilities.pmeasure.pairwise_target_diagnostics`:
 p_measure, filtering_error, fmax, frequency_shift, novelty_period) for
 every target mode against each sub-triad that contains it, and writes
-the novelty-frequency spectrum figures (`rsw_sphere.plotting.novelty_panel`).
+the novelty-frequency spectrum figures (`rsw_sphere.plotting.novelty_frequency_panel`).
 
     python run_dynamics.py --wave-set quartet_rossby_kelvin
 
@@ -111,7 +111,8 @@ Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). Calls
 `sweep.diagnostics`: 1D supports `precession` only
 (`rsw_sphere.utilities.precession.precession_frequency_efficiency`,
 natively 1D); 2D supports `p_measure`/`filtering_error`/`frequency_shift`/
-`fmax`/`efficiency`/`low_frequency_energy` via `rsw_sphere.utilities.registry.sweep_2d`.
+`fmax`/`novelty_period`/`efficiency`/`low_frequency_energy` via
+`rsw_sphere.utilities.registry.sweep_2d`.
 Swept/target modes for a 2D sweep default to the wave set's own "private"
 modes (`WaveSetSpec.shared_and_private_modes()`). `--wave-set KEY` reads
 `sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad` straight
@@ -349,7 +350,7 @@ member modes' filesystem-safe slugs, e.g. `triad_rh34_rh45`, not a
 `outputs/figures/wave_sets/<wave_set_key>/...` (sweep/diagnostic
 figures, plus `sweep_2d`'s own per-point cache files).
 `run_dynamics.py --diagnostics`'s own novelty-frequency spectrum figures
-(`rsw_sphere.plotting.novelty_panel`) land alongside the dynamics ones,
+(`rsw_sphere.plotting.novelty_frequency_panel`) land alongside the dynamics ones,
 in that same `outputs/figures/dynamics/<wave_set_key>/` folder, named
 `novelty_<target>_vs_<unit>.png`.
 

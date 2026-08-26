@@ -148,7 +148,7 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
 
 
 def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = 3.0,
-                                   min_prominence: float = 0.03, exclusion_frac: float = 0.20,
+                                   min_prominence: float = 0.02, exclusion_frac: float = 0.20,
                                    n_grid: int = 4000):
     """"Novelty" frequency content of a full wave-set trajectory relative
     to EVERY sub-triad that contains the same target mode at once

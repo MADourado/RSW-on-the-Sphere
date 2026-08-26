@@ -18,6 +18,7 @@ Each figure shows, on one axis (all curves on the same peak-normalized
 """
 import os
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 from rsw_sphere.plotting.style import apply_house_style
@@ -30,6 +31,13 @@ from rsw_sphere.utilities.periods import _power_spectrum
 _SUB_DASH_STYLES = ["--", (0, (4, 1, 1, 1)), "-.", (0, (1, 1))]
 _SUB_COLORS = ["tab:blue", "tab:green", "tab:purple", "tab:cyan"]
 _ORDINALS = ["first", "second", "third", "fourth", "fifth"]
+
+#: y-axis floor (log scale) -- peak-normalized power realistically bottoms
+#: out around 1e-4 for these spectra (checked against real data); a log
+#: axis can't show exact 0 anyway, and this keeps weak-but-real content
+#: (e.g. the ~10%-relevance case that's invisible on a linear 0-1 axis)
+#: visible instead of flattened against the bottom.
+_Y_FLOOR = 1e-4
 
 
 def _filesystem_safe(label: str) -> str:
@@ -50,23 +58,25 @@ def novelty_frequency_figure(results: dict, target_label: str, result: dict, pat
     apply_house_style()
     fig, ax = plt.subplots(figsize=(9, 5))
 
-    periods, diff, excluded = result['periods_days'], result['power_diff'], result['excluded']
-    ax.fill_between(periods, -1, 1, where=excluded, color="lightgray", alpha=0.5,
+    periods = result['periods_days']
+    diff = np.maximum(np.abs(result['power_diff']), _Y_FLOOR)
+    excluded = result['excluded']
+    ax.fill_between(periods, _Y_FLOOR, 1, where=excluded, color="lightgray", alpha=0.5,
                      label="excluded (sub-triads' own dominant peaks)")
-    ax.axhline(0, color="gray", lw=0.7)
 
     for i, sub_name in enumerate(result['sub_names']):
         sub = results[sub_name]
         j_sub = sub["labels"].index(target_label)
         p_sub, pow_sub = _power_spectrum(sub["t"], sub["E"][:, j_sub])
         pow_sub_n = pow_sub / pow_sub.max() if pow_sub.max() > 0 else pow_sub
-        ax.plot(p_sub, pow_sub_n, color=_SUB_COLORS[i % len(_SUB_COLORS)],
+        ax.plot(p_sub, np.maximum(pow_sub_n, _Y_FLOOR), color=_SUB_COLORS[i % len(_SUB_COLORS)],
                 ls=_SUB_DASH_STYLES[i % len(_SUB_DASH_STYLES)], lw=1.3,
                 label=f"mode energy in {sub_name}")
 
-    ax.plot(p_full, pow_full_n, color="black", lw=2.2, label="mode energy in quartet")
+    ax.plot(p_full, np.maximum(pow_full_n, _Y_FLOOR), color="black", lw=2.2,
+            label="mode energy in quartet")
     ax.plot(periods, diff, color="tab:red", lw=1.3, alpha=0.85,
-            label="difference (excluding sub-triad dominant peaks)")
+            label="|difference| (excluding sub-triad dominant peaks)")
 
     hot = plt.get_cmap("autumn")  # red (0.0) -> yellow (1.0)
     n_peaks = len(result['novel_peaks'])
@@ -77,13 +87,11 @@ def novelty_frequency_figure(results: dict, target_label: str, result: dict, pat
                    label=f"{ordinal} novel period: {p['period_days']:.3f}d ({p['relevance_pct']:.1f}%)")
 
     ax.set_xlim(0, xmax)
-    ax.set_ylim(-1, 1)
+    ax.set_yscale("log")
+    ax.set_ylim(_Y_FLOOR, 1.5)
     ax.set_xlabel("Period (days)")
     ax.set_ylabel("Peak-normalized power (FFT)")
-    title = f"{target_label}: novelty-frequency detection"
-    if not result['novel_peaks']:
-        title += " -- no novel frequency detected"
-    ax.set_title(title)
+    ax.set_title(f"Energy Spectra for mode: {target_label}")
     ax.legend(fontsize=7, loc="upper right")
 
     fig.tight_layout()

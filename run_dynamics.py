@@ -79,7 +79,13 @@ def _integrate_and_plot_unit(args):
     if plot:
         import matplotlib.pyplot as plt
         from rsw_sphere.plotting.style import apply_house_style
-        fig_path = os.path.join(output_root, "figures", "dynamics", wave_set_key, f"{name}.png")
+        # "full"'s own filename lists every one of its modes (no shared
+        # sum to omit the way a sub-triad's own name does -- there's
+        # only one "full" unit, so no ambiguity to resolve by omitting
+        # anything); a sub-triad's own name (already "triad_<m1>_<m2>")
+        # is used as-is.
+        fig_name = f"full_{'_'.join(_mode_slug(*m) for m in modes)}.png" if name == "full" else f"{name}.png"
+        fig_path = os.path.join(output_root, "figures", "dynamics", wave_set_key, fig_name)
         os.makedirs(os.path.dirname(fig_path), exist_ok=True)
 
         apply_house_style()
@@ -142,11 +148,11 @@ def main():
                          help="also compute/print every pairwise diagnostic (p_measure, "
                               "filtering_error, fmax, frequency_shift, novelty_period) for every "
                               "target mode against every sub-triad that contains it, and write "
-                              "the novelty-frequency spectrum figures (rsw_sphere.plotting.novelty_panel)")
+                              "the novelty-frequency spectrum figures (rsw_sphere.plotting.novelty_frequency_panel)")
     parser.add_argument("--novelty-exclusion-frac", type=float, default=0.20,
                          help="novelty_period: +/- period window excluded around each "
                               "sub-triad's own dominant peak")
-    parser.add_argument("--novelty-min-prominence", type=float, default=0.03,
+    parser.add_argument("--novelty-min-prominence", type=float, default=0.02,
                          help="novelty_period: minimum find_peaks prominence to report a novel peak")
     args = parser.parse_args()
 
@@ -172,7 +178,7 @@ def main():
     if args.diagnostics:
         import numpy as np
         from rsw_sphere.utilities.pmeasure import pairwise_target_diagnostics
-        from rsw_sphere.plotting.novelty_panel import novelty_frequency_figures
+        from rsw_sphere.plotting.novelty_frequency_panel import novelty_frequency_figures
 
         spec = specs[args.wave_set]
         full = results["full"]

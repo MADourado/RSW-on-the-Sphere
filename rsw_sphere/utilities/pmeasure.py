@@ -292,7 +292,7 @@ def _frequency_shift(T_days, amp_full, amp_sub, dEK_sub):
 
 
 def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = 0.20,
-                     min_prominence: float = 0.03):
+                     min_prominence: float = 0.02):
     """(dominant novel period in days, its relevance %) -- see
     ``rsw_sphere.utilities.periods.novel_frequency_content`` for the
     algorithm (2026-08-26 design: excludes only the sub-triad's own
@@ -313,7 +313,7 @@ def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = 
 
 def pairwise_target_diagnostics(T_days, amp_full, amp_sub,
                                  novelty_exclusion_frac: float = 0.20,
-                                 novelty_min_prominence: float = 0.03) -> dict:
+                                 novelty_min_prominence: float = 0.02) -> dict:
     """Every pairwise (full wave set vs. one sub-triad) diagnostic for a
     SINGLE already-integrated target-mode comparison -- reuses the exact
     same per-grid-point formulas ``wave_set_diagnostics_sweep`` computes
@@ -348,7 +348,7 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
                                 N: int = 10, deg: int = 300, cache_path: str = None,
                                 verbose: bool = False, progress_label: str = "",
                                 novelty_exclusion_frac: float = 0.20,
-                                novelty_min_prominence: float = 0.03):
+                                novelty_min_prominence: float = 0.02):
     """2D sweep computing several per-target diagnostics from one shared
     pass (one full-wave-set integration + one row-cached reference-triad
     integration per grid point), instead of one pass per diagnostic.

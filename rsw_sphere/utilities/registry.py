@@ -41,7 +41,7 @@ def sweep_2d(modes, triads, h_e, swept_indices, fixed_velocities, target_indices
              n_grid: int = 40, tf_days: float = 10, h: float = 0.01,
              N: int = 10, deg: int = 300, cache_dir: str = None,
              verbose: bool = False, progress_label: str = "",
-             novelty_exclusion_frac: float = 0.20, novelty_min_prominence: float = 0.03):
+             novelty_exclusion_frac: float = 0.20, novelty_min_prominence: float = 0.02):
     """Compute every requested 2D diagnostic, dispatching to the pairwise
     and/or functional sweep engine(s) as needed and merging their output.
 
