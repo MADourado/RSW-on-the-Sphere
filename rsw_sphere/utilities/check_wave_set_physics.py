@@ -28,32 +28,27 @@ gamma, N, deg, ...)`` -- never only a registry key -- so it can be run on
 an ad-hoc configuration that isn't in any YAML.
 
 Run the built-in default battery (a synthetic triad, quartet and quintet,
-not tied to any registry -- the registry doesn't exist until Phase B):
+not tied to any registry):
 
-    python examples/check_wave_set_physics.py
+    python rsw_sphere/utilities/check_wave_set_physics.py
 
 Run only some checks:
 
-    python examples/check_wave_set_physics.py --check C1,C4
+    python rsw_sphere/utilities/check_wave_set_physics.py --check C1,C4
 
 Run against an ad-hoc configuration (4 modes, 2 triads; sum mode listed
 first in each ``--triad``):
 
-    python examples/check_wave_set_physics.py \\
+    python rsw_sphere/utilities/check_wave_set_physics.py \\
         --modes 4,5,3 1,2,3 3,4,3 3,6,3 \\
         --triads 0,1,2 0,1,3
 
-Run against a registered wave set (once Phase B's registry exists):
+Run against a registered wave set:
 
-    python examples/check_wave_set_physics.py --wave-set quartet_rh_preference
+    python rsw_sphere/utilities/check_wave_set_physics.py --wave-set quartet_rh_preference
 """
 import argparse
-import os
 import sys
-
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 

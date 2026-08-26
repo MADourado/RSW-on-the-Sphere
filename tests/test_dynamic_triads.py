@@ -1,12 +1,15 @@
 """Direct TRIAD energy-conservation test -- the independent reference
-implementation WaveSet is cross-checked against (examples/check_wave_set_physics.py's
+implementation WaveSet is cross-checked against (rsw_sphere/utilities/check_wave_set_physics.py's
 C1), tested here on its own rather than only indirectly."""
 import numpy as np
+import pytest
 
 from rsw_sphere.physics import gamma_from_he, G
 from rsw_sphere.dynamics.dynamic_triads import TRIAD, Energy_0
 from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
+
+pytestmark = pytest.mark.slow
 
 H_E = 10000.0
 

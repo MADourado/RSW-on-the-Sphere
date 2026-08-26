@@ -125,6 +125,12 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+`pytest tests/ -m "not slow"` runs the short suite (pure unit/parsing
+tests, a few seconds) -- for everyday iteration. `pytest tests/` (no
+marker filter) runs everything, including real `RK44` integration tests
+(~1-2 minutes) -- run this before trusting a change to `rsw_sphere/`
+itself, not on every edit.
+
 ## Usage
 
 ```bash
@@ -137,8 +143,10 @@ python run_linear_modes.py --run-all
 python run_dynamics.py --wave-set quartet_gravity_kelvin
 
 # sweep 1-2 modes' initial velocities + diagnostics (P-measure, filtering
-# error, frequency shift, efficiency, low-frequency energy, precession)
-python run_sweep.py --config examples/sweep_quartet_gravity_kelvin_diagnostics.yaml
+# error, frequency shift, efficiency, low-frequency energy, precession) --
+# reads the wave set's own registry entry; --config path.yaml for an
+# ad-hoc sweep not worth registering
+python run_sweep.py --wave-set quartet_gravity_kelvin
 
 # screen a list of candidate modes filling one slot of a registered wave set
 python run_sweep_sets.py --config examples/candidates_quartet_gravity_kelvin.yaml
@@ -177,10 +185,11 @@ pattern) in [`docs/hough_modes.md`](docs/hough_modes.md) (`rsw-hough-mode
 output.png --m 3 --n 7 --alpha 3`).
 
 Resonant-triad tools (batch properties table, energy-integration time
-series, efficiency-of-energy-transfer sweeps) are documented in
-[`docs/triads.md`](docs/triads.md) (`rsw-triad-table` / `rsw-triad` /
-`rsw-triad-efficiency`). Their generalization to quartets and quintets
-(coupled multi-triad configurations) is documented in
+series, efficiency-of-energy-transfer sweeps) are covered by the same
+unified drivers used for quartets/quintets (a triad is the degenerate
+1-triad case) — see [`docs/triads.md`](docs/triads.md) for the old-to-new
+command mapping. Quartets and quintets (coupled multi-triad
+configurations) are documented in
 [`docs/wave_sets.md`](docs/wave_sets.md) (`rsw-waveset-table` /
 `rsw-waveset` / `rsw-waveset-periods` / `rsw-waveset-pmeasure` /
 `rsw-waveset-precession`) — including how to test a new

@@ -1,13 +1,10 @@
-"""Shared mode-labelling and number-formatting helpers for the triad and
-wave-set (quartet/quintet) plotting/table modules.
+"""Shared mode-labelling and number-formatting helpers for the wave-set
+(quartet/quintet) plotting/table modules.
 
-``_mode_label`` was independently defined, identically, in ``triad_table.py``
-and ``triad_efficiency.py``, plus a third near-identical inline closure
-(``_paper_label``, with an unused ``fallback`` argument) in
-``triad_dynamics.py``. All three implement the same rule: the paper's prose
-consistently uses **EG/WG** for eastward/westward inertia-gravity modes, not
-the code's internal **EIG/WIG** shorthand (``TRIAD.label_a/b/c``) -- so
-paper-facing labels must be generated here, not read off ``TRIAD`` directly.
+``_mode_label`` implements one rule: the paper's prose consistently uses
+**EG/WG** for eastward/westward inertia-gravity modes, not the code's
+internal **EIG/WIG** shorthand (``TRIAD.label_a/b/c``) -- so paper-facing
+labels must be generated here, not read off ``TRIAD`` directly.
 
 Run as a quick sanity check:
 

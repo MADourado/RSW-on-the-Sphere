@@ -39,7 +39,7 @@ Quartet B's own precession-frequency panels into JFM-template.tex's
 `fig: precession_frequency`) turned out not to need it -- that figure is
 two independent PNGs combined by LaTeX `subfigure`, not a Python
 composite, and each source script (`run_sweep.py` + a config, or
-`examples/borrowed_topology_precession_figure.py`) already writes its own
+`examples_legacy/raphaldini2022_compare/borrowed_topology_precession_figure.py`) already writes its own
 complete, publication-ready PNG on its own. A `postproc/` wrapper that
 just re-called those same plotting functions added no assembly work,
 only a second code path to keep in sync (2026-08-25 review). Create the
@@ -105,10 +105,14 @@ Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). Calls
 natively 1D); 2D supports `p_measure`/`filtering_error`/`frequency_shift`/
 `efficiency`/`low_frequency_energy` via `rsw_sphere.utilities.registry.sweep_2d`.
 Swept/target modes for a 2D sweep default to the wave set's own "private"
-modes (`WaveSetSpec.shared_and_private_modes()`).
+modes (`WaveSetSpec.shared_and_private_modes()`). `--wave-set KEY` reads
+`sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad` straight
+from that wave set's own `wave_sets_default.yaml` entry -- `--config
+path.yaml` (a standalone `RunConfig` YAML) is only for an ad-hoc sweep
+not worth registering.
 
-    python run_sweep.py --config examples/sweep_quartet_gravity_kelvin_diagnostics.yaml
-    python run_sweep.py --config examples/sweep_quartet_a_rh36.yaml
+    python run_sweep.py --wave-set quartet_gravity_kelvin
+    python run_sweep.py --wave-set quartet_rh_preference
 
 ### `run_sweep_sets.py`
 Loops a diagnostic over a LIST of wave-set variants -- substituting which
@@ -200,7 +204,8 @@ modes.
   efficiency (max−min energy), total-energy conservation check, and plots the
   time series.
 - `Triad_Precession` — dead code (commented out since the §2.2 rebuild).
-  Superseded by `rsw_sphere/plotting/triad_efficiency.py`.
+  Superseded by `run_sweep.py`'s efficiency diagnostic
+  (`rsw_sphere/utilities/efficiency.py`).
 - `eff_tri`, `period_Fourier` — efficiency-vs-velocity curves and FFT-based
   dominant-period analysis. (Some of these are exploratory helpers.)
 
@@ -217,7 +222,7 @@ in the 2026 paper §3 rebuild — none worked as shipped (all called a
 (`dynamic_triads.py`) is untouched and is `WaveSet`'s independent
 reference implementation, proven equivalent under a mode-relabeling
 permutation (`WaveSet`'s own module docstring;
-`examples/check_wave_set_physics.py` checks C1-C3). See
+`rsw_sphere/utilities/check_wave_set_physics.py` checks C1-C3). See
 [`../docs/wave_sets.md`](../docs/wave_sets.md) for the plotting/registry
 layer built on top and how to test a configuration not yet registered.
 
@@ -297,7 +302,8 @@ low-frequency energy -- full wave set alone), `periods.py`
 compute engine + plot function, used by `run_sweep.py`/`run_sweep_sets.py`).
 Every `*_sweep`/`*_diagnostics_sweep` function here takes a `cache_path`
 (`.npz`, cache-if-absent/load-if-present) and reads
-`triad_efficiency.default_velocity_range` for its own default sweep range.
+`rsw_sphere.utilities.efficiency.default_velocity_range` for its own
+default sweep range.
 
 ## Outputs
 
@@ -321,11 +327,10 @@ diagnostic can be re-derived from one without re-integrating, and the
 same physical configuration reuses one entry across scripts), not
 figures. Also gitignored.
 
-`examples/legacy/` holds scripts superseded by
-`paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-codebase-reorg-2026-08-25.md`'s
-reorganization (verified to reproduce their own prior output before the
-move) — a holding area pending a later, separate deletion pass, not a
-statement that the code there still reflects current practice.
+`examples/legacy/` holds scripts superseded by a codebase reorganization
+(verified to reproduce their own prior output before the move) — a
+holding area pending a later, separate deletion pass, not a statement
+that the code there still reflects current practice.
 
 ## Conventions & gotchas
 

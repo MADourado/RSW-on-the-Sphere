@@ -22,9 +22,6 @@ dev = ["pytest"]
 [project.scripts]
 rsw-dispersion = "rsw_sphere.plotting.dispersion_relation_fancy:main"
 rsw-hough-mode = "rsw_sphere.plotting.hough_spatial_ev:main"
-rsw-triad-table = "rsw_sphere.plotting.triad_table:main"
-rsw-triad = "rsw_sphere.plotting.triad_dynamics:main"
-rsw-triad-efficiency = "rsw_sphere.plotting.triad_efficiency:main"
 rsw-waveset-table = "rsw_sphere.plotting.wave_set_table:main"
 rsw-waveset = "rsw_sphere.plotting.energy_evolution:main"
 rsw-waveset-periods = "rsw_sphere.plotting.period_panel:main"
@@ -33,3 +30,8 @@ rsw-waveset-precession = "rsw_sphere.plotting.precession_plot:main"
 
 [tool.setuptools.packages.find]
 include = ["rsw_sphere*"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: real integration (RK44 sweeps/trajectories, multi-second each) -- pytest -m 'not slow' for the short suite; plain pytest (default) runs everything.",
+]

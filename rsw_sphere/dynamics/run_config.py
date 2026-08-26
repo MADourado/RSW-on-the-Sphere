@@ -64,6 +64,24 @@ class RunConfig:
         else:
             raise ValueError(f"{path!r}: needs either 'wave_set' (registry key) or 'modes' (inline spec)")
 
+        return cls._from_cfg(cfg, spec)
+
+    @classmethod
+    def from_registry_entry(cls, key: str, specs_path: str = DEFAULT_WAVESETS_PATH) -> "RunConfig":
+        """Build straight from one wave_sets_default.yaml entry's own
+        tf_days/h/sweep (if it has one) -- no separate wrapper config file
+        needed, e.g. for run_sweep.py --wave-set KEY. Falls back to the
+        entry's settings block for tf_days/h if not overridden at the
+        entry's own top level (same fallback from_yaml uses)."""
+        with open(specs_path) as f:
+            raw = yaml.safe_load(f)
+        if key not in raw:
+            raise ValueError(f"{key!r} not found in {specs_path!r} (available: {list(raw)})")
+        spec = load_wave_set_specs(specs_path)[key]
+        return cls._from_cfg(raw[key], spec)
+
+    @classmethod
+    def _from_cfg(cls, cfg: dict, spec: WaveSetSpec) -> "RunConfig":
         return cls.from_wave_set(
             spec,
             tf_days=cfg.get("tf_days", spec.settings.get("tf_days", 10)),
@@ -93,7 +111,7 @@ def _sweep_from_dict(raw, spec: WaveSetSpec):
     if not raw:
         return None
 
-    from rsw_sphere.plotting.triad_efficiency import default_velocity_range
+    from rsw_sphere.utilities.efficiency import default_velocity_range
 
     if "axes" in raw:
         axes = tuple(SweepAxis(mode=a["mode"], min=float(a["min"]), max=float(a["max"])) for a in raw["axes"])

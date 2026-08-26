@@ -2,9 +2,12 @@
 Quartet A's own published boundary (examples_legacy/quartet_precession_sweep.py's
 self-check) -- u~83-92/u~140 lock both constituent triads, u=70 doesn't."""
 import numpy as np
+import pytest
 
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 from rsw_sphere.utilities.precession import precession_frequency_efficiency
+
+pytestmark = pytest.mark.slow
 
 _LOCK_TOL = 1e-3
 

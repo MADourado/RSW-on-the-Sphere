@@ -14,12 +14,13 @@ G, H_E = 9.8, 10000.0
 N, DEG = 6, 300  # low N -- fast, exact identities regardless of resolution.
 # deg=300 is NOT arbitrary/lowerable here: velocity_to_amplitude's own
 # norm_component uses a hardcoded deg=300 quadrature independent of
-# whatever deg a WaveSet was built with (examples/precession_resonance_broad_search.py
+# whatever deg a WaveSet was built with (examples_legacy/raphaldini2022_compare/precession_resonance_broad_search.py
 # documents this same constraint) -- deg MUST stay 300 wherever
 # amplitudes_from_velocities is used, or norm_component's quadrature
 # shape mismatches the mode's own uvh arrays.
 
 
+@pytest.mark.slow
 def test_triad_energy_conservation():
     """A 3-mode/1-triad WaveSet's total energy (E2+E3) is conserved to
     ~machine precision -- an *exact* identity for any 3-wave truncation

@@ -1,47 +1,25 @@
-# Example configs
+# Wave-set registry
 
-Named `configs.yaml` variants reproducing specific figures/tables from the
-thesis (`docs/Marco_Msc.pdf`), runnable with either driver:
+`wave_sets_default.yaml` (repo root) is the single registry for
+triads/quartets/quintets alike (a triad is the degenerate 1-triad case),
+used by all four root drivers (`run_linear_modes.py`, `run_dynamics.py`,
+`run_sweep.py`, `run_sweep_sets.py`). See
+[`docs/wave_sets.md`](../docs/wave_sets.md), which also covers how to test
+a triad/quartet/quintet that isn't in the registry at all.
+`rsw_sphere/utilities/check_wave_set_physics.py` is the hard physics gate
+every new or edited entry must pass before any figure is trusted.
 
-```bash
-python run_linear_modes.py --config examples/table_2_1_quasi_resonant.yaml
-python run_dynamics.py --config examples/table_2_1_quasi_resonant.yaml
-```
-
-| Config | Reproduces | Notes |
-|--------|-----------|-------|
-| `../configs.yaml` (repo root) | Fig. 2.9 / Table 2.2 triad 2 | The shipped default. |
-| `table_2_1_quasi_resonant.yaml` | Table 2.1 | Near-zero coupling coefficient, tiny frequency mismatch — expect almost no energy exchange. Initial velocities are placeholders (not given in the thesis table). |
-| `table_2_3_kelvin_rh_energy_flow.yaml` | Table 2.3 / Fig. 2.7 | Energy flow from Rossby-Haurwitz to eastward gravity modes via the Kelvin wave `(1,1,EIG)`. |
-
-Each writes its figures under its own `OUTPUT_PATH` (subfolders of
-`outputs/figures/`) so they don't overwrite each other or the default run.
-
-See `docs/code_guide.md` for the thesis-figure-to-code map these were
-drawn from.
-
-## Triad registry
-
-`triads_section_2_2.yaml` is a different kind of config — not a
-`run_linear_modes.py`/`run_dynamics.py` input, but the registry of triads
-used by `rsw-triad-table` / `rsw-triad` / `rsw-triad-efficiency` (see
-[`docs/triads.md`](../docs/triads.md)).
-
-## Wave-set (quartet/quintet) registry
-
-`wave_sets_section_3.yaml` is the same kind of registry, generalized to
-quartets and quintets (coupled multi-triad configurations) — used by
-`rsw-waveset-table` / `rsw-waveset` / `rsw-waveset-periods` /
-`rsw-waveset-pmeasure`, and by `make_section3_figures.py`'s composite
-builder (see [`docs/wave_sets.md`](../docs/wave_sets.md), which also
-covers how to test a triad/quartet/quintet that isn't in this file at
-all). `check_wave_set_physics.py` is the hard physics gate every new or
-edited entry must pass before any figure is trusted.
+The §2.2-specific parallel toolchain (`triad_specs.py`/`triad_table.py`/
+`triad_dynamics.py`/`triad_efficiency.py`, `triads_section_2_2.yaml`) was
+retired 2026-08-26 — see [`docs/triads.md`](../docs/triads.md) for the
+old-to-new command mapping. `make_section22_figures.py` depended on it
+directly and is no longer runnable.
 
 ## Precession resonance (2026-08-12)
 
-Two standalone scripts from the same-day precession-resonance
-investigation:
+`raphaldini2022_compare/`: the same-day precession-resonance
+investigation, moved into its own subfolder as a unit (2026-08-26) since
+the scripts import each other by bare module name.
 
 - `reproduce_raphaldini2022_fig2.py` — direct, dependency-free
   reproduction of Raphaldini, Peixoto, Teruya, Raupp & Bustamante (2022,
@@ -86,6 +64,18 @@ investigation:
   results) needs new framing if revisited.
 
 ## Gate I2/I5/I6 and the short-gravity/long-Rossby search (2026-08-13)
+
+`special_runs/`: the scripts in this section and in "§3.3 rewrite" below
+(except `rh_partner_quartet_family.py`) were moved into their own
+subfolder (2026-08-26) as one interdependent unit -- `gate_i2_map_extension.py`
+is the root of an import chain most of the others share (`gate_i4_scaling_law.py`,
+`gate_i2_map_recalibrate.py`, `frequency_shift_catalogue_search.py`,
+`frequency_shift_stage2.py`, `frequency_amplitude_companion.py`,
+`alternate_topology_probe.py`, `catalogue_wide_tracking.py`), plus
+`gate_i5_headline.py`/`section33_headline_numbers.py` (independent, but
+equally not reducible to a `run_sweep.py`/`run_sweep_sets.py` config --
+Hilbert-transform phase lag, physical-Joules conversion, power-law
+fits/R², dual-estimator agreement checks, tf-convergence studies).
 
 Continuation of the same-day inspection work above, per
 `PLAN-section-3-experiments.md` Phases I2/I5/I6:

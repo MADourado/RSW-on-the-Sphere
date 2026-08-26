@@ -1,13 +1,10 @@
-"""Shared cache-key hashing for expensive 2D parameter sweeps (triad
-efficiency maps, and -- planned -- wave-set P-measure/period-difference
-maps).
+"""Shared cache-key hashing for expensive 2D parameter sweeps (efficiency
+maps, wave-set P-measure/period-difference maps).
 
-``cache_key_hash`` was defined in ``triad_efficiency.py``; moved here so the
-wave-set sweep modules (``rsw_sphere.plotting.wave_set_pmeasure`` etc.) can
-reuse the same hashing discipline without re-deriving it. **The payload
-tuple and its ordering must not change** -- the ``.npz`` caches already on
-disk under ``outputs/figures/triads/`` are keyed by this function's exact
-output for triad sweeps; changing the payload silently invalidates them
+Used by the wave-set sweep modules (``rsw_sphere.plotting.wave_set_pmeasure``
+etc.) so they share one hashing discipline. **The payload tuple and its
+ordering must not change** -- existing ``.npz`` caches are keyed by this
+function's exact output; changing the payload silently invalidates them
 (the same failure mode as the stale-NaN bug this function was written to
 fix in the first place).
 

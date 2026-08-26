@@ -1,12 +1,13 @@
 """``rsw_sphere.dynamics.dynamical_phase.individual_phase`` reduces to a
-straight line of slope ``-omega_j`` when coupling is negligible (Phase 2 of
-paper-nonlinear-interactions-SWE-sphere/.claude/PLAN-codebase-reorg-2026-08-25.md)."""
+straight line of slope ``-omega_j`` when coupling is negligible."""
 import numpy as np
 import pytest
 
 from rsw_sphere.physics import gamma_from_he
 from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
+
+pytestmark = pytest.mark.slow
 from rsw_sphere.dynamics.dynamical_phase import individual_phase
 
 G, H_E = 9.8, 10000.0

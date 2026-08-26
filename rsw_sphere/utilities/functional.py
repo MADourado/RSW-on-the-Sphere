@@ -11,7 +11,7 @@ from rsw_sphere.physics import gamma_from_he, days_from_nondim_time
 from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.plotting.labels import _mode_label
-from rsw_sphere.plotting.triad_efficiency import default_velocity_range
+from rsw_sphere.utilities.efficiency import default_velocity_range
 from rsw_sphere.utilities.efficiency import wave_set_efficiency
 from rsw_sphere.utilities.periods import low_frequency_power
 

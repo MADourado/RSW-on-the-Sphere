@@ -33,7 +33,7 @@ if _REPO not in sys.path:
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from rsw_sphere.physics import gamma_from_he, G
-from rsw_sphere.dynamics.triad_specs import load_triad_family, DEFAULT_FAMILIES_PATH
+from rsw_sphere.dynamics.triad_family_specs import load_triad_family, DEFAULT_FAMILIES_PATH
 from rh_partner_family import triad_efficiency_point
 
 #: n=10 is a positive control (must stay at its own known-converged

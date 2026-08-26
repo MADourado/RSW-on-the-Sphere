@@ -17,22 +17,19 @@ GREY = '0.55'
 # re-assigned per-panel by triad-local index a/b/c. Warm hues (yellow ->
 # orange -> red -> dark red/maroon) for Rossby-Haurwitz (RH) modes, cool
 # hues (light blue -> blue -> indigo/violet) for inertia-gravity (EG/WG)
-# modes, grey reserved for non-modal references (e.g. the total-energy
-# line in triad_dynamics.py).
+# modes, grey reserved for non-modal references (e.g. a total-energy line).
 #
 # Keyed by the raw ``(m, n, alpha)`` triple (alpha: 1=EIG/EG, 2=WIG/WG,
-# 3=RH) rather than a formatted label string, since the two call sites
-# (triad_dynamics.py, triad_efficiency.py) format mode labels slightly
-# differently (``dynamic_triads.label()`` emits "RH (m,n)" with a space,
-# ``triad_table._mode_label`` emits "RH(m,n)" without) -- the tuple is the
-# one thing both can produce identically from what they already hold.
+# 3=RH) rather than a formatted label string, since ``dynamic_triads.label()``
+# emits "RH (m,n)" with a space while this module's own ``_mode_label``
+# emits "RH(m,n)" without -- the tuple is the one thing both can produce
+# identically from what they already hold.
 #
 # Hue assigned by each mode's *linear* period (fixed, not recomputed at
 # plot time): within a family, the fastest (shortest-period) mode gets the
 # lightest hue and the slowest gets the darkest, so darker == slower reads
 # consistently across figures. Periods used to fix this ordering (computed
-# via ``triad_table.triad_properties``/``wave_set_table.wave_set_table``,
-# h_e=10000 m, 2026-08-11):
+# via ``wave_set_table.wave_set_table``, h_e=10000 m, 2026-08-11):
 #   RH(3,4)=3.72d, RH(4,5)=3.99d, RH(1,2)=5.03d, RH(3,6)=7.59d,
 #   RH(3,10)=19.0d, RH(1,7)=30.3d
 #   EG(6,9)=0.156d, EG(7,9)=0.156d, EG(1,1)=1.35d
@@ -72,7 +69,7 @@ def add_outward_twin_axis(ax, x, y, marker_style='v-', color=GREEN, ylabel='', l
     Factored out after the identical "third twin axis, spine pushed
     outward, matching-color label" block was copy-pasted between
     ``precession_plot.plot_dual_axis_frequency_efficiency`` and
-    ``examples/borrowed_topology_precession_figure.py``'s ``plot_sweep``
+    ``examples_legacy/raphaldini2022_compare/borrowed_topology_precession_figure.py``'s ``plot_sweep``
     and had already drifted (one copy set a log y-scale, the other
     didn't) -- see paper-nonlinear-interactions-SWE-sphere's own code
     review, 2026-08-25.

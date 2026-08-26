@@ -1,5 +1,7 @@
 """run_sweep_sets: candidate-mode substitution + m-inference + one-point
 diagnostic screening."""
+import pytest
+
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 
 import run_sweep_sets as rss
@@ -31,6 +33,7 @@ def test_build_candidate_spec_velocity_override():
     assert [cand.velocities[i] for i in other] == [spec.velocities[i] for i in other]
 
 
+@pytest.mark.slow
 def test_run_sweep_sets_end_to_end_small():
     config = {
         "base_wave_set": "quartet_gravity_kelvin",

@@ -1,13 +1,14 @@
 """End-to-end smoke tests for all five root drivers, at small/fast
 parameters (short tf_days, coarse h, tiny n_grid) -- checks each driver
 runs correctly end-to-end, not full-resolution physics (that's
-examples/check_wave_set_physics.py's job)."""
+rsw_sphere/utilities/check_wave_set_physics.py's job)."""
 import os
 import subprocess
 import sys
 import textwrap
 
 import numpy as np
+import pytest
 
 from rsw_sphere.dynamics.run_config import RunConfig, SweepAxis, SweepConfig
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
@@ -15,6 +16,7 @@ from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+@pytest.mark.slow
 def test_run_linear_modes_smoke(tmp_path):
     result = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "run_linear_modes.py"),
@@ -25,6 +27,7 @@ def test_run_linear_modes_smoke(tmp_path):
     assert (tmp_path / "figures" / "linear" / "RH-4-5" / "Hough_harmonic_RH-4-5.png").exists()
 
 
+@pytest.mark.slow
 def test_run_linear_modes_run_all_smoke(tmp_path):
     specs_path = tmp_path / "specs.yaml"
     specs_path.write_text(textwrap.dedent("""\
@@ -69,6 +72,7 @@ def test_run_linear_modes_requires_wave_set_or_run_all(tmp_path):
     assert "required" in result.stderr
 
 
+@pytest.mark.slow
 def test_run_dynamics_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_gravity_kelvin"]
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05,
@@ -82,6 +86,7 @@ def test_run_dynamics_smoke(tmp_path):
     assert os.path.exists(os.path.join(str(tmp_path), "tables", f"{spec.key}.csv"))
 
 
+@pytest.mark.slow
 def test_run_sweep_1d_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rh_preference"]
     sweep = SweepConfig(axes=(SweepAxis(mode="d", min=80.0, max=90.0),), n_grid=2,
@@ -95,6 +100,7 @@ def test_run_sweep_1d_smoke(tmp_path):
     assert len(result["u_values"]) == 2
 
 
+@pytest.mark.slow
 def test_run_sweep_2d_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_gravity_kelvin"]
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=0.0, max=20.0),
@@ -109,6 +115,46 @@ def test_run_sweep_2d_smoke(tmp_path):
     assert result["P"].shape == (2, 2, 2)
 
 
+@pytest.mark.slow
+def test_run_sweep_wave_set_cli_smoke(tmp_path):
+    specs_path = tmp_path / "specs.yaml"
+    specs_path.write_text(textwrap.dedent("""\
+        tiny_quartet:
+          h_e: 10000
+          modes:
+            a: {m: 4, n: 5, alpha: 3, u: 30.0}
+            b: {m: 3, n: 4, alpha: 3, u: 30.0}
+            c: {m: 1, n: 2, alpha: 3, u: 30.0}
+            d: {m: 1, n: 1, alpha: 1, u: 0.0}
+          triads:
+            - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+            - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
+          reference_triad: 0
+          settings: {tf_days: 1, h: 0.05, n_grid: 10}
+          sweep:
+            axes: [{mode: c, min: 0.0, max: 20.0}, {mode: d, min: 0.0, max: 10.0}]
+            n_grid: 2
+            diagnostics: [p_measure]
+          plot: {title: "tiny test"}
+        """))
+    output = str(tmp_path / "sweep_out.png")
+    result = subprocess.run(
+        [sys.executable, os.path.join(_ROOT, "run_sweep.py"), "--wave-set", "tiny_quartet",
+         "--specs", str(specs_path), "--output", output, "--no-per-point"],
+        capture_output=True, text=True, cwd=_ROOT)
+    assert result.returncode == 0, result.stderr
+    assert os.path.exists(output)
+
+
+def test_run_sweep_requires_config_or_wave_set(tmp_path):
+    result = subprocess.run(
+        [sys.executable, os.path.join(_ROOT, "run_sweep.py")],
+        capture_output=True, text=True, cwd=_ROOT)
+    assert result.returncode != 0
+    assert "required" in result.stderr
+
+
+@pytest.mark.slow
 def test_run_sweep_sets_smoke():
     import run_sweep_sets as rss
     config = {

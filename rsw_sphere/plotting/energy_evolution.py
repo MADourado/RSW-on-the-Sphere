@@ -106,8 +106,8 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
     """"Triad 1 / triad 2 [/ triad 3] / wave set" comparison row.
 
     Each constituent triad is its own 3-mode WaveSet (sum mode last), not
-    triad_dynamics.triad_energy_evolution -- that normalizes by initial
-    energy, which would put a sub-triad panel in different units.
+    normalized by initial energy (the retired §2.2 toolchain's convention),
+    which would put a sub-triad panel in different units.
 
     highlight : int, or one per triad (sequence of len(triads)), or None.
     highlight_full : highlight for the full-wave-set panel (only used

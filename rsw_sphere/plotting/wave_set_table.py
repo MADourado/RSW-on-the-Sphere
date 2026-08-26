@@ -1,9 +1,7 @@
 """Properties tables for quartet/quintet ("wave set") examples in the
 paper's merged §Coupled Triads section.
 
-Mirrors ``rsw_sphere.plotting.triad_table`` (§2.2's master table) but for
-``WaveSet`` (``rsw_sphere.dynamics.wave_sets``) instead of ``TRIAD``:
-batch-computes, for each ``WaveSetSpec`` in the registry (loaded from
+Batch-computes, for each ``WaveSetSpec`` in the registry (loaded from
 ``wave_sets_default.yaml`` via
 ``rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs``), every mode's
 frequency and linear period, and -- since a wave set couples through
@@ -11,10 +9,10 @@ frequency and linear period, and -- since a wave set couples through
 triad (``NaN`` where a mode isn't in that triad, matching the
 dissertation's own ``tab: cap41``/``cap42``/``cap43`` layout: "Coeff. 1",
 "Coeff. 2", ...). Each triad's own mismatch/S/pump mode/energy-
-conservation residual is also computed (residual checked internally,
-never rendered, exactly as in ``triad_table``) -- but note there is no
-wave-set-*level* residual (a quartet/quintet does not conserve energy;
-see ``rsw_sphere.dynamics.wave_sets``'s module docstring).
+conservation residual is also computed (checked internally, never
+rendered) -- but note there is no wave-set-*level* residual (a
+quartet/quintet does not conserve energy; see
+``rsw_sphere.dynamics.wave_sets``'s module docstring).
 
 Run from the command line (output written under ``outputs/figures/wave_sets/``
 by convention):

@@ -2,7 +2,6 @@
 §Coupled Triads section (formerly §Multiple Triads / §Inertia-Gravity
 Waves / §Five-Wave model).
 
-Mirrors ``rsw_sphere.dynamics.triad_specs`` :
 YAML is the source of truth (``wave_sets_default.yaml``), this
 module just loads it into typed, validated objects consumed by
 ``rsw_sphere.plotting.wave_set_*``.

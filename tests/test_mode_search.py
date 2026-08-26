@@ -1,12 +1,14 @@
 """edge_completions/pivot_completions: selection-rule + symmetry-parity
 filtering, and (opt-in) coupling-coefficient computation."""
 import numpy as np
+import pytest
 
 from rsw_sphere.utilities.mode_search import edge_completions, pivot_completions
 
 A_MODE, B_MODE = (4, 5, 3), (3, 4, 3)  # quartet_gravity_kelvin's own edge
 
 
+@pytest.mark.slow
 def test_member_role_matches_quartet_gravity_kelvin():
     # d=EG(1,1) is quartet_gravity_kelvin's own registered member-role
     # completion of this edge -- locks each mode's own coupling value
@@ -28,6 +30,7 @@ def test_sum_role_matches_quartet_gravity_79():
     assert "EG(7,9)" in sum_labels  # quartet_gravity_79's own registered d
 
 
+@pytest.mark.slow
 def test_sum_role_candidate_is_the_pump():
     cands = edge_completions(A_MODE, B_MODE, max_n=9, alphas=(1,), compute_coupling=True)
     eg79 = next(c for c in cands if c["label"] == "EG(7,9)")
@@ -35,6 +38,7 @@ def test_sum_role_candidate_is_the_pump():
     assert all(v is not None for v in (eg79["coup_a"], eg79["coup_b"], eg79["coup_c"]))
 
 
+@pytest.mark.slow
 def test_pivot_completions_coupling_matches_edge_style_values():
     # RH(4,5) pivot, pivot_is_sum with p=RH(1,1)/q=RH(3,3): coup_p/coup_pivot
     # here are the same physical coefficients as edge_completions' old

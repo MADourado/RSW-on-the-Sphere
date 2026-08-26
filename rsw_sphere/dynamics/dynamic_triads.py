@@ -166,10 +166,10 @@ def Triad_dynamics(Triad, A_0, t_0, t_f, h, path = None):
 # Triad_Precession and eff_tri below are DEAD CODE, kept commented out for
 # the record (not deleted) rather than removed outright.
 #
-# Triad_Precession is superseded by rsw_sphere.plotting.triad_efficiency
-# (efficiency_sweep + plot_efficiency_map), which splits the same 10x10
-# RK44 sweep computed here from its plotting, adds an .npz cache (this
-# sweep is ~1e7 RK steps and must not be re-run just to restyle a figure),
+# Triad_Precession is superseded by run_sweep.py's efficiency diagnostic
+# (rsw_sphere.utilities.efficiency.wave_set_efficiency), which splits the
+# same RK44 sweep from its plotting, adds an .npz cache (this sweep is
+# ~1e7 RK steps and must not be re-run just to restyle a figure),
 # and fixes the mis-reported "linha i/20" progress print (10 rows, not 20).
 #
 # eff_tri is additionally broken as written: it calls

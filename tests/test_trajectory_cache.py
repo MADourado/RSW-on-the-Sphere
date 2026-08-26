@@ -2,6 +2,7 @@
 readable-filename convention. Mirrors trajectory_cache.py's own __main__
 self-check, as a pytest."""
 import numpy as np
+import pytest
 
 from rsw_sphere.physics import gamma_from_he, G
 from rsw_sphere.dynamics.wave_sets import WaveSet
@@ -23,6 +24,7 @@ def test_ic_label_sorted_by_mode_not_registration_order():
     assert ic_label(modes_a, [30.0, 10.0]) == ic_label(modes_b, [10.0, 30.0])
 
 
+@pytest.mark.slow
 def test_run_and_cache_hit_returns_identical_trajectory(tmp_path):
     gamma = gamma_from_he(H_E, g=G)[1]
     modes = [(4, 5, 3), (3, 4, 3), (1, 2, 3)]

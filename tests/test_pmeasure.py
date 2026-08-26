@@ -3,9 +3,12 @@ combined P/F2 sweep against p_measure_sweep."""
 import math
 
 import numpy as np
+import pytest
 
 from rsw_sphere.utilities.pmeasure import (
     p_measure, p_measure_sweep, wave_set_diagnostics_sweep, MIN_REFERENCE_DEK)
+
+pytestmark = pytest.mark.slow
 
 N, DEG = 6, 300  # low N for speed; deg MUST stay 300 -- see tests/test_wave_sets.py
 

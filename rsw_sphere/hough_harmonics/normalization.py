@@ -127,9 +127,9 @@ def velocity_to_amplitude(u_target, u_component, h_e, g=9.8):
     ``U = 2*A*u_component``, i.e. ``A = U / (2 * norm_component(u_component)
     * sqrt(g*h_e))``.
 
-    This factor of 2 was missing from ``rsw_sphere.plotting.triad_dynamics``
-    and ``rsw_sphere.plotting.triad_efficiency``'s own velocity-to-amplitude
-    conversions until 2026-08-11 -- found while cross-checking the new
+    This factor of 2 was missing from the (retired) §2.2 triad toolchain's
+    own velocity-to-amplitude conversions until 2026-08-11 -- found while
+    cross-checking the new
     quartet/quintet layer's harvested parameters against the dissertation's
     published ``tab: cap4ex`` amplitudes: every one of 4 independent
     (mode, velocity) pairs matched the published value to ~4-5 significant

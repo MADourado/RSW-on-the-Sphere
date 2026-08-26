@@ -12,31 +12,45 @@ folder's own registries).
 |---|---|
 | `../wave_sets_default.yaml` (repo root) | The registry (`rsw_sphere.dynamics.wave_set_specs`) -- triads, quartets and quintets alike (a triad is just the 1-triad case), used by all four root drivers, including `run_linear_modes.py`. |
 | `wave_sets_custom.yaml` | Example of a non-default registry, passed via `--specs`/`specs_path`. |
-| `triads_section_2_2.yaml` | §2.2's own parallel single-triad registry (`rsw_sphere.dynamics.triad_specs`), feeding `triad_table.py`/`triad_dynamics.py`/`triad_efficiency.py` -- its 4 headline triads are now ALSO registered in `wave_sets_default.yaml` (added 2026-08-26) for use by the 4 root drivers; this file itself hasn't been retired. |
-| `triad_families.yaml` | RH(3,n) partner-family registry, used by `rh_partner_family.py`. |
+| `triad_families.yaml` | RH(3,n) partner-family registry (`rsw_sphere.dynamics.triad_family_specs`), used by `rh_partner_family.py`. |
 
 ## Driver configs
 
-`sweep_*.yaml`/`candidates_*.yaml` are `run_sweep.py`/`run_sweep_sets.py`
-configs (`RunConfig` + a `sweep:` block, or a candidate-screening block).
+`candidates_*.yaml` are `run_sweep_sets.py` configs (a candidate-screening
+block). `run_sweep.py` sweeps don't need their own config file when the
+wave set's own `wave_sets_default.yaml` entry already carries a `sweep:`
+block (`--wave-set KEY`); a standalone `RunConfig`-shaped YAML (`--config
+path.yaml`) is only for an ad-hoc/one-off sweep not worth registering.
 
 ```bash
-python run_sweep.py --config examples/sweep_quartet_gravity_kelvin_diagnostics.yaml
-python run_sweep.py --config examples/sweep_quartet_a_rh36.yaml
+python run_sweep.py --wave-set quartet_gravity_kelvin
+python run_sweep.py --wave-set quartet_rh_preference
 python run_linear_modes.py --wave-set triad_kelvin_rossby_flow
 ```
 
 ## Infrastructure
 
-`check_wave_set_physics.py` is the `WaveSet`-vs-`TRIAD` physics gate --
-run on any new/edited wave set before trusting a figure from it (see
-`docs/wave_sets.md` §0).
+`rsw_sphere/utilities/check_wave_set_physics.py` is the `WaveSet`-vs-`TRIAD`
+physics gate -- run on any new/edited wave set before trusting a figure
+from it (see `docs/wave_sets.md` §0).
 
 ## Not yet populated
 
 `tables/`/`figures/` (small scripts that call a driver for its cached
-data and format/compose a paper table or panel on top) and
-`special_runs/`/`raphaldini2022_compare/` (candidate clusters from
-`examples_legacy/` re-attempted against `run_sweep_sets.py`) are planned
-per the driver refactor plan but not yet built -- see
-`.claude/PLAN-driver-refactor-2026-08-25.md`'s Phase B+C.
+data and format/compose a paper table or panel on top) is not yet built
+-- Table cap41/cap42/cap43 and Figs cap4ex1/power1/quintetpanel are
+already reproducible directly via `wave_set_table.py`/`make_section3_figures.py`
+(see their own regenerate-comments in `JFM-template.tex`), just not yet
+wrapped as named `examples/tables/`/`examples/figures/` scripts.
+
+`examples_legacy/special_runs/` (2026-08-26): the 10-script cluster whose
+core computation isn't reducible to a `run_sweep.py`/`run_sweep_sets.py`
+diagnostic (power-law fits, Hilbert phase lag, dual-estimator agreement
+checks, tf-convergence studies, physical-Joules conversion) -- see
+`examples_legacy/README.md`'s own note on this move. `rh_partner_quartet_family.py`/
+`short_gravity_long_rossby_example.py` are each a straightforward
+`run_sweep_sets.py` candidate screen away from full migration, but need
+a new registered `base_wave_set` first -- not yet done.
+`examples_legacy/raphaldini2022_compare/` (the 7-script external
+barotropic-model comparison cluster) has also been moved into its own
+subfolder.

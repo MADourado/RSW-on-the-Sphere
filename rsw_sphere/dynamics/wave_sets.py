@@ -17,7 +17,7 @@ modes / 1 triad.
 
 **``TRIAD`` itself is left untouched.** It is the independent reference
 implementation ``WaveSet`` is proven against -- see
-``examples/check_wave_set_physics.py``, checks C1-C4.
+``rsw_sphere/utilities/check_wave_set_physics.py``, checks C1-C4.
 
 The permutation, precisely
 ---------------------------
@@ -42,7 +42,7 @@ is the gauge transformation ``A_j -> s_j A_j`` with ``s_p s_q s_r = -1``;
 since every configuration used in this paper is a *star* sharing a single
 edge (the sum mode's siblings are each private to one triad), this map is
 surjective and the choice of ``fat_policy`` cannot change any energy at any
-instant (see the docstring of ``examples/check_wave_set_physics.py``,
+instant (see the docstring of ``rsw_sphere/utilities/check_wave_set_physics.py``,
 check C4, for the precise claim and how it is verified rather than
 assumed). Default ``fat_policy='symmetry'`` matches ``TRIAD``, which is
 required for the P-measure's numerator (a wave set) and denominator (a
@@ -285,8 +285,8 @@ class WaveSet:
         """Real initial amplitudes producing the given per-mode initial
         zonal velocities, via ``velocity_to_amplitude`` (paper ``eq:
         Azonal``) -- the same ``/2``-corrected conversion used throughout
-        §2.2 (``rsw_sphere.plotting.triad_dynamics``), centralized here so
-        every §3 module (``wave_set_dynamics``, ``wave_set_pmeasure``,
+        the (retired) §2.2 triad toolchain, centralized here so every §3
+        module (``wave_set_dynamics``, ``wave_set_pmeasure``,
         ``wave_set_periods``) shares one implementation.
 
         Parameters
@@ -329,7 +329,7 @@ class WaveSet:
     def sub_triad(self, i):
         """Build the independent-reference ``TRIAD`` for constituent triad
         ``i`` (same ``gamma``/``N``/``deg`` as this wave set, sum mode
-        placed last). Used by ``examples/check_wave_set_physics.py`` (C1)
+        placed last). Used by ``rsw_sphere/utilities/check_wave_set_physics.py`` (C1)
         and by ``rsw_sphere.plotting.wave_set_dynamics`` to plot a
         sub-triad's own trajectory in the same units as the parent set.
 

@@ -16,6 +16,123 @@
 # Velocity caps: Rossby (RH) mode velocities up to
 # 100 m/s; gravity (EG/WG) mode velocities up to 50 m/s. 
 #
+triad_near_zero_coupling:
+  label: "Quasi-resonant, near-zero coupling coefficient"
+  display_label: "Triad near zero coupling"
+  role: >-
+    Tthe coupling coefficient is close to
+    zero and the frequency mismatch is tiny (~1e-4-1e-5), so
+    run_dynamics.py should show almost no energy exchange between the
+    three modes -- a sanity check that TRIAD's coupling coefficient
+    correctly comes out near-zero for these mode triples.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 7, alpha: 1, u: 25.0}
+    b: {m: 1, n: 6, alpha: 3, u: 25.0}
+    c: {m: 3, n: 7, alpha: 1, u: 25.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 10
+    h: 0.001
+    n_grid: 10
+
+triad_kelvin_gravity_energy_flow:
+  label: "RH -> EG energy flow via the Kelvin wave "
+  display_label: "Triad RH->EG via Kelvin"
+  role: >-
+    Energy flow from
+    Rossby-Haurwitz to eastward gravity modes, via the Kelvin wave
+    (1,1,EIG). Same topology as triad_kelvin_rossby_flow, different
+    (published) driving velocity for the Kelvin mode.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 100.0}
+    b: {m: 1, n: 1, alpha: 1, u: 80.0}
+    c: {m: 3, n: 4, alpha: 3, u: 63.89}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 10
+    h: 0.001
+    n_grid: 10
+
+triad_rossby_only_near_resonant:
+  label: "Rossby-only, near-resonant, long period"
+  display_label: "Triad A"
+  role: "Rossby-only, near-resonant, long period"
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 100.0}
+    b: {m: 3, n: 10, alpha: 3, u: 0.0}
+    c: {m: 1, n: 2, alpha: 3, u: 58.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 200
+    h: 0.01
+    n_grid: 15
+
+triad_rossby_only_non_resonant:
+  label: "Rossby-only, non-resonant, short period"
+  display_label: "Triad B"
+  role: "Rossby-only, non-resonant, short period"
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 100.0}
+    b: {m: 3, n: 4, alpha: 3, u: 0.0}
+    c: {m: 1, n: 2, alpha: 3, u: 58.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 15
+    h: 0.01
+    n_grid: 15
+
+triad_kelvin_rossby_flow:
+  label: "RH <-> EG flow via the Kelvin wave"
+  display_label: "Triad C"
+  role: >-
+    RH<->EG flow. Has two worked target-mode examples: target=EG(1,1)
+    (RH->EG) and target=RH(3,4) (EG->RH, the pump mode).
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 100.0}
+    b: {m: 1, n: 1, alpha: 1, u: 50.0}
+    c: {m: 3, n: 4, alpha: 3, u: 63.89}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+    n_grid: 15
+
+triad_gravity_with_rossby_catalyst:
+  label: "EG <-> EG with RH catalyst"
+  display_label: "Triad D"
+  role: >-
+    EG<->EG with RH catalyst. The catalyst role is
+    played by the Rossby mode RH(1,7) (small coupling coefficient, sets the
+    exchange period without absorbing energy), while EG(6,9)/EG(7,9) are
+    the pair actually exchanging energy.
+  h_e: 10000
+  modes:
+    a: {m: 7, n: 9, alpha: 1, u: 0.0}
+    b: {m: 6, n: 9, alpha: 1, u: 50.0}
+    c: {m: 1, n: 7, alpha: 3, u: 20.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 60
+    h: 0.01
+    n_grid: 15
+
 quartet_rh_preference:
   label: "RH(1,2)+RH(4,5) choosing between RH(3,4) and RH(3,6)"
   display_label: "Quartet A"
@@ -36,6 +153,18 @@ quartet_rh_preference:
     tf_days: 30
     h: 0.01
     n_grid: 10
+  sweep:
+    axes: [{mode: d, min: 10.0, max: 150.0}]
+    n_grid: 45
+    diagnostics: [precession]
+  target_mode: c
+  plot_triad: 0
+  tf_days: 150.0
+  plot:
+    xlabel: "RH(3,6) driving velocity $u$ (m/s)"
+    title: "Quartet A (this paper)"
+    plot_u_max: 120.0
+  output: outputs/figures/quartet_a_rh36_precession.png
 
 quartet_rh_alt_partner:
   label: "RH(1,2)+RH(4,5) with RH(3,4) and RH(3,8)"
@@ -53,6 +182,41 @@ quartet_rh_alt_partner:
   triads:
     - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
     - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 30
+    h: 0.01
+    n_grid: 10
+  sweep:
+    axes: [{mode: d, min: 10.0, max: 150.0}]
+    n_grid: 30
+    diagnostics: [precession]
+  target_mode: c
+  plot_triad: 0
+  tf_days: 150.0
+  plot:
+    xlabel: "RH(3,8) driving velocity $u$ (m/s)"
+    title: "RH(3,8) variant (this paper)"
+  output: outputs/figures/quartet_a_rh38_precession.png
+
+quartet_rh_borrowed_topology:
+  label: "RH(1,3)+RH(3,7) edge (Raphaldini et al. 2022's own topology) with target RH(2,9)"
+  display_label: "Quartet B"
+  role: >-
+    All-Rossby quartet reproducing Raphaldini et al. (2022)'s own
+    barotropic-vorticity precession-resonance topology, used for the
+    barotropic-vs-RSW comparison (sec: quartet_rh_precession). Velocities
+    follow quartet_rh_preference's own pattern: shared edge (b, c) driven
+    at 40 m/s, sum mode a and target mode d at rest.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 0.0}
+    b: {m: 1, n: 3, alpha: 3, u: 40.0}
+    c: {m: 3, n: 7, alpha: 3, u: 40.0}
+    d: {m: 2, n: 9, alpha: 3, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
+    - {sum: c, members: [b, d], display_label: "Triad 2 (with RH(2,9))", triad_key: null}
   reference_triad: 0
   settings:
     tf_days: 30
@@ -79,6 +243,13 @@ quartet_gravity_kelvin:
     tf_days: 20
     h: 0.01
     n_grid: 10
+  sweep:
+    axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
+    n_grid: 10
+    diagnostics: [p_measure, filtering_error]
+  plot:
+    title: "Quartet C -- draft analysis panel"
+  output: outputs/figures/wave_sets/quartet_gravity_kelvin_diagnostics.png
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"
@@ -100,6 +271,31 @@ quartet_gravity_79:
     tf_days: 10
     h: 0.01
     n_grid: 10
+
+
+quartet_dual_gravity_edge:
+  label: "EG(1,1)+EG(5,7) edge coupling RH(4,5) and EG(6,8)"
+  display_label: "Quartet E"
+  role: >-
+    Gravity-dominated quartet.
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 50.0}
+    b: {m: 1, n: 1, alpha: 2, u: 100.0}
+    c: {m: 5, n: 7, alpha: 1, u: 200.0}
+    d: {m: 3, n: 4, alpha: 3, u: 20.0}
+  triads:
+    - {sum: c, members: [a, b], display_label: "Triad 1 (with EG(5,7))", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with RH(3,4))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+    n_grid: 10
+  sweep:
+    diagnostics: [p_measure, filtering_error]
+    n_grid: 10
+  output: outputs/figures/wave_sets/quartet_dual_gravity_edge_diagnostics.png
 
 quintet_gravity_star:
   label: "RH(4,5)+RH(1,2)+RH(3,4) with both EG(1,1) and EG(7,9)"

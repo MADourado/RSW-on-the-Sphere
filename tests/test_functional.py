@@ -1,8 +1,11 @@
 """functional_diagnostics_sweep: efficiency + low_frequency_energy over a
 2D velocity grid, full-wave-set trajectory only."""
 import numpy as np
+import pytest
 
 from rsw_sphere.utilities.functional import functional_diagnostics_sweep
+
+pytestmark = pytest.mark.slow
 
 N, DEG = 6, 300
 

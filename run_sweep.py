@@ -12,9 +12,17 @@ requested diagnostic as its own figure:
 - 2 swept modes (2D): p_measure, filtering_error, frequency_shift,
   efficiency, low_frequency_energy, via rsw_sphere.utilities.registry.sweep_2d.
 
-Run:
+Run, if the wave set's own registry entry already carries its own
+sweep:/tf_days/h/plot/output/target_mode/plot_triad keys (see
+wave_sets_default.yaml's quartet_gravity_kelvin/quartet_rh_preference
+entries), no separate config file is needed:
 
-    python run_sweep.py --config examples/sweep_quartet_gravity_kelvin_diagnostics.yaml
+    python run_sweep.py --wave-set quartet_gravity_kelvin
+
+or point at a standalone RunConfig YAML for an ad-hoc/one-off sweep not
+worth adding to the registry:
+
+    python run_sweep.py --config path/to/sweep.yaml
 """
 import argparse
 import dataclasses
@@ -24,6 +32,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 import matplotlib.pyplot as plt
+import yaml
 
 from rsw_sphere.dynamics.run_config import RunConfig
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
@@ -181,17 +190,36 @@ def run_sweep(config: RunConfig, output: str, plot_cfg: dict = None, run_per_poi
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", required=True, help="path to a RunConfig YAML with a sweep: block")
+    parser.add_argument("--config", default=None, help="path to a RunConfig YAML with a sweep: block")
+    parser.add_argument("--wave-set", default=None,
+                         help="registry role key -- reads sweep/tf_days/h/plot/output/target_mode/"
+                              "plot_triad straight from that wave_sets_default.yaml entry, "
+                              "no separate config file needed.")
+    parser.add_argument("--specs", default=DEFAULT_WAVESETS_PATH, help="used with --wave-set")
     parser.add_argument("--output", default=None, help="override the config's own output")
     parser.add_argument("--no-per-point", action="store_true",
                          help="skip the per-grid-point run_dynamics pass (diagnostics only)")
     args = parser.parse_args()
 
-    import yaml
-    with open(args.config) as f:
-        raw = yaml.safe_load(f)
-    config = RunConfig.from_yaml(args.config)
-    output = args.output or raw.get("output") or "outputs/figures/wave_sets/sweep.png"
+    if bool(args.config) == bool(args.wave_set):
+        parser.error("exactly one of --config or --wave-set is required")
+
+    if args.wave_set:
+        specs = load_wave_set_specs(args.specs)
+        if args.wave_set not in specs:
+            parser.error(f"--wave-set {args.wave_set!r} not found in {args.specs!r} "
+                         f"(available: {list(specs)})")
+        with open(args.specs) as f:
+            raw = yaml.safe_load(f)[args.wave_set]
+        config = RunConfig.from_registry_entry(args.wave_set, args.specs)
+        default_output = f"outputs/figures/wave_sets/{args.wave_set}_sweep.png"
+    else:
+        with open(args.config) as f:
+            raw = yaml.safe_load(f)
+        config = RunConfig.from_yaml(args.config)
+        default_output = "outputs/figures/wave_sets/sweep.png"
+
+    output = args.output or raw.get("output") or default_output
     plot_cfg = raw.get("plot", {})
 
     print(f"Running sweep for wave set {config.wave_set_spec.key!r}...")

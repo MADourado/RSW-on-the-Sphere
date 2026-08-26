@@ -2,7 +2,7 @@
 fixed, a third varying) captures the most energy from a fixed pair of
 driving modes. The family itself (which modes, which velocities, which
 n-values, which integration settings) is config-driven --
-``examples/triad_families.yaml`` + ``rsw_sphere.dynamics.triad_specs.
+``examples/triad_families.yaml`` + ``rsw_sphere.dynamics.triad_family_specs.
 load_triad_family`` -- not hardcoded here; this script is a thin runner
 over whichever family key is requested (default: ``rh_partner_family``,
 RH(4,5)+RH(1,2)+RH(3,n)).
@@ -48,7 +48,7 @@ from rsw_sphere.physics import gamma_from_he, G
 from rsw_sphere.hough_harmonics.normalization import velocity_to_amplitude
 from rsw_sphere.dynamics.dynamic_triads import TRIAD, Triad_dynamics
 from rsw_sphere.dynamics.wave_sets import WaveSet
-from rsw_sphere.dynamics.triad_specs import load_triad_family, DEFAULT_FAMILIES_PATH
+from rsw_sphere.dynamics.triad_family_specs import load_triad_family, DEFAULT_FAMILIES_PATH
 
 
 def triad_efficiency_point(gamma, mode_a, mode_b, mode_c, velocities, target,
