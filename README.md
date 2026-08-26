@@ -56,8 +56,11 @@ The main physical questions explored (see the thesis for full detail):
   screening, sharing one config class,
   `rsw_sphere.dynamics.run_config.RunConfig`), each taking their own YAML
   per invocation. A triad is just the registry's 1-triad case, so the
-  same registry covers triads, quartets and quintets. See
-  `docs/code_guide.md`'s "Entry points".
+  same registry covers triads, quartets and quintets. Plus a fifth,
+  registry-independent driver, `run_mode_search.py`, for finding what
+  *could* go in the registry: given 2 fixed modes (an edge) or 1 (a
+  pivot), it lists candidate modes completing a valid triad with them.
+  See `docs/code_guide.md`'s "Entry points".
 
 ## Repository layout
 
@@ -78,6 +81,7 @@ run_linear_modes.py         # dispersion relation + per-mode Hough plots
 run_dynamics.py            # integrate a wave set (full + sub-triads), cached
 run_sweep.py               # IC sweep (1-2 modes) + diagnostics
 run_sweep_sets.py          # loop a diagnostic over candidate-mode variants
+run_mode_search.py         # find candidate modes completing a triad with a given edge/pivot
 wave_sets_default.yaml     # default WaveSet registry (triads, quartets, quintets) -- all four drivers
 pyproject.toml             # pip install -e . / console scripts
 ```

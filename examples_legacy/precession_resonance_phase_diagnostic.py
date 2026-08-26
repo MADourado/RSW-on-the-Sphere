@@ -44,7 +44,7 @@ if _REPO not in sys.path:
 
 import numpy as np
 
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache
 from rsw_sphere.physics import days_from_nondim_time

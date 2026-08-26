@@ -125,6 +125,23 @@ Generalizes the hand-rolled catalogues in
 
     python run_sweep_sets.py --config examples/candidates_quartet_gravity_kelvin.yaml
 
+### `run_mode_search.py`
+Registry-independent: given a fixed edge (`--edge MODE_P MODE_Q`) or pivot
+(`--pivot MODE`, `m,n,alpha` each), lists candidate modes completing a
+valid triad -- for scouting a new `wave_sets_default.yaml` entry or a
+`run_sweep_sets.py` `candidates:` block without hand-deriving the
+selection rule. Wraps `rsw_sphere.utilities.mode_search`: cheap by
+default (wavenumber `m_sum = m_p + m_q` + meridional-symmetry parity,
+both O(1)); `--coupling` also computes actual TRIAD coefficients
+(slower). `--edge` covers triads/quartets/star-quintets (one edge shared
+by every constituent triad); `--pivot` covers an "hourglass" quintet
+(two independent triads sharing a single mode, not an edge) -- a valid
+`WaveSet` topology not currently used by any registered wave set.
+
+    python run_mode_search.py --edge 4,5,3 3,4,3 --max-n 9 --alphas 1,2
+    python run_mode_search.py --edge 4,5,3 3,4,3 --max-n 9 --alphas 1 --coupling --csv outputs/_scratch/candidates.csv
+    python run_mode_search.py --pivot 4,5,3 --max-n 6 --alphas 3
+
 ## `rsw_sphere/hough_harmonics/` — the numerical core
 
 ### `eigenvalues_and_eigenvectors/matrix_system.py`

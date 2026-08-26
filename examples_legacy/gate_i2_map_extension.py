@@ -77,7 +77,7 @@ import numpy as np
 from scipy.signal import find_peaks
 
 from rsw_sphere.physics import gamma_from_he, days_from_nondim_time
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.dynamic_triads import TRIAD
 

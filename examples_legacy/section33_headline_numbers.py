@@ -30,7 +30,7 @@ from scipy.signal import find_peaks
 
 from rsw_sphere.physics import (gamma_from_he, days_from_nondim_time,
                                  air_density_from_equivalent_depth, A, G)
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 

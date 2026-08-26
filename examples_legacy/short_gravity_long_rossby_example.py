@@ -61,7 +61,7 @@ import numpy as np
 from scipy.signal import find_peaks, savgol_filter
 
 from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.wave_sets import WaveSet
 
 H_E = 10000.0

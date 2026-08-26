@@ -1,4 +1,4 @@
-"""End-to-end smoke tests for all four root drivers, at small/fast
+"""End-to-end smoke tests for all five root drivers, at small/fast
 parameters (short tf_days, coarse h, tiny n_grid) -- checks each driver
 runs correctly end-to-end, not full-resolution physics (that's
 examples/check_wave_set_physics.py's job)."""
@@ -122,3 +122,29 @@ def test_run_sweep_sets_smoke():
     results = rss.run_sweep_sets(config)
     assert len(results) == 2
     assert all("p_measure (%)" in r and "error" not in r for r in results)
+
+
+def test_run_mode_search_edge_smoke():
+    result = subprocess.run(
+        [sys.executable, os.path.join(_ROOT, "run_mode_search.py"),
+         "--edge", "4,5,3", "3,4,3", "--max-n", "1", "--alphas", "1"],
+        capture_output=True, text=True, cwd=_ROOT)
+    assert result.returncode == 0, result.stderr
+    assert "EG(1,1)" in result.stdout
+
+
+def test_run_mode_search_pivot_smoke():
+    result = subprocess.run(
+        [sys.executable, os.path.join(_ROOT, "run_mode_search.py"),
+         "--pivot", "4,5,3", "--max-n", "3", "--alphas", "3"],
+        capture_output=True, text=True, cwd=_ROOT)
+    assert result.returncode == 0, result.stderr
+    assert "pivot_is_sum" in result.stdout or "pivot_is_member" in result.stdout
+
+
+def test_run_mode_search_requires_edge_or_pivot():
+    result = subprocess.run(
+        [sys.executable, os.path.join(_ROOT, "run_mode_search.py")],
+        capture_output=True, text=True, cwd=_ROOT)
+    assert result.returncode != 0
+    assert "required" in result.stderr

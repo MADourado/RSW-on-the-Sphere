@@ -18,9 +18,9 @@
 #
 triad_near_zero_coupling:
   label: "Quasi-resonant, near-zero coupling coefficient"
-  display_label: "Triad (Table 2.1)"
+  display_label: "Triad near zero coupling"
   role: >-
-    Reproduces thesis Table 2.1: the coupling coefficient is close to
+    Tthe coupling coefficient is close to
     zero and the frequency mismatch is tiny (~1e-4-1e-5), so
     run_dynamics.py should show almost no energy exchange between the
     three modes -- a sanity check that TRIAD's coupling coefficient
@@ -39,10 +39,10 @@ triad_near_zero_coupling:
     n_grid: 10
 
 triad_kelvin_gravity_energy_flow:
-  label: "RH -> EG energy flow via the Kelvin wave (Table 2.3)"
-  display_label: "Triad (Table 2.3)"
+  label: "RH -> EG energy flow via the Kelvin wave "
+  display_label: "Triad RH->EG via Kelvin"
   role: >-
-    Reproduces thesis Table 2.3 / Fig. 2.7: energy flow from
+    Energy flow from
     Rossby-Haurwitz to eastward gravity modes, via the Kelvin wave
     (1,1,EIG). Same topology as triad_kelvin_rossby_flow, different
     (published) driving velocity for the Kelvin mode.
@@ -116,7 +116,7 @@ triad_gravity_with_rossby_catalyst:
   label: "EG <-> EG with RH catalyst"
   display_label: "Triad D"
   role: >-
-    EG<->EG with RH catalyst; ~200x scale separation. The catalyst role is
+    EG<->EG with RH catalyst. The catalyst role is
     played by the Rossby mode RH(1,7) (small coupling coefficient, sets the
     exchange period without absorbing energy), while EG(6,9)/EG(7,9) are
     the pair actually exchanging energy.

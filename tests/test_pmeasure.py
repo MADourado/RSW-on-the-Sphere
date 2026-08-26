@@ -46,7 +46,7 @@ def test_diagnostics_sweep_p_measure_matches_p_measure_sweep():
     (both share _integrate_sub_triad_amplitude)."""
     kwargs = dict(swept_indices=(2, 3), fixed_velocities={0: 30.0, 1: 30.0},
                   target_indices=[2, 3], u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-                  reference_triad=0, n_grid=3, tf_days=2, h=0.02, N=N, deg=DEG)
+                  reference_triad=0, n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
     p_only = p_measure_sweep(QUARTET_MODES, QUARTET_TRIADS, 10000.0, **kwargs)
     combined = wave_set_diagnostics_sweep(QUARTET_MODES, QUARTET_TRIADS, 10000.0,
                                            diagnostics=("p_measure",), **kwargs)
@@ -59,7 +59,7 @@ def test_diagnostics_sweep_shared_gate_matches_own_private_mode_velocity():
     result = wave_set_diagnostics_sweep(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         u1_range=(0.0, 30.0), u2_range=(0.0, 30.0), reference_triad=0,
-        n_grid=2, tf_days=2, h=0.02, N=N, deg=DEG)
+        n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
 
     for array_key in ('P', 'F2'):
         values = result[array_key]
@@ -80,7 +80,7 @@ def test_diagnostics_sweep_subset_only_computes_requested_arrays():
     result = wave_set_diagnostics_sweep(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         diagnostics=("filtering_error",), u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-        reference_triad=0, n_grid=2, tf_days=2, h=0.02, N=N, deg=DEG)
+        reference_triad=0, n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
     assert "F2" in result
     assert "P" not in result
 

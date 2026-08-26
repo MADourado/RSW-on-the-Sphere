@@ -141,7 +141,7 @@ def main():
 
     results = run_dynamics(config)
     for name, r in results.items():
-        print(f"[{name}] {r['title']}: drift={r['drift']:.3e}, "
+        print(f"[{name}] {r['title']}: Energy drift={r['drift']:.3e}, "
               f"dEK={dict(zip(r['labels'], r['dEK']))}")
         print(f"  trajectory -> {r['trajectory_path']}")
         if r['figure_path']:

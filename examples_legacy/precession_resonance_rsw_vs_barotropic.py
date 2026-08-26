@@ -43,7 +43,7 @@ if _ROOT not in sys.path:
 import numpy as np
 
 from rsw_sphere.physics import gamma_from_he
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.wave_sets import WaveSet
 
 G = 9.8

@@ -31,7 +31,7 @@ if _REPO not in sys.path:
 import numpy as np
 
 from rsw_sphere.physics import gamma_from_he, air_density_from_equivalent_depth, A, G
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from gate_i2_map_extension import find_catalogue, A_MODE, B_MODE, C_MODE, H_E
 from gate_i4_scaling_law import build_full_and_sub

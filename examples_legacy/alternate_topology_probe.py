@@ -53,7 +53,7 @@ import numpy as np
 
 from rsw_sphere.physics import (gamma_from_he, days_from_nondim_time,
                                  air_density_from_equivalent_depth, A, G)
-from rsw_sphere.dynamics.integrators import RK33
+from rsw_sphere.dynamics.integrators import RK44 as RK33
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.dynamic_triads import TRIAD
 from frequency_shift_catalogue_search import fft_period_parabolic, prominence_period
