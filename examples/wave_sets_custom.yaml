@@ -234,7 +234,7 @@ quartet_gravity_kelvin:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}
     b: {m: 3, n: 4, alpha: 3, u: 30.0}
     c: {m: 1, n: 2, alpha: 3, u: 30.0}
-    d: {m: 1, n: 1, alpha: 1, u: 0.0}
+    d: {m: 1, n: 1, alpha: 1, u: 30.0}
   triads:
     - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
     - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
@@ -281,15 +281,15 @@ quartet_dual_gravity_edge:
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 50.0}
-    b: {m: 1, n: 1, alpha: 2, u: 100.0}
-    c: {m: 5, n: 7, alpha: 1, u: 200.0}
-    d: {m: 3, n: 4, alpha: 3, u: 20.0}
+    b: {m: 7, n: 9, alpha: 2, u: 50.0}
+    c: {m: 3, n: 9, alpha: 2, u: 50.0}
+    d: {m: 3, n: 4, alpha: 3, u: 80.0}
   triads:
-    - {sum: c, members: [a, b], display_label: "Triad 1 (with EG(5,7))", triad_key: null}
-    - {sum: a, members: [b, d], display_label: "Triad 2 (with RH(3,4))", triad_key: null}
+    - {sum: b, members: [a, c], display_label: "Triad 1 (with EG(5,7))", triad_key: null}
+    - {sum: b, members: [a, d], display_label: "Triad 2 (with RH(3,4))", triad_key: null}
   reference_triad: 0
   settings:
-    tf_days: 20
+    tf_days: 10
     h: 0.01
     n_grid: 10
   sweep:

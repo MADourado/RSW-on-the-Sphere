@@ -18,7 +18,7 @@ solver.
 
 ---
 
-## 1. `Hough_and_derivatives.py` — latitudinal profile
+## 1. `hough_and_derivatives.py` — latitudinal profile
 
 Plots the (normalized) latitudinal Hough functions `u(φ), v(φ), h(φ)` and
 their derivatives, for a single mode at a given equivalent height. This is
@@ -28,8 +28,10 @@ generate the `<alpha>-<m>-<n>/Hough_harmonic_<alpha>-<m>-<n>.png` and
 (e.g. `RH-1-2/Hough_harmonic_RH-1-2.png`).
 
 ```python
+import os
 from rsw_sphere.plotting.hough_and_derivatives import hough_and_derivatives
 
+os.makedirs('outputs/figures/RH-1-2', exist_ok=True)  # path must exist -- not created for you
 hough_and_derivatives(m=1, n=2, alpha=3, h_e=10000, path='outputs/figures/RH-1-2')
 ```
 
@@ -40,7 +42,7 @@ the bottom of the file.
 
 ---
 
-## 2. `Hough_spatial_ev.py` — full spatial pattern
+## 2. `hough_spatial_ev.py` — full spatial pattern
 
 Reconstructs and plots the **full 2D spatial structure** of a Hough mode
 over the sphere: `h(λ, φ)` as a filled contour, `(u(λ,φ), v(λ,φ))` as a
@@ -114,7 +116,7 @@ consistent.
 
 ### 2.4 Requirements
 
-`Hough_spatial_ev.py` additionally requires **cartopy** (map projection +
+`hough_spatial_ev.py` additionally requires **cartopy** (map projection +
 gridlines), listed in `requirements.txt`. 
 
 

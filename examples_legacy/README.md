@@ -13,7 +13,8 @@ The §2.2-specific parallel toolchain (`triad_specs.py`/`triad_table.py`/
 `triad_dynamics.py`/`triad_efficiency.py`, `triads_section_2_2.yaml`) was
 retired 2026-08-26 — see [`docs/triads.md`](../docs/triads.md) for the
 old-to-new command mapping. `make_section22_figures.py` depended on it
-directly and is no longer runnable.
+directly and was rewritten the same day against the unified
+`functional_diagnostics_sweep`/`wave_set_energy_evolution` functions.
 
 ## Precession resonance (2026-08-12)
 
@@ -100,7 +101,13 @@ Continuation of the same-day inspection work above, per
   artifact** (the measured period was a monotone function of the
   smoothing window) — window-independent estimators (FFT with
   parabolic interpolation; prominence-filtered peaks) both give <=0.1%.
-  The 2026-08-11 request remains unresolved.
+  Of the two candidates that passed `frequency_shift_catalogue_search.py`'s
+  Stage-1 screen (EG(1,1), already registered as `quartet_gravity_kelvin`;
+  WG(1,1)), only WG(1,1) was missing a registry entry — now added as
+  `quartet_gravity_wg11` (2026-08-26), migrating this script off its own
+  retracted claim. Stage 2 (x-sweep + tf-convergence quantification) was
+  never run to completion for WG(1,1) — `run_sweep.py --wave-set
+  quartet_gravity_wg11` is the way to do that now.
 
 Both retractions above were part of a same-day review that also
 independently re-verified the air-density work, the Gate I2 catalogue

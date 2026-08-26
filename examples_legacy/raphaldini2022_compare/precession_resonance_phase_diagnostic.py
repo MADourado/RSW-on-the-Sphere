@@ -90,10 +90,11 @@ def rsw_phases_and_efficiency(ws, scale, t_f=1500.0, h=None, low_freq_period_cut
     docstring) energy-transfer efficiency and the run's own energy
     drift, computed from the SAME trajectory (no extra integration): the
     time-averaged-total-energy analogue of ``rsw_comp.efficiency``'s
-    instantaneous-max-fraction (see ``quartet_precession_sweep.
-    precession_sweep``'s own ``efficiency``/``energy_drift``, same
-    convention, applied here to the standalone (non-registry) Quartet B
-    RSW build). The trajectory itself is cached via
+    instantaneous-max-fraction (see
+    ``rsw_sphere.utilities.precession.precession_frequency_efficiency``'s
+    own ``efficiency``/``energy_drift``, same convention, applied here to
+    the standalone (non-registry) Quartet B RSW build). The trajectory
+    itself is cached via
     ``rsw_sphere.dynamics.trajectory_cache.run_and_cache`` under
     ``outputs/trajectories/quartets/`` -- re-running at the same
     ``(scale, t_f, h)`` is a cache hit.

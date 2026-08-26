@@ -19,9 +19,10 @@ used by `examples/rh_partner_family.py`) is a separate, still-active
 facility and was not affected by this retirement.
 
 `examples_legacy/make_section22_figures.py`'s composite-panel figures
-depended on the retired modules directly and are no longer runnable; its
-two panels are not yet reproduced by a `figures/`-style script (tracked in
-`examples/README.md`).
+(cited by `JFM-template.tex`'s own regenerate-comments) were rewritten
+against `functional_diagnostics_sweep`/`wave_set_energy_evolution`
+(2026-08-26) and still work -- not yet promoted to an `examples/figures/`
+script (tracked in `examples/README.md`), but no longer broken.
 
 See [`dispersion_relation.md`](dispersion_relation.md) and the main
 [`README.md`](../README.md) for the underlying eigenvalue problem.

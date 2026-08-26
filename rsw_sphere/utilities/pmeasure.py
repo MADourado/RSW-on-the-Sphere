@@ -19,7 +19,7 @@ from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.utilities.efficiency import default_velocity_range
-from rsw_sphere.utilities.periods import dominant_periods
+from rsw_sphere.utilities.periods import fft_period_parabolic, prominence_period
 
 G = 9.8
 
@@ -68,6 +68,20 @@ def _f2(amp_full, amp_sub, dEK_sub):
     if rms_sub <= 0:
         return np.nan
     return rms_diff / rms_sub
+
+
+def _fmax(E_full, E_sub, dEK_sub):
+    """% difference in PEAK kinetic energy, full wave set vs. reference
+    triad -- signed, unlike F2 (paper eq. Fmax). A physical-Joules
+    prefactor cancels in the ratio, so this is computed directly on the
+    nondimensional |A|^2 series.
+    """
+    if dEK_sub <= MIN_REFERENCE_DEK:
+        return np.nan
+    peak_sub = E_sub.max()
+    if peak_sub <= 0:
+        return np.nan
+    return 100 * (E_full.max() - peak_sub) / peak_sub
 
 
 def p_measure(modes, triads, velocities, h_e: float = 10000,
@@ -224,18 +238,57 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
 
 #: Registered diagnostics for wave_set_diagnostics_sweep. Add an entry
 #: here (not a new sweep loop) for a further per-target diagnostic.
-_DIAGNOSTIC_ARRAY_KEYS = {"p_measure": "P", "filtering_error": "F2", "frequency_shift": "FreqShift"}
+_DIAGNOSTIC_ARRAY_KEYS = {"p_measure": "P", "filtering_error": "F2", "frequency_shift": "FreqShift",
+                          "fmax": "Fmax"}
+
+
+#: Above this absolute difference (percentage points) between the two
+#: period estimators' own shift %, FreqShiftAgree is False --
+#: (frequency_shift_catalogue_search.py's own "agree within 1pp"
+#: threshold). Disagreement is NOT treated as an error and does not null
+#: FreqShift out: JFM-template.tex Sec. 3.3.5 found the two estimators
+#: genuinely disagree for the catalogue's only real effect (EG(1,1)/
+#: WG(1,1)), once the gravity mode's own energy share grows enough for a
+#: second spectral component to appear -- prominence/peak-counting is
+#: known to fail under that amplitude modulation while the FFT peak,
+#: though broadened, still tracks the dominant frequency. A NaN-on-
+#: disagreement gate would silently erase exactly that published result.
+FREQ_SHIFT_AGREEMENT_TOL = 1.0
 
 
 def _frequency_shift(T_days, amp_full, amp_sub, dEK_sub):
-    """% shift in dominant period, full wave set vs. reference triad alone."""
+    """(% shift in dominant period, agree) -- full wave set vs. reference
+    triad alone. The shift itself is always the FFT-with-parabolic-
+    interpolation estimate (never smoothing-dependent, so already immune
+    to the Savitzky-Golay artifact class that once inflated a null effect
+    to a reported 41-45%); `agree` reports whether a second,
+    prominence-filtered peak-timing estimator agrees within
+    FREQ_SHIFT_AGREEMENT_TOL -- an advisory reliability signal, not a
+    gate, since disagreement can itself be a genuine second spectral
+    component (see FREQ_SHIFT_AGREEMENT_TOL's own docstring) rather than
+    a measurement error. NaN/False if dEK_sub is too small or no period
+    is resolvable at all.
+    """
     if dEK_sub <= MIN_REFERENCE_DEK:
-        return np.nan
-    period_full = dominant_periods(T_days, amp_full ** 2)['period_global']
-    period_sub = dominant_periods(T_days, amp_sub ** 2)['period_global']
-    if not np.isfinite(period_sub) or period_sub <= 0:
-        return np.nan
-    return 100 * (period_full - period_sub) / period_sub
+        return np.nan, False
+    E_full, E_sub = amp_full ** 2, amp_sub ** 2
+
+    period_full_fft = fft_period_parabolic(T_days, E_full)
+    period_sub_fft = fft_period_parabolic(T_days, E_sub)
+    period_full_prom = prominence_period(T_days, E_full)
+    period_sub_prom = prominence_period(T_days, E_sub)
+
+    def _shift(period_full, period_sub):
+        if not period_full or not period_sub or period_sub <= 0:
+            return np.nan
+        return 100 * (period_full - period_sub) / period_sub
+
+    shift_fft = _shift(period_full_fft, period_sub_fft)
+    if not np.isfinite(shift_fft):
+        return np.nan, False
+    shift_prom = _shift(period_full_prom, period_sub_prom)
+    agree = bool(np.isfinite(shift_prom) and abs(shift_fft - shift_prom) <= FREQ_SHIFT_AGREEMENT_TOL)
+    return shift_fft, agree
 
 
 def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: dict,
@@ -256,6 +309,8 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
     -------
     dict
         U1, U2, drift, labels, plus one array per requested diagnostic.
+        If "frequency_shift" is requested, also FreqShiftAgree (bool array,
+        same shape as FreqShift) -- advisory only, see _frequency_shift.
     """
     unknown = set(diagnostics) - set(_DIAGNOSTIC_ARRAY_KEYS)
     if unknown:
@@ -269,6 +324,9 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
         u2_range = default_velocity_range(modes[idx2][2])
 
     array_keys = [_DIAGNOSTIC_ARRAY_KEYS[d] for d in diagnostics]
+    need_freq_shift = "frequency_shift" in diagnostics
+    if need_freq_shift:
+        array_keys = array_keys + ["FreqShiftAgree"]
     if cache_path and os.path.exists(cache_path):
         data = np.load(cache_path)
         out = {'U1': data['U1'], 'U2': data['U2'], 'drift': data['drift'],
@@ -292,7 +350,11 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
         (t_idx is not None and idx1 in triads[t_idx]) for t_idx in t_idx_for_target
     ]
 
-    results = {name: np.full((n_grid, n_grid, len(target_indices)), np.nan) for name in array_keys}
+    results = {
+        name: (np.zeros((n_grid, n_grid, len(target_indices)), dtype=bool) if name == "FreqShiftAgree"
+               else np.full((n_grid, n_grid, len(target_indices)), np.nan))
+        for name in array_keys
+    }
     DRIFT = np.empty((n_grid, n_grid))
 
     if verbose:
@@ -316,7 +378,6 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
             E2, E3 = ws.energy(Y)
             E_total = np.real(E2 + E3)
             DRIFT[i, j] = np.max(np.abs(E_total - E_total[0])) / np.maximum(np.abs(E_total[0]), 1e-300)
-            need_freq_shift = "frequency_shift" in diagnostics
             T_days = days_from_nondim_time(T) if need_freq_shift else None
 
             for k, tgt in enumerate(target_indices):
@@ -342,8 +403,11 @@ def wave_set_diagnostics_sweep(modes, triads, h_e: float, swept_indices, fixed_v
                     results["P"][i, j, k] = 100 * (dEK_full - dEK_sub) / dEK_sub
                 if "filtering_error" in diagnostics:
                     results["F2"][i, j, k] = _f2(amp_full, amp_sub, dEK_sub)
+                if "fmax" in diagnostics:
+                    results["Fmax"][i, j, k] = _fmax(E_full, E_sub, dEK_sub)
                 if need_freq_shift:
-                    results["FreqShift"][i, j, k] = _frequency_shift(T_days, amp_full, amp_sub, dEK_sub)
+                    results["FreqShift"][i, j, k], results["FreqShiftAgree"][i, j, k] = \
+                        _frequency_shift(T_days, amp_full, amp_sub, dEK_sub)
 
         if verbose:
             done_rows = i + 1

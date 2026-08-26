@@ -62,12 +62,16 @@ time units.
 
 All four drivers select from the same `wave_sets_default.yaml` registry
 (a triad is just its own 1-triad case, so there's no separate plain-Triad
-config anymore). `run_dynamics.py`/`run_sweep.py`/`run_sweep_sets.py`
-additionally share one config class,
-`rsw_sphere.dynamics.run_config.RunConfig` (registry key + `specs_path`,
-or an inline wave set; `tf_days`/`h`/`output_root`/`plot`/`parallel`; a
-`sweep:` block for the latter two) -- `RunConfig.from_yaml(path)` in every
-one of them. See `examples/` for configs.
+config anymore) via `--wave-set KEY [--specs path.yaml]`.
+`run_linear_modes.py` needs nothing beyond the `WaveSetSpec` itself (no
+time integration). `run_dynamics.py`/`run_sweep.py` build a
+`rsw_sphere.dynamics.run_config.RunConfig` (`tf_days`/`h`/`output_root`/
+`plot`/`parallel`; a `sweep:` block for `run_sweep.py`) straight from the
+registry entry (`RunConfig.from_registry_entry`/`from_wave_set`);
+`run_sweep.py` alone also accepts a standalone `RunConfig` YAML
+(`--config path.yaml`, `RunConfig.from_yaml`) for an ad-hoc sweep not
+worth registering. `run_sweep_sets.py` reads its own, differently-shaped
+YAML directly (`--config`, required). See `examples/` for configs.
 
 ### `run_linear_modes.py` (renamed from `run_diagnostics.py`)
 Creates the output directory (`<output-root>/figures/`), then optionally:
@@ -103,7 +107,7 @@ Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). Calls
 `sweep.diagnostics`: 1D supports `precession` only
 (`rsw_sphere.utilities.precession.precession_frequency_efficiency`,
 natively 1D); 2D supports `p_measure`/`filtering_error`/`frequency_shift`/
-`efficiency`/`low_frequency_energy` via `rsw_sphere.utilities.registry.sweep_2d`.
+`fmax`/`efficiency`/`low_frequency_energy` via `rsw_sphere.utilities.registry.sweep_2d`.
 Swept/target modes for a 2D sweep default to the wave set's own "private"
 modes (`WaveSetSpec.shared_and_private_modes()`). `--wave-set KEY` reads
 `sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad` straight
@@ -327,7 +331,7 @@ diagnostic can be re-derived from one without re-integrating, and the
 same physical configuration reuses one entry across scripts), not
 figures. Also gitignored.
 
-`examples/legacy/` holds scripts superseded by a codebase reorganization
+`examples_legacy/legacy/` holds scripts superseded by a codebase reorganization
 (verified to reproduce their own prior output before the move) — a
 holding area pending a later, separate deletion pass, not a statement
 that the code there still reflects current practice.
@@ -339,7 +343,7 @@ that the code there still reflects current practice.
 - **Mode selection** relies on sorting eigenvalues and indexing by `l = n − m`;
   the ordering (WIG / RH / EIG blocks) is assumed stable — see the index map in
   `eigenvectors.py` and the notes in `dispersion_relation.md` §2.4.
-- **Pump mode** is expected to be mode c (`m_c` largest), per the config comment.
+- **Pump mode** is expected to be mode c (`m_c` largest) -- `TRIAD`'s own convention.
 - **Dependency pinning** (`numpy<2.0`, `scipy<1.15`) matters: the Legendre /
   eigenvalue APIs used here changed in later releases.
 - **No Python identifiers were renamed** in the 2026-07 package refactor

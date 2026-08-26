@@ -47,10 +47,14 @@ wrapped as named `examples/tables/`/`examples/figures/` scripts.
 core computation isn't reducible to a `run_sweep.py`/`run_sweep_sets.py`
 diagnostic (power-law fits, Hilbert phase lag, dual-estimator agreement
 checks, tf-convergence studies, physical-Joules conversion) -- see
-`examples_legacy/README.md`'s own note on this move. `rh_partner_quartet_family.py`/
-`short_gravity_long_rossby_example.py` are each a straightforward
-`run_sweep_sets.py` candidate screen away from full migration, but need
-a new registered `base_wave_set` first -- not yet done.
+`examples_legacy/README.md`'s own note on this move.
+`rh_partner_quartet_family.py` is fully migrated: `quartet_rh_preference`
+was already its exact base quartet, so `examples/candidates_rh_partner_family.yaml`
+(`run_sweep_sets.py --config`) reproduces it with no registry change.
+`short_gravity_long_rossby_example.py` is also migrated, onto the
+corrected candidate `quartet_gravity_wg11` (WG(1,1), not the retracted
+WG(7,9) claim the script itself made -- see that registry entry's own
+`role` note).
 `examples_legacy/raphaldini2022_compare/` (the 7-script external
 barotropic-model comparison cluster) has also been moved into its own
 subfolder.

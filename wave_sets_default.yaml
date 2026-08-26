@@ -273,6 +273,43 @@ quartet_gravity_79:
     n_grid: 10
 
 
+quartet_gravity_wg11:
+  label: "RH(4,5)+RH(3,4)+RH(1,2) + westward gravity mode WG(1,1)"
+  display_label: "Quartet C (westward variant)"
+  role: >-
+    Same RH-only triad and topology as quartet_gravity_kelvin (EG(1,1)),
+    with the eastward Kelvin mode replaced by its westward counterpart
+    WG(1,1) -- one of only two candidates on the RH(4,5)+RH(3,4) edge
+    that PASSED a Stage-1 screen (cross-checked FFT/prominence period
+    estimators agree within 1pp, frequency_shift_catalogue_search.py) as
+    a plausible genuine frequency-shift effect, not a smoothing artifact.
+    Not yet Stage-2 quantified (x-sweep + tf-convergence, no saved
+    output) -- run `run_sweep.py --wave-set quartet_gravity_wg11` before
+    citing a specific magnitude. (A third candidate, WG(7,9), was
+    initially reported to shift the target's period by 41-45% but that
+    finding was retracted 2026-08-13: Savitzky-Golay smoothing produced
+    an artifact both window-independent estimators put at <=0.1% -- do
+    not re-register WG(7,9) for this story without re-deriving the
+    effect from scratch.)
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 1, n: 1, alpha: 2, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with WG(1,1))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+    n_grid: 10
+  sweep:
+    diagnostics: [frequency_shift, p_measure]
+    n_grid: 10
+  output: outputs/figures/wave_sets/quartet_gravity_wg11_diagnostics.png
+
 quartet_dual_gravity_edge:
   label: "EG(1,1)+EG(5,7) edge coupling RH(4,5) and EG(6,8)"
   display_label: "Quartet E"

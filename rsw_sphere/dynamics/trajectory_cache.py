@@ -1,8 +1,7 @@
 """Raw ODE-trajectory caching for ``WaveSet``/``RK44`` runs.
 
-Every sweep-style script in this repository (``examples_legacy/quartet_precession_sweep.py``,
-``examples/precession_sweep_figure.py``, the ``wave_set_*`` sweep modules)
-re-integrates from scratch on every run -- no ``.npz`` cache anywhere in the
+Every sweep-style script in this repository used to
+re-integrate from scratch on every run -- no ``.npz`` cache anywhere in the
 repo stores the raw ``Y(t)`` solution itself, only summary/sweep arrays
 derived from it. That makes re-analysis (e.g. checking a different
 diagnostic on an already-run trajectory) always pay the integration cost

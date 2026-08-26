@@ -86,7 +86,7 @@ python rsw_sphere/utilities/check_wave_set_physics.py --wave-set quartet_gravity
 
 # an AD-HOC configuration not in any registry -- e.g. a new quintet idea
 python rsw_sphere/utilities/check_wave_set_physics.py \
-    --modes "4,5,3" "1,2,3" "3,4,3" "1,1,1" "7,9,1" \
+    --modes "4,5,3" "3,4,3" "1,2,3" "1,1,1" "7,9,1" \
     --triads "0,1,2" "0,1,3" "4,0,1"
 ```
 
@@ -382,12 +382,43 @@ print(result['P'], result['F2'])
 
 `plot_filtering_error_map`'s colormap is sequential (`viridis`), unlike
 the P-measure's diverging one — $\mathcal{F}_2^a \geq 0$ by construction,
-so there is no zero-crossing to preserve. $\mathcal{F}_{max}^a$ (paper eq.
-`Fmax`, signed, dimensional) is not implemented yet; add it as a new
-entry to `_DIAGNOSTIC_ARRAY_KEYS`/the per-point branch in
-`wave_set_diagnostics_sweep` (both in `rsw_sphere/utilities/pmeasure.py`) — it would
-read the same `E_full`/`amp_sub` already computed per grid point, no new
-integration.
+so there is no zero-crossing to preserve.
+
+**`fmax`** (paper eq. `Fmax`): signed % difference in the target's own
+*peak* kinetic energy, full wave set vs. reference triad —
+`100 * (E_full.max() - E_sub.max()) / E_sub.max()` (`_fmax`,
+`rsw_sphere/utilities/pmeasure.py`). The paper's own version is a
+physical-Joules quantity (`G*H_E^2*A^2*pi*rho` prefactor,
+`examples_legacy/special_runs/frequency_amplitude_companion.py`), but
+that prefactor cancels in the percentage, so this reads the same
+`E_full`/`E_sub` already computed per grid point for `p_measure` — no new
+integration. `plot_fmax_map` (`rsw_sphere/plotting/pmeasure_map.py`) uses
+the same diverging `RdBu_r`/`TwoSlopeNorm` convention as P-measure/
+`frequency_shift`, since Fmax is signed.
+
+**`frequency_shift`**: % shift in the target's own dominant period, full
+wave set vs. reference triad (`_frequency_shift`,
+`rsw_sphere/utilities/pmeasure.py`) — the always-returned value is the
+FFT-with-parabolic-interpolation estimate, never smoothing-dependent (a
+Savitzky-Golay-smoothed estimator once inflated a genuinely null effect
+to a reported 41-45%, retracted 2026-08-13; see `JFM-template.tex`
+§3.3.5). A second, prominence-filtered peak-timing estimator is
+cross-checked and reported alongside as **`FreqShiftAgree`** (bool,
+same shape as `FreqShift`) — **advisory, not a gate**: disagreement is
+*not* nulled to NaN, since §3.3.5 found the two estimators genuinely
+disagree for the catalogue's only real effect (EG(1,1)/WG(1,1)) once the
+gravity mode's own energy share is large enough for a second spectral
+component to appear — peak-counting is known to fail under that
+amplitude modulation while the FFT peak, though broadened, still tracks
+the dominant frequency. A NaN-on-disagreement gate would have silently
+erased exactly that published result; the shift is always the real
+(FFT) number, `FreqShiftAgree` just tells you whether to read it with a
+caveat. `plot_frequency_shift_map`'s optional `agree=` argument marks
+each disagreeing grid point with a small dot rather than hiding it
+(scatter, not hatching -- agreement isn't a smooth field, marking
+exact sample points is more honest than interpolating between them).
+`run_sweep.py` passes this through automatically when `FreqShiftAgree`
+is present in the sweep result.
 
 ---
 
@@ -399,9 +430,10 @@ libration statistics, plus (optionally) one target mode's own
 time-averaged-total-energy efficiency and/or one or more modes' own raw
 `individual_phase` slope (Raphaldini et al. 2022's individual-mode
 phase-reversal diagnostic, their Section III.A/Fig. 3). Generalizes what
-were previously two bespoke scripts
-(`examples_legacy/quartet_precession_sweep.py`, `examples/legacy/precession_sweep_figure.py`)
-into this repo's own registry-driven `wave_set_<topic>.py` pattern.
+were previously two bespoke scripts (`quartet_precession_sweep.py`,
+`precession_sweep_figure.py`, both retired 2026-08-26 -- see
+`examples_legacy/README.md`) into this repo's own registry-driven
+`wave_set_<topic>.py` pattern.
 
 Every swept trajectory is cached via
 `rsw_sphere.dynamics.trajectory_cache.run_and_cache` under
@@ -442,7 +474,7 @@ every time someone wants a new sweep combination. `--wave-set KEY` reads
 the `sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad`
 keys straight from that wave set's own `wave_sets_default.yaml` entry
 (e.g. `quartet_rh_preference`'s own sweep, the migrated replacement for
-`examples/legacy/precession_sweep_figure.py`'s own
+`examples_legacy/legacy/precession_sweep_figure.py`'s own
 `precession_sweep_figures.yaml` entry, verified to reproduce that
 script's output pixel-for-pixel) — no separate config file needed;
 `--config path.yaml` (a standalone YAML) is only for an ad-hoc sweep not

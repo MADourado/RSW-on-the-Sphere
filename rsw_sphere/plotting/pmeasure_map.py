@@ -86,9 +86,18 @@ def plot_filtering_error_map(U1, U2, F2, xlabel: str = None, ylabel: str = None,
 
 def plot_frequency_shift_map(U1, U2, shift, xlabel: str = None, ylabel: str = None,
                               title: str = None, vlim: float = None,
-                              path: str = None, ax=None):
+                              agree=None, path: str = None, ax=None):
     """Diverging-colormap dominant-period %-shift map (period can lengthen
     or shorten). vlim: symmetric clip; default the data's own max |shift|.
+
+    `agree`: optional bool array, same shape as `shift`
+    (FreqShiftAgree from wave_set_diagnostics_sweep) -- where False,
+    marks that exact grid point (small dot) rather than hiding the
+    value. Disagreement between the two period estimators is advisory,
+    not an error (JFM-template.tex Sec. 3.3.5: it can flag a genuine
+    second spectral component, not just a bad measurement) -- shift is
+    real and plotted either way; markers are per-sample-point, not
+    interpolated, since agreement isn't a smooth field.
 
     Returns (fig, ax, cs).
     """
@@ -108,6 +117,13 @@ def plot_frequency_shift_map(U1, U2, shift, xlabel: str = None, ylabel: str = No
     norm = TwoSlopeNorm(vmin=-vlim, vcenter=0, vmax=vlim)
     levels = np.linspace(-vlim, vlim, 101)
     cs = ax.contourf(U1, U2, np.ma.masked_invalid(shift_clipped), levels=levels, cmap='RdBu_r', norm=norm)
+    if agree is not None:
+        disagree = (~np.asarray(agree, dtype=bool)) & finite
+        if np.any(disagree):
+            ax.scatter(np.asarray(U1)[disagree], np.asarray(U2)[disagree],
+                       s=6, c='k', marker='.', alpha=0.6, linewidths=0,
+                       label='estimators disagree')
+            ax.legend(loc='upper right', fontsize='small', framealpha=0.8)
     if xlabel:
         ax.set_xlabel(xlabel)
     if ylabel:
@@ -115,6 +131,44 @@ def plot_frequency_shift_map(U1, U2, shift, xlabel: str = None, ylabel: str = No
     if title:
         ax.set_title(title)
     fig.colorbar(cs, ax=ax, label='dominant period shift (%)')
+
+    if own_fig:
+        save_or_show(fig, path)
+    return fig, ax, cs
+
+
+def plot_fmax_map(U1, U2, Fmax, xlabel: str = None, ylabel: str = None,
+                   title: str = None, vlim: float = None,
+                   path: str = None, ax=None):
+    """Diverging-colormap peak-kinetic-energy %-difference map (signed,
+    full wave set vs. reference triad). vlim: symmetric clip; default the
+    data's own max |Fmax|.
+
+    Returns (fig, ax, cs).
+    """
+    own_fig = ax is None
+    if own_fig:
+        from rsw_sphere.plotting.style import apply_house_style
+        apply_house_style()
+        fig, ax = plt.subplots(figsize=(6, 5))
+    else:
+        fig = ax.figure
+
+    finite = np.isfinite(Fmax)
+    if vlim is None:
+        vlim = float(np.nanmax(np.abs(Fmax))) if np.any(finite) else 1.0
+    Fmax_clipped = np.clip(Fmax, -vlim, vlim)
+
+    norm = TwoSlopeNorm(vmin=-vlim, vcenter=0, vmax=vlim)
+    levels = np.linspace(-vlim, vlim, 101)
+    cs = ax.contourf(U1, U2, np.ma.masked_invalid(Fmax_clipped), levels=levels, cmap='RdBu_r', norm=norm)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title)
+    fig.colorbar(cs, ax=ax, label=r'$\mathcal{F}_{max}^a$ (%)')
 
     if own_fig:
         save_or_show(fig, path)

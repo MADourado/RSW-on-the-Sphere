@@ -51,6 +51,58 @@ def low_frequency_power(t_days, E_j, period_cutoff_days: float = 10.0, max_perio
     return float(np.sqrt(max(integral, 0.0)))
 
 
+def fft_period_parabolic(t_days, E_j):
+    """Dominant period via real FFT of the mean-subtracted series, with
+    parabolic interpolation of the peak bin against its two neighbors --
+    window-independent, no tunable smoothing parameter (unlike a
+    Savitzky-Golay-smoothed peak search, which can silently report a
+    period that is a monotone function of the smoothing window --
+    caught this way once already, see `prominence_period`'s own
+    docstring). Returns period in days, or None if no resolvable peak.
+    """
+    t_days = np.asarray(t_days)
+    E_j = np.asarray(E_j)
+    dt_days = t_days[1] - t_days[0]
+    x = E_j - E_j.mean()
+    spec = np.abs(np.fft.rfft(x))
+    freqs = np.fft.rfftfreq(len(x), d=dt_days)
+    # Ignore the DC bin, anything below a resolvable minimum period
+    # (2*dt, Nyquist), and anything longer than a third of the window
+    # (unreliable).
+    valid = (freqs > 1.0 / (t_days[-1] / 3)) & (freqs < 1.0 / (2 * dt_days))
+    if not np.any(valid):
+        return None
+    idx_candidates = np.where(valid)[0]
+    k = idx_candidates[np.argmax(spec[idx_candidates])]
+    if k <= 0 or k >= len(spec) - 1:
+        return 1.0 / freqs[k]
+    y0, y1, y2 = spec[k - 1], spec[k], spec[k + 1]
+    denom = (y0 - 2 * y1 + y2)
+    delta = 0.5 * (y0 - y2) / denom if abs(denom) > 1e-300 else 0.0
+    delta = np.clip(delta, -0.5, 0.5)
+    f_refined = freqs[k] + delta * (freqs[1] - freqs[0])
+    return 1.0 / f_refined if f_refined > 0 else None
+
+
+def prominence_period(t_days, E_j):
+    """Peak-to-peak period via prominence-filtered peaks on the RAW
+    (unsmoothed) trace -- prominence threshold set relative to the
+    trace's own amplitude range, not an absolute/tuned constant. Cross-
+    checking this against `fft_period_parabolic` is what caught a
+    Savitzky-Golay smoothing artifact that had inflated a reported
+    frequency shift to 41-45% when the true, window-independent effect
+    was <=0.1% (2026-08-13) -- a single estimator would not have. Returns
+    period in days, or None if fewer than 3 peaks are found.
+    """
+    t_days = np.asarray(t_days)
+    E_j = np.asarray(E_j)
+    prom = 0.1 * (E_j.max() - E_j.min())
+    peaks, _ = find_peaks(E_j, prominence=prom)
+    if len(peaks) < 3:
+        return None
+    return float(np.mean(np.diff(t_days[peaks])))
+
+
 def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_frac: float = 0.01):
     """Dominant period(s) via FFT.
 

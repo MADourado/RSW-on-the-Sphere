@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from rsw_sphere.utilities.pmeasure import (
-    p_measure, p_measure_sweep, wave_set_diagnostics_sweep, MIN_REFERENCE_DEK)
+    p_measure, p_measure_sweep, wave_set_diagnostics_sweep, MIN_REFERENCE_DEK, _frequency_shift)
 
 pytestmark = pytest.mark.slow
 
@@ -94,6 +94,58 @@ def test_frequency_shift_matches_shared_gate():
         diagnostics=("frequency_shift",), u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
         reference_triad=0, n_grid=2, tf_days=5, h=0.02, N=N, deg=DEG)
     values = result['FreqShift']
+    assert math.isnan(values[0, 0, 0])  # c=0 -> target-c undefined
+    assert math.isnan(values[0, 0, 1])  # d=0 -> target-d undefined
+    finite = values[~np.isnan(values)]
+    assert finite.size > 0
+
+
+def test_frequency_shift_does_not_null_out_a_real_disagreeing_effect():
+    """Regression for JFM-template.tex Sec. 3.3.5: EG(1,1) is the
+    catalogue's real frequency-shift effect (target RH(3,4), x=0.5
+    energy split, published +16.8 to +17.5%), and the paper found the two
+    period estimators do NOT cleanly agree there (a genuine second
+    spectral component, not a measurement error) -- FreqShift must still
+    report the real (FFT-based) value, not NaN, with FreqShiftAgree
+    flagging the disagreement instead of hiding the number."""
+    import warnings
+    from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
+    from rsw_sphere.dynamics.integrators import RK44
+    from rsw_sphere.dynamics.wave_sets import WaveSet
+
+    h_e = 10000.0
+    gamma = gamma_from_he(h_e, g=G)[1]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ws_full = WaveSet(gamma, QUARTET_MODES, QUARTET_TRIADS, N=N, deg=DEG)
+        ws_sub = WaveSet(gamma, QUARTET_MODES[:3], QUARTET_TRIADS[:1], N=N, deg=DEG)
+
+    A0_base = ws_sub.amplitudes_from_velocities([30.0, 30.0, 30.0], h_e, g=G)
+    e_tot = np.sum(np.real(A0_base * np.conj(A0_base)))
+    x = 0.5
+    e_each = (1 - x) / 3 * e_tot
+    A0_sub = np.sqrt(e_each) * np.ones(3, dtype=complex)
+    A0_full = np.concatenate([A0_sub, [np.sqrt(x * e_tot)]]).astype(complex)
+    t_f = 120.0 * 4 * np.pi
+    Yf, Tf = RK44(ws_full, 0, t_f, 0.01, A0_full)
+    Ys, Ts = RK44(ws_sub, 0, t_f, 0.01, A0_sub)
+    T_days = days_from_nondim_time(Tf)
+    amp_full, amp_sub = np.abs(Yf[:, 1]), np.abs(Ys[:, 1])  # target b = RH(3,4)
+    E_sub = amp_sub ** 2
+    dEK_sub = E_sub.max() - E_sub.min()
+
+    shift, agree = _frequency_shift(T_days, amp_full, amp_sub, dEK_sub)
+    assert not math.isnan(shift), "a real, published effect must not be nulled out"
+    assert 10.0 < shift < 25.0, f"shift={shift} outside the published +16.8 to +17.5% range"
+    assert agree is False, "the paper found the two estimators do NOT agree here"
+
+
+def test_fmax_matches_shared_gate():
+    result = wave_set_diagnostics_sweep(
+        QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
+        diagnostics=("fmax",), u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
+        reference_triad=0, n_grid=2, tf_days=5, h=0.02, N=N, deg=DEG)
+    values = result['Fmax']
     assert math.isnan(values[0, 0, 0])  # c=0 -> target-c undefined
     assert math.isnan(values[0, 0, 1])  # d=0 -> target-d undefined
     finite = values[~np.isnan(values)]

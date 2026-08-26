@@ -1,6 +1,6 @@
 """precession_frequency_efficiency lock-island regression: locks
-Quartet A's own published boundary (examples_legacy/quartet_precession_sweep.py's
-self-check) -- u~83-92/u~140 lock both constituent triads, u=70 doesn't."""
+Quartet A's own published boundary -- u~83-92/u~140 lock both constituent
+triads, u=70 doesn't."""
 import numpy as np
 import pytest
 
