@@ -16,9 +16,7 @@ Config:
                                                  # this velocity instead of its base
                                                  # spec's own registered one (often 0 --
                                                  # p_measure/filtering_error still pick up
-                                                 # a passively, nonlinearly excited candidate,
-                                                 # but frequency_shift needs a real kick to
-                                                 # resolvably shift the target's dominant period)
+                                                 # a passively, nonlinearly excited candidate)
     candidates_from: {max_n: 15}                # m inferred from candidate_slot's
                                                  # own triad selection rule; n in [m, max_n]; or:
     candidates: [{m: 1, n: 1, alpha: 1}, ...]   # explicit list
@@ -89,8 +87,7 @@ def _build_candidate_spec(spec, candidate_slot, mode_triple, velocity=None):
     return dataclasses.replace(spec, modes=tuple(modes), velocities=tuple(velocities))
 
 
-_ROW_LABELS = {"p_measure": "p_measure (%)", "filtering_error": "filtering_error",
-               "frequency_shift": "frequency_shift (%)"}
+_ROW_LABELS = {"p_measure": "p_measure (%)", "filtering_error": "filtering_error"}
 
 
 def _one_candidate(args):

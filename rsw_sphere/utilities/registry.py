@@ -13,11 +13,11 @@ from rsw_sphere.utilities.pmeasure import (
 from rsw_sphere.utilities.functional import (
     functional_diagnostics_sweep, _DIAGNOSTIC_ARRAY_KEYS as _FUNCTIONAL_KEYS)
 from rsw_sphere.plotting.pmeasure_map import (
-    plot_p_measure_map, plot_filtering_error_map, plot_frequency_shift_map, plot_fmax_map,
+    plot_p_measure_map, plot_filtering_error_map, plot_fmax_map,
     plot_novelty_period_map)
 from rsw_sphere.plotting.functional_map import plot_efficiency_map, plot_low_frequency_energy_map
 
-PAIRWISE = frozenset(_PAIRWISE_KEYS)  # {"p_measure", "filtering_error", "frequency_shift", "fmax", "novelty_period"}
+PAIRWISE = frozenset(_PAIRWISE_KEYS)  # {"p_measure", "filtering_error", "fmax", "novelty_period"}
 FUNCTIONAL = frozenset(_FUNCTIONAL_KEYS)  # {"efficiency", "low_frequency_energy"}
 ALL_2D = PAIRWISE | FUNCTIONAL
 
@@ -26,7 +26,6 @@ DIAGNOSTIC_ARRAY_KEYS = {**_PAIRWISE_KEYS, **_FUNCTIONAL_KEYS}
 DIAGNOSTIC_PLOT_FNS = {
     "p_measure": plot_p_measure_map,
     "filtering_error": plot_filtering_error_map,
-    "frequency_shift": plot_frequency_shift_map,
     "fmax": plot_fmax_map,
     "novelty_period": plot_novelty_period_map,
     "efficiency": plot_efficiency_map,

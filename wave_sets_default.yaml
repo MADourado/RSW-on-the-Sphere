@@ -310,16 +310,18 @@ quartet_gravity_wg11:
     with the eastward Kelvin mode replaced by its westward counterpart
     WG(1,1) -- one of only two candidates on the RH(4,5)+RH(3,4) edge
     that PASSED a Stage-1 screen (cross-checked FFT/prominence period
-    estimators agree within 1pp, frequency_shift_catalogue_search.py) as
-    a plausible genuine frequency-shift effect, not a smoothing artifact.
-    Not yet Stage-2 quantified (x-sweep + tf-convergence, no saved
-    output) -- run `run_sweep.py --wave-set quartet_gravity_wg11` before
-    citing a specific magnitude. (A third candidate, WG(7,9), was
-    initially reported to shift the target's period by 41-45% but that
-    finding was retracted 2026-08-13: Savitzky-Golay smoothing produced
-    an artifact both window-independent estimators put at <=0.1% -- do
-    not re-register WG(7,9) for this story without re-deriving the
-    effect from scratch.)
+    estimators agree within 1pp, the now-deleted
+    frequency_shift_catalogue_search.py) as a plausible genuine
+    period-shift effect, not a smoothing artifact. Never Stage-2
+    quantified (x-sweep + tf-convergence, no saved output), and the
+    `frequency_shift` diagnostic that would have quantified it has since
+    been removed from the codebase (unused, backed no live paper
+    content) -- re-add a period-shift diagnostic first if this candidate
+    is revisited. (A third candidate, WG(7,9), was initially reported to
+    shift the target's period by 41-45% but that finding was retracted
+    2026-08-13: Savitzky-Golay smoothing produced an artifact both
+    window-independent estimators put at <=0.1% -- do not re-register
+    WG(7,9) for this story without re-deriving the effect from scratch.)
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}
@@ -335,7 +337,7 @@ quartet_gravity_wg11:
     h: 0.01
     n_grid: 10
   sweep:
-    diagnostics: [frequency_shift, p_measure]
+    diagnostics: [p_measure]
     n_grid: 10
   output: outputs/figures/wave_sets/quartet_gravity_wg11/diagnostics.png
 

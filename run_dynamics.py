@@ -146,7 +146,7 @@ def main():
     parser.add_argument("--no-parallel", action="store_true", help="force serial execution")
     parser.add_argument("--diagnostics", action="store_true",
                          help="also compute/print every pairwise diagnostic (p_measure, "
-                              "filtering_error, fmax, frequency_shift, novelty_period) for every "
+                              "filtering_error, fmax, novelty_period) for every "
                               "target mode against every sub-triad that contains it, and write "
                               "the novelty-frequency spectrum figures (rsw_sphere.plotting.novelty_frequency_panel)")
     parser.add_argument("--novelty-exclusion-frac", type=float, default=0.20,
@@ -199,11 +199,10 @@ def main():
                                if np.isfinite(d['novelty_period']) else "none detected")
                 rows.append([
                     label, name, f"{d['p_measure']:.2f}%", f"{d['filtering_error']:.4f}",
-                    f"{d['fmax']:.2f}%", f"{d['frequency_shift']:.2f}%", str(d['frequency_shift_agree']),
-                    novelty_str,
+                    f"{d['fmax']:.2f}%", novelty_str,
                 ])
 
-        headers = ["mode", "vs.", "p_measure", "filt_err", "fmax", "freq_shift", "agree", "novelty_period (%)"]
+        headers = ["mode", "vs.", "p_measure", "filt_err", "fmax", "novelty_period (%)"]
         widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h)
                   for i, h in enumerate(headers)]
         row_fmt = "  ".join(f"{{:<{w}}}" for w in widths)

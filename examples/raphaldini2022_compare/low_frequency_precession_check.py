@@ -3,19 +3,20 @@ oscillations, the way Raphaldini et al. (2022) report (their Figs.
 2(c)/5(c)/8(c)/11(c): integrated low-frequency spectral power in a target
 mode's kinetic energy tracks the efficiency peak)? A distinct claim from
 their Fig. 3 individual-mode phase reversal already checked in
-``examples/individual_mode_reversal_investigation.py`` -- this script
-checks the OTHER finding.
+``individual_mode_reversal_investigation.py`` -- this script checks the
+OTHER finding. Backs the live claim at JFM-template.tex's ``sec:
+quartet_rh_precession`` ("efficiency peaks in both quartets also
+coincide with elevated low-frequency spectral power ...").
 
-Three checks, reusing already-cached trajectories where available (Phase
-5's own investigation already produced them):
+Three checks, reusing already-cached trajectories where available:
 
 1. Barotropic calibration -- direct reproduction, same scale range as
-   ``examples/reproduce_raphaldini2022_fig2.py``.
+   ``rsw_sphere.utilities.barotropic_vort_model``'s own module docstring.
 2. Quartet B, RSW -- reuses the trajectories cached under
    ``outputs/trajectories/quartets/`` by
    ``individual_mode_reversal_investigation.step2_quartet_b_rsw`` and
-   ``precession_resonance_phase_diagnostic.rsw_phases_and_efficiency``
-   (same explicit scale-based label, both share this cache entry).
+   ``precession_comparison.rsw_phases_and_efficiency`` (same explicit
+   scale-based label, both share this cache entry).
 3. Quartet A, RSW -- reuses the trajectories cached under
    ``outputs/trajectories/quartets/`` by
    ``rsw_sphere.utilities.precession`` (the confirmed lock at
@@ -27,7 +28,7 @@ Three checks, reusing already-cached trajectories where available (Phase
 
 Run:
 
-    python examples/low_frequency_precession_check.py
+    python examples/raphaldini2022_compare/low_frequency_precession_check.py
 """
 import os
 import sys
@@ -45,14 +46,14 @@ from rsw_sphere.physics import days_from_nondim_time
 from rsw_sphere.utilities.periods import low_frequency_power
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
+import rsw_sphere.utilities.barotropic_vort_model as baro
 
-import reproduce_raphaldini2022_fig2 as baro
-import precession_resonance_rsw_vs_barotropic as rsw_b
+import precession_comparison as comp
 
 
 def step1_barotropic(scales=None):
     """Target mode 4 (RH(2,9) analogue, index 3) -- same range as
-    ``reproduce_raphaldini2022_fig2.py``'s own ``__main__``.
+    ``rsw_sphere.utilities.barotropic_vort_model``'s own established range.
 
     Uses the NORMALIZED kinetic-energy fraction ``Q4(t) =
     |A4|^2*kappa4 / sum_j(|Aj|^2*kappaj)`` (Raphaldini et al.'s own eq. 35,
@@ -69,24 +70,14 @@ def step1_barotropic(scales=None):
     print("=== Step 1: barotropic calibration (target mode 4, normalized energy fraction) ===")
     print(f"{'scale':>10} {'efficiency(%)':>14} {'low_freq_power':>16}")
     for s in scales:
-        h = min(0.02, 0.2 / (max(1.0, s) * 6 + 1))
-        A0 = s * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
-        A1s, A2s, A3s, A4s, ts = [A0[0]], [A0[1]], [A0[2]], [A0[3]], [0.0]
-        for t, A in baro._rk4(baro.rhs, 0, 1500.0, h, A0):
-            A1s.append(A[0]); A2s.append(A[1]); A3s.append(A[2]); A4s.append(A[3])
-            ts.append(t)
-        A1s, A2s, A3s, A4s = map(np.array, (A1s, A2s, A3s, A4s))
-        T = np.array(ts)
-        num = np.abs(A4s) ** 2 * baro.KAPPA4
-        den = (np.abs(A1s) ** 2 * baro.KAPPA1 + np.abs(A2s) ** 2 * baro.KAPPA2
-               + np.abs(A3s) ** 2 * baro.KAPPA3 + num)
-        Q4 = num / den
+        Y, T = baro.integrate(s, t_f=1500.0)
+        E = np.abs(Y) ** 2 * baro.KAPPA
+        Q4 = E[:, 3] / E.sum(axis=1)
         # T is nondimensional time normalized by 2*Omega, same convention as
-        # the rest of this repo (reproduce_raphaldini2022_fig2.py's own
-        # module docstring) -- days_from_nondim_time applies here too.
+        # the rest of this repo -- days_from_nondim_time applies here too.
         days = days_from_nondim_time(T)
         p = low_frequency_power(days, Q4, period_cutoff_days=10.0)
-        eff = baro.efficiency(s)
+        eff = baro.efficiency_from_trajectory(Y)
         print(f"{s:>10.2e} {100 * eff:>14.4f} {p:>16.6e}")
 
 
@@ -107,22 +98,19 @@ def step2_quartet_b_rsw(scales=None, t_f=1500.0):
     if scales is None:
         scales = np.array([1e-4, 1e-3, 1e-2, 3e-2, 0.1, 0.3, 1.0, 3.0, 10.0])
 
-    ws = rsw_b.build()
+    ws, spec = comp.build_rsw_waveset()
+    target_idx = spec.index(comp.TARGET_MODE_KEY)
     print("\n=== Step 2: Quartet B, RSW (target mode RH4=RH(2,9), normalized energy fraction) ===")
     print(f"{'scale':>10} {'efficiency(%)':>14} {'low_freq_power':>16}")
     for s in scales:
-        h = min(0.02, 0.2 / (max(1.0, s) * 6 + 1))
-        A0 = s * np.array([1.0, 1.0, 1.0, 1e-3], dtype=complex)
-        # Explicit scale-based label, see precession_resonance_phase_diagnostic.py's comment.
-        label = f"scale{s:.6g}_tf{t_f:.0f}_h{h:.5f}"
-        Y, T, _ = run_and_cache(ws, A0, t_f, h, label=label)
+        Y, T = comp.rsw_trajectory(ws, s, t_f=t_f)
         days = days_from_nondim_time(T)
         E = np.real(Y * np.conj(Y))
         E_total_t = np.sum(E, axis=1)
-        Q4 = E[:, 3] / E_total_t
+        Q4 = E[:, target_idx] / E_total_t
         p = low_frequency_power(days, Q4, period_cutoff_days=10.0)
 
-        eff = (E[:, 3].max() - E[:, 3].min()) / E_total_t.mean()
+        eff = (E[:, target_idx].max() - E[:, target_idx].min()) / E_total_t.mean()
         print(f"{s:>10.2e} {100 * eff:>14.4f} {p:>16.6e}")
 
 

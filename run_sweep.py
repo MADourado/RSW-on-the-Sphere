@@ -9,7 +9,7 @@ requested diagnostic as its own figure:
 - 1 swept mode (1D): `precession` only, via
   rsw_sphere.utilities.precession.precession_frequency_efficiency
   (already natively 1D). Other diagnostics are 2D-sweep-only for now.
-- 2 swept modes (2D): p_measure, filtering_error, frequency_shift, fmax,
+- 2 swept modes (2D): p_measure, filtering_error, fmax, novelty_period,
   efficiency, low_frequency_energy, via rsw_sphere.utilities.registry.sweep_2d.
 
 Run, if the wave set's own registry entry already carries its own
@@ -139,16 +139,12 @@ def _run_sweep_2d(config: RunConfig, output: str, plot_cfg: dict):
         array_key = DIAGNOSTIC_ARRAY_KEYS[diag]
         plot_fn = DIAGNOSTIC_PLOT_FNS[diag]
         values = result[array_key]
-        extra = {}
-        if diag == "frequency_shift" and "FreqShiftAgree" in result:
-            extra["agree"] = result["FreqShiftAgree"]
         for col, tgt in enumerate(target_indices):
             tgt_label = _mode_label(*spec.modes[tgt])
-            agree_kwargs = {"agree": extra["agree"][..., col]} if "agree" in extra else {}
             plot_fn(result["U1"], result["U2"], values[..., col],
                     xlabel=plot_cfg.get("xlabel", f"{label1} u (m/s)"),
                     ylabel=plot_cfg.get("ylabel", f"{label2} u (m/s)"),
-                    title=f"{diag}: {tgt_label}", ax=axes_grid[row, col], **agree_kwargs)
+                    title=f"{diag}: {tgt_label}", ax=axes_grid[row, col])
         finite = values[np.isfinite(values)]
         if finite.size:
             print(f"  [{diag}] range over finite grid points: "

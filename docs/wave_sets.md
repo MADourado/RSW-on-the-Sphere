@@ -2,8 +2,8 @@
 
 **Driver interface note (updated 2026-08-26):** `run_sweep.py`'s
 diagnostic switch is `sweep.diagnostics: [...]` (values: `p_measure`,
-`filtering_error`, `frequency_shift`, `efficiency`, `low_frequency_energy`
-for a 2D sweep; `precession` for 1D) -- any `quartet_diagnostics`
+`filtering_error`, `fmax`, `novelty_period`, `efficiency`,
+`low_frequency_energy` for a 2D sweep; `precession` for 1D) -- any `quartet_diagnostics`
 mentioned below is stale, from before that switch existed. The wave-set
 registry moved to repo-root `wave_sets_default.yaml` (was
 `examples/wave_sets_section_3.yaml`) and now also covers plain triads
@@ -393,32 +393,8 @@ physical-Joules quantity (`G*H_E^2*A^2*pi*rho` prefactor,
 that prefactor cancels in the percentage, so this reads the same
 `E_full`/`E_sub` already computed per grid point for `p_measure` — no new
 integration. `plot_fmax_map` (`rsw_sphere/plotting/pmeasure_map.py`) uses
-the same diverging `RdBu_r`/`TwoSlopeNorm` convention as P-measure/
-`frequency_shift`, since Fmax is signed.
-
-**`frequency_shift`**: % shift in the target's own dominant period, full
-wave set vs. reference triad (`_frequency_shift`,
-`rsw_sphere/utilities/pmeasure.py`) — the always-returned value is the
-FFT-with-parabolic-interpolation estimate, never smoothing-dependent (a
-Savitzky-Golay-smoothed estimator once inflated a genuinely null effect
-to a reported 41-45%, retracted 2026-08-13; see `JFM-template.tex`
-§3.3.5). A second, prominence-filtered peak-timing estimator is
-cross-checked and reported alongside as **`FreqShiftAgree`** (bool,
-same shape as `FreqShift`) — **advisory, not a gate**: disagreement is
-*not* nulled to NaN, since §3.3.5 found the two estimators genuinely
-disagree for the catalogue's only real effect (EG(1,1)/WG(1,1)) once the
-gravity mode's own energy share is large enough for a second spectral
-component to appear — peak-counting is known to fail under that
-amplitude modulation while the FFT peak, though broadened, still tracks
-the dominant frequency. A NaN-on-disagreement gate would have silently
-erased exactly that published result; the shift is always the real
-(FFT) number, `FreqShiftAgree` just tells you whether to read it with a
-caveat. `plot_frequency_shift_map`'s optional `agree=` argument marks
-each disagreeing grid point with a small dot rather than hiding it
-(scatter, not hatching -- agreement isn't a smooth field, marking
-exact sample points is more honest than interpolating between them).
-`run_sweep.py` passes this through automatically when `FreqShiftAgree`
-is present in the sweep result.
+the same diverging `RdBu_r`/`TwoSlopeNorm` convention as P-measure,
+since Fmax is signed.
 
 ---
 
@@ -486,8 +462,8 @@ python run_sweep.py --wave-set quartet_rh_preference
 
 **2D sweeps** (`sweep.axes` has 2 entries) dispatch to
 `rsw_sphere.utilities.registry.sweep_2d`, wrapping §5's
-`wave_set_diagnostics_sweep` (`p_measure`/`filtering_error`/
-`frequency_shift`) and §-less `functional_diagnostics_sweep`
+`wave_set_diagnostics_sweep` (`p_measure`/`filtering_error`/`fmax`/
+`novelty_period`) and §-less `functional_diagnostics_sweep`
 (`efficiency`/`low_frequency_energy`) behind one shared diagnostic list
 -- one combined panel (one row per requested diagnostic, one column per
 swept mode, which doubles as the target). If `sweep.axes` is omitted

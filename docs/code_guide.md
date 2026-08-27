@@ -98,7 +98,7 @@ default (`ProcessPoolExecutor`, `config.max_workers` or half the CPU
 count). `run_dynamics(config) -> dict` is directly importable --
 `run_sweep.py` calls it per grid point. `--diagnostics` additionally
 prints every pairwise diagnostic (`rsw_sphere.utilities.pmeasure.pairwise_target_diagnostics`:
-p_measure, filtering_error, fmax, frequency_shift, novelty_period) for
+p_measure, filtering_error, fmax, novelty_period) for
 every target mode against each sub-triad that contains it, and writes
 the novelty-frequency spectrum figures (`rsw_sphere.plotting.novelty_frequency_panel`).
 
@@ -110,7 +110,7 @@ Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). Calls
 `sweep.save_point_figures`), then computes/plots every diagnostic in
 `sweep.diagnostics`: 1D supports `precession` only
 (`rsw_sphere.utilities.precession.precession_frequency_efficiency`,
-natively 1D); 2D supports `p_measure`/`filtering_error`/`frequency_shift`/
+natively 1D); 2D supports `p_measure`/`filtering_error`/
 `fmax`/`novelty_period`/`efficiency`/`low_frequency_energy` via
 `rsw_sphere.utilities.registry.sweep_2d`.
 Swept/target modes for a 2D sweep default to the wave set's own "private"
@@ -130,9 +130,8 @@ mode fills one slot (`candidate_slot`), not sweeping a velocity.
 `candidate_slot`'s own triad selection rule (`m_sum = m_p + m_q`); `target_mode`
 is the (usually different, already-driven) mode whose diagnostic value is
 reported. One point per candidate (own registered velocities, unless
-`candidate_velocity` overrides the candidate slot's own velocity -- needed
-for `frequency_shift`, which a passively/weakly excited candidate won't
-resolvably shift), parallel across candidates, writes a CSV (`table:`).
+`candidate_velocity` overrides the candidate slot's own velocity),
+parallel across candidates, writes a CSV (`table:`).
 Generalizes the kind of hand-rolled candidate-mode catalogue enumeration
 that used to live in one-off scripts (e.g. the now-deleted
 `examples_legacy/special_runs/gate_i2_map_extension.py`'s own
