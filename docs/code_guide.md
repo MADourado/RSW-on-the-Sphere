@@ -98,9 +98,13 @@ default (`ProcessPoolExecutor`, `config.max_workers` or half the CPU
 count). `run_dynamics(config) -> dict` is directly importable --
 `run_sweep.py` calls it per grid point. `--diagnostics` additionally
 prints every pairwise diagnostic (`rsw_sphere.utilities.pmeasure.pairwise_target_diagnostics`:
-p_measure, filtering_error, fmax, novelty_period) for
-every target mode against each sub-triad that contains it, and writes
-the novelty-frequency spectrum figures (`rsw_sphere.plotting.novelty_frequency_panel`).
+p_measure, novelty_period) for
+every target mode against each sub-triad that contains it, then a "final
+diagnostics" section (`p_measure_combined_for_all_targets`/
+`rsw_sphere.utilities.novelty_frequency.novelty_combined_for_all_targets`)
+with one row per target considering every containing sub-triad at once,
+and writes the novelty-frequency spectrum figures
+(`rsw_sphere.plotting.novelty_frequency_panel`).
 
     python run_dynamics.py --wave-set quartet_rossby_kelvin
 
@@ -110,8 +114,8 @@ Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). Calls
 `sweep.save_point_figures`), then computes/plots every diagnostic in
 `sweep.diagnostics`: 1D supports `precession` only
 (`rsw_sphere.utilities.precession.precession_frequency_efficiency`,
-natively 1D); 2D supports `p_measure`/`filtering_error`/
-`fmax`/`novelty_period`/`efficiency`/`low_frequency_energy` via
+natively 1D); 2D supports `p_measure`/`p_measure_final`/
+`novelty_period`/`efficiency`/`low_frequency_energy` via
 `rsw_sphere.utilities.registry.sweep_2d`.
 Swept/target modes for a 2D sweep default to the wave set's own "private"
 modes (`WaveSetSpec.shared_and_private_modes()`). `--wave-set KEY` reads

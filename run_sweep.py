@@ -9,7 +9,7 @@ requested diagnostic as its own figure:
 - 1 swept mode (1D): `precession` only, via
   rsw_sphere.utilities.precession.precession_frequency_efficiency
   (already natively 1D). Other diagnostics are 2D-sweep-only for now.
-- 2 swept modes (2D): p_measure, filtering_error, fmax, novelty_period,
+- 2 swept modes (2D): p_measure, p_measure_final, novelty_period,
   efficiency, low_frequency_energy, via rsw_sphere.utilities.registry.sweep_2d.
 
 Run, if the wave set's own registry entry already carries its own
@@ -114,7 +114,7 @@ def _run_sweep_2d(config: RunConfig, output: str, plot_cfg: dict):
     u_ranges = [(a.min, a.max) for a in axes]
     fixed_velocities = {i: spec.velocities[i] for i in range(spec.n_modes()) if i not in swept_indices}
     target_indices = list(swept_indices)  # private/swept modes are the natural per-target diagnostics
-    diagnostics = config.sweep.diagnostics or ("p_measure", "filtering_error")
+    diagnostics = config.sweep.diagnostics or ("p_measure",)
 
     triad_indices = [spec.triad_indices(i) for i in range(spec.n_triads())]
     cache_dir = os.path.join(config.output_root, "figures", "wave_sets", spec.key)

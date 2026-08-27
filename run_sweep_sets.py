@@ -15,13 +15,13 @@ Config:
     candidate_velocity: 30.0                   # optional: drive the candidate at
                                                  # this velocity instead of its base
                                                  # spec's own registered one (often 0 --
-                                                 # p_measure/filtering_error still pick up
-                                                 # a passively, nonlinearly excited candidate)
+                                                 # p_measure still picks up a passively,
+                                                 # nonlinearly excited candidate)
     candidates_from: {max_n: 15}                # m inferred from candidate_slot's
                                                  # own triad selection rule; n in [m, max_n]; or:
     candidates: [{m: 1, n: 1, alpha: 1}, ...]   # explicit list
     alphas: [1, 2]                              # candidates_from only; default EG+WG
-    diagnostics: [p_measure, filtering_error]   # subset of registry.ALL_2D
+    diagnostics: [p_measure]                    # subset of registry.ALL_2D
     tf_days: 20
     h: 0.01
     table: outputs/tables/quartet_rossby_kelvin_candidates.csv
@@ -87,7 +87,7 @@ def _build_candidate_spec(spec, candidate_slot, mode_triple, velocity=None):
     return dataclasses.replace(spec, modes=tuple(modes), velocities=tuple(velocities))
 
 
-_ROW_LABELS = {"p_measure": "p_measure (%)", "filtering_error": "filtering_error"}
+_ROW_LABELS = {"p_measure": "p_measure (%)"}
 
 
 def _one_candidate(args):
@@ -158,7 +158,7 @@ def run_sweep_sets(config: dict) -> list:
         candidates = _candidates_from_edge(spec, slot, cf["max_n"],
                                             tuple(config.get("alphas", (1, 2))))
 
-    diagnostics = tuple(config.get("diagnostics", ("p_measure", "filtering_error")))
+    diagnostics = tuple(config.get("diagnostics", ("p_measure",)))
     unknown = set(diagnostics) - ALL_2D
     if unknown:
         raise ValueError(f"unknown diagnostic(s) {unknown} -- must be a subset of {ALL_2D}")

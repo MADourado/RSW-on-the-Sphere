@@ -2,6 +2,7 @@
 energy exactly (quartets/quintets) -- normalizes by mean total energy
 instead of initial total energy, gated on drift.
 """
+import math
 
 #: Velocity-sweep range caps by mode family: Rossby (RH, alpha=3) modes are
 #: swept up to 100 m/s (jet-stream-strength winds); gravity (EG/WG,
@@ -30,3 +31,22 @@ def wave_set_efficiency(E_target, E_total, drift: float, drift_max: float = 0.1)
     if denom <= 0:
         return float("nan")
     return (E_target.max() - E_target.min()) / denom
+
+
+def efficiency_variation(efficiency_full, efficiency_sub):
+    """% change in efficiency, full wave set vs. one reference sub-triad
+    -- same formula as the P-measure (`rsw_sphere.utilities.pmeasure`),
+    applied to `wave_set_efficiency`'s own drift-gated, mean-total-energy
+    -normalized quantity instead of the raw energy variation dEK. Tracks
+    P closely whenever total energy stays close to constant between the
+    two runs (efficiency's own <E_total> denominator then barely differs,
+    and the drift gate rarely trips); diverges from it only when total-
+    energy non-conservation (Appendix "Energy conservation of the
+    four-wave truncation") actually matters for this target.
+
+    NaN if either input is NaN (e.g. one run's own drift gate tripped) or
+    ``efficiency_sub`` is zero.
+    """
+    if not math.isfinite(efficiency_full) or not math.isfinite(efficiency_sub) or efficiency_sub == 0:
+        return float("nan")
+    return 100 * (efficiency_full - efficiency_sub) / efficiency_sub

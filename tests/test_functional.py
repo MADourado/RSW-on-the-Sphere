@@ -1,9 +1,12 @@
 """functional_diagnostics_sweep: efficiency + low_frequency_energy over a
 2D velocity grid, full-wave-set trajectory only."""
+import math
+
 import numpy as np
 import pytest
 
 from rsw_sphere.utilities.functional import functional_diagnostics_sweep
+from rsw_sphere.utilities.efficiency import efficiency_variation
 
 pytestmark = pytest.mark.slow
 
@@ -39,3 +42,13 @@ def test_subset_only_computes_requested_arrays():
         n_grid=2, tf_days=2, h=0.02, N=N, deg=DEG)
     assert "Efficiency" in result
     assert "LowFreqEnergy" not in result
+
+
+def test_efficiency_variation_matches_p_measure_formula():
+    assert math.isclose(efficiency_variation(0.05, 0.04), 100 * (0.05 - 0.04) / 0.04)
+
+
+def test_efficiency_variation_nan_when_either_input_nan():
+    assert math.isnan(efficiency_variation(float("nan"), 0.04))
+    assert math.isnan(efficiency_variation(0.05, float("nan")))
+    assert math.isnan(efficiency_variation(0.05, 0.0))

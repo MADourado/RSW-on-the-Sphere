@@ -246,7 +246,7 @@ quartet_rossby_kelvin:
   sweep:
     axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
     n_grid: 10
-    diagnostics: [p_measure, filtering_error]
+    diagnostics: [p_measure]
   plot:
     title: "Quartet C -- draft analysis panel"
   output: outputs/figures/wave_sets/quartet_rossby_kelvin_diagnostics.png
@@ -293,7 +293,7 @@ quartet_dual_gravity_edge:
     h: 0.01
     n_grid: 10
   sweep:
-    diagnostics: [p_measure, filtering_error]
+    diagnostics: [p_measure]
     n_grid: 10
   output: outputs/figures/wave_sets/quartet_dual_gravity_edge_diagnostics.png
 

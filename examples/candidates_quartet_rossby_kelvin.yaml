@@ -6,7 +6,7 @@ specs_path: wave_sets_default.yaml
 candidate_slot: d
 target_mode: b
 candidates_from: {max_n: 9}
-diagnostics: [p_measure, filtering_error]
+diagnostics: [p_measure]
 tf_days: 20
 h: 0.01
 table: outputs/tables/quartet_rossby_kelvin_candidates.csv

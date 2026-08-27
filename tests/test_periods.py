@@ -1,8 +1,9 @@
-"""dominant_periods/low_frequency_power/novel_frequency_content on
-synthetic signals with known periods."""
+"""dominant_periods/low_frequency_power/novel_frequency_content/
+spectral_deviation on synthetic signals with known periods."""
 import numpy as np
 
-from rsw_sphere.utilities.periods import dominant_periods, low_frequency_power, novel_frequency_content
+from rsw_sphere.utilities.periods import (
+    dominant_periods, low_frequency_power, novel_frequency_content, spectral_deviation)
 
 
 def test_dominant_periods_recovers_known_tones():
@@ -38,3 +39,33 @@ def test_novel_frequency_content_recovers_injected_tone_and_reports_nothing_when
 
     r_null = novel_frequency_content(t, E_sub, t, E_sub, xmax=20.0)
     assert not r_null['novel_peaks']
+
+
+def test_spectral_deviation_zero_for_identical_spectra_and_positive_for_different():
+    t = np.linspace(0, 60, 4000)
+    Q_sub = (1.0 + 0.02 * np.cos(2 * np.pi * t / 4.0)) ** 2
+    Q_same = Q_sub.copy()
+    Q_different = (1.0 + 0.02 * np.cos(2 * np.pi * t / 4.0) + 0.05 * np.cos(2 * np.pi * t / 9.0)) ** 2
+
+    d_same = spectral_deviation(t, Q_same, t, Q_sub, xmax=20.0)
+    d_different = spectral_deviation(t, Q_different, t, Q_sub, xmax=20.0)
+    assert d_same < 1e-9
+    assert d_different > d_same
+
+
+def test_spectral_deviation_normalizes_by_larger_side_not_weak_reference():
+    """A reference with almost no spectral power (weakly excited in that
+    one triad) must not blow up the ratio -- normalize by whichever side
+    (full or sub) has the larger power, per the 2026-08-27 fix."""
+    t = np.linspace(0, 60, 4000)
+    Q_sub_flat = np.ones_like(t)
+    Q_full = (1.0 + 0.02 * np.cos(2 * np.pi * t / 4.0)) ** 2
+    d = spectral_deviation(t, Q_full, t, Q_sub_flat, xmax=20.0)
+    assert np.isfinite(d)
+    assert 50 < d < 150  # sub contributes ~nothing, so d ~ 100%, not orders of magnitude
+
+
+def test_spectral_deviation_nan_when_both_sides_flat():
+    t = np.linspace(0, 60, 4000)
+    flat = np.ones_like(t)
+    assert np.isnan(spectral_deviation(t, flat, t, flat, xmax=20.0))

@@ -2,7 +2,7 @@
 
 **Driver interface note (updated 2026-08-26):** `run_sweep.py`'s
 diagnostic switch is `sweep.diagnostics: [...]` (values: `p_measure`,
-`filtering_error`, `fmax`, `novelty_period`, `efficiency`,
+`p_measure_final`, `novelty_period`, `efficiency`,
 `low_frequency_energy` for a 2D sweep; `precession` for 1D) -- any `quartet_diagnostics`
 mentioned below is stale, from before that switch existed. The wave-set
 registry moved to repo-root `wave_sets_default.yaml` (was
@@ -41,8 +41,11 @@ reference implementation `WaveSet` is checked against (see §0 below).
 these scripts' own sweep functions — prefer it over calling a
 `wave_set_*.py` script directly when the sweep is a one-off tied to a
 specific figure, so the config (not a new script) is what's committed.
-Its `sweep.diagnostics: [p_measure, filtering_error]` is the entry point
-for §5's combined P-measure + $\mathcal{F}_2^a$ panel.
+Its `sweep.diagnostics: [p_measure]` is the entry point for §5's
+P-measure panel ($\mathcal{F}_2^a$/filtering error was retired
+2026-08-27, replaced by the single-run-only spectral, share-normalized
+`spectral_deviation` -- not yet wired into this 2D sweep engine, see
+`rsw_sphere.utilities.periods.spectral_deviation`'s own docstring).
 
 All five load their wave sets from a **registry YAML** rather than
 hardcoding mode numbers — by default
@@ -356,13 +359,13 @@ one session. **Always check `p_measure_sweep`'s returned array directly** (e.g.
 `(result['P'] < 0).mean()`) rather than answering "does this figure show
 inhibition" by looking at the rendered PNG.
 
-**Computing both diagnostics together: `wave_set_diagnostics_sweep`.**
-Calling `p_measure_sweep` and a separate `F2`-only sweep back to back
-would integrate the same full-wave-set and reference-triad trajectories
-twice for no reason. `wave_set_diagnostics_sweep(..., diagnostics=
-("p_measure", "filtering_error"))` shares **one** grid loop across
-whichever diagnostics are requested — the switch `run_sweep.py`'s own
-`sweep.diagnostics: [...]` (§6.1) exposes as YAML. `p_measure_sweep`
+**Computing several diagnostics together: `wave_set_diagnostics_sweep`.**
+Calling `p_measure_sweep` and a separate diagnostic-only sweep back to
+back would integrate the same full-wave-set and reference-triad
+trajectories twice for no reason. `wave_set_diagnostics_sweep(...,
+diagnostics=("p_measure", "novelty_period"))` shares **one** grid loop
+across whichever diagnostics are requested — the switch `run_sweep.py`'s
+own `sweep.diagnostics: [...]` (§6.1) exposes as YAML. `p_measure_sweep`
 itself is kept as its own separate, unchanged function rather than
 replaced, since its `.npz` cache format is pinned to figures already on
 disk (`rsw_sphere.plotting.sweeps`'s own docstring) — `wave_set_diagnostics_sweep`
@@ -376,25 +379,85 @@ spec = load_wave_set_specs()['quartet_rossby_kelvin']
 triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
 result = wave_set_diagnostics_sweep(spec.modes, triads, spec.h_e, (2, 3),
                                      {0: 30.0, 1: 30.0}, [2, 3], n_grid=5, tf_days=20, h=0.01)
-print(result['P'], result['F2'])
+print(result['P'])
 "
 ```
 
-`plot_filtering_error_map`'s colormap is sequential (`viridis`), unlike
-the P-measure's diverging one — $\mathcal{F}_2^a \geq 0$ by construction,
-so there is no zero-crossing to preserve.
+**`p_measure_final`** (`final_p_measure`, `rsw_sphere/utilities/pmeasure.py`):
+plain `p_measure` compares a target against ONE fixed reference triad
+(`reference_triad`/`triad_index`) — fine for a private mode, but for a
+mode shared across triads that one triad can happen to leave it weakly
+excited (off-resonance, or a weak coupling role in that specific triad)
+even while a *different* containing triad drives it hard. The resulting
+percentage is then dominated by how small that one triad's own `dEK` was,
+not by how much the mode's dynamics actually changed (found 2026-08-27,
+`quartet_rossby_gravity_influence`: both WG(7,9) and RH(4,5) showed P in
+the hundreds-to-thousands of percent against one specific sub-triad,
+while the (then time-domain, now-retired) filtering error against that
+same reference stayed modest). `p_measure_final`
+instead compares against whichever containing triad gives the target its
+own LARGEST `dEK` — integrating every containing triad per grid point,
+not just one, so it costs more when a target belongs to more than one.
+Companion array **`PFinalRefIdx`** (float, same shape) records which
+triad (its index into the wave set's own `triads`) was picked at each
+point, NaN where every candidate's own `dEK` stayed below
+`MIN_REFERENCE_DEK`. `final_p_measure` itself is a small, pure,
+broadcastable function (`dEK_full`/each candidate's `dEK` can be a scalar
+or a whole sweep-grid ndarray) — `p_measure_combined_for_target`/
+`_for_all_targets` wrap it around `run_dynamics.py`'s own results dict
+for single-run reporting (mirrors
+`rsw_sphere.utilities.novelty_frequency.novelty_combined_for_target`'s
+convention); `wave_set_diagnostics_sweep` wraps it for a 2D sweep.
+`run_dynamics.py --diagnostics`'s "final diagnostics" table section uses
+the single-run wrapper, alongside the equivalent multi-sub-triad-combined
+novelty-period result.
 
-**`fmax`** (paper eq. `Fmax`): signed % difference in the target's own
-*peak* kinetic energy, full wave set vs. reference triad —
-`100 * (E_full.max() - E_sub.max()) / E_sub.max()` (`_fmax`,
-`rsw_sphere/utilities/pmeasure.py`). The paper's own version is a
-physical-Joules quantity (`G*H_E^2*A^2*pi*rho` prefactor,
-`examples_legacy/special_runs/frequency_amplitude_companion.py`), but
-that prefactor cancels in the percentage, so this reads the same
-`E_full`/`E_sub` already computed per grid point for `p_measure` — no new
-integration. `plot_fmax_map` (`rsw_sphere/plotting/pmeasure_map.py`) uses
-the same diverging `RdBu_r`/`TwoSlopeNorm` convention as P-measure,
-since Fmax is signed.
+**`spectral_deviation`** (`rsw_sphere.utilities.periods.spectral_deviation`,
+gated wrapper `_spectral_deviation` in `pmeasure.py`): retired the
+time-domain "filtering error"/F2 entirely 2026-08-27 (`plot_filtering_error_map`
+and the `"filtering_error"` sweep diagnostic are both gone -- not yet
+replaced in `wave_set_diagnostics_sweep`, single-run reporting only for
+now). F2 had two real problems: (1) comparing raw `|A_full(t)|` against
+`|A_sub(t)|` penalizes a sub-triad simply for having fewer active modes
+and therefore a smaller total-energy budget, not for behaving
+differently; (2) as a point-by-point time-domain RMS error, it never
+converged with `t_f` for a near-resonant sub-triad whose own dynamical
+phase drifts on an ~2000-day timescale (`quartet_rossby_gravity_influence`,
+`triad_wg39_rh45`: F2 bounced between 0.176 and 0.439 from `t_f`=20d to
+160d, never settling). `spectral_deviation` fixes both by (1) comparing
+each run's own AMPLITUDE share `q = |A_target|/sqrt(E_total.mean())`
+instead of raw amplitude -- linear in amplitude, unlike the energy share
+`E/E_total.mean()`, which would quadratically amplify a given relative
+difference before it ever reaches the ratio (same fix family as
+`wave_set_efficiency`'s own, just without that extra amplification), and
+(2) comparing POWER SPECTRA (`periods._power_spectrum`, the exact
+primitive `novel_frequency_content` already uses) instead of a raw
+time-domain difference -- a spectral comparison integrates coherently
+over the whole window and isn't dominated by wherever the two
+trajectories happen to be out of phase at the arbitrary `t_f` cutoff.
+A third fix, added after the first version of this metric still showed
+huge values for a weakly-excited reference (`WG(7,9)` vs
+`triad_rh34_rh45`: 155.4, vs. 0.9998 after the fix): the ratio's own
+denominator normalizes by whichever of {full, sub} has the LARGER
+spectral power, not the reference alone -- otherwise a reference that
+leaves the target only weakly excited (almost no spectral power to
+normalize by) inflates the ratio by orders of magnitude, the exact same
+"weak fixed reference" pathology `final_p_measure` fixes for P/efficiency,
+just showing up in the spectral metric's own denominator instead of a
+"which triad to pick" choice.
+
+`pairwise_target_diagnostics` (single named reference triad) reports
+`spectral_deviation` for any target, private or shared -- unlike the
+"final"/combined versions of every other diagnostic here, this pairwise
+form is exactly the "filtering error" of one specific, named mode
+removal, valid whether the target is private or shared. `p_measure_combined_for_target`'s
+own `spectral_deviation` (against the SAME winning reference
+`final_p_measure` already picked, so every "final" column agrees on
+which sub-triad a shared mode is being read against) does NOT carry that
+framing -- for a shared mode there is no single canonical "the" removal
+experiment (there are two, one per containing triad), so it instead
+reports how much the target deviates from whichever single triad best
+explains it, not the effect of removing one specific known mode.
 
 ---
 
@@ -462,7 +525,7 @@ python run_sweep.py --wave-set quartet_rh_preference
 
 **2D sweeps** (`sweep.axes` has 2 entries) dispatch to
 `rsw_sphere.utilities.registry.sweep_2d`, wrapping §5's
-`wave_set_diagnostics_sweep` (`p_measure`/`filtering_error`/`fmax`/
+`wave_set_diagnostics_sweep` (`p_measure`/`p_measure_final`/
 `novelty_period`) and §-less `functional_diagnostics_sweep`
 (`efficiency`/`low_frequency_energy`) behind one shared diagnostic list
 -- one combined panel (one row per requested diagnostic, one column per
@@ -476,7 +539,7 @@ so an ordinary quartet needs no `axes` at all:
 ```yaml
 # inside wave_sets_default.yaml's own quartet_rossby_kelvin entry:
 sweep:
-  diagnostics: [p_measure, filtering_error]
+  diagnostics: [p_measure]
   n_grid: 10
 output: outputs/figures/wave_sets/quartet_rossby_kelvin_diagnostics.png
 ```
