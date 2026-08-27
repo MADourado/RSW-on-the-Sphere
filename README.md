@@ -72,7 +72,7 @@ rsw_sphere/                 # the installable package
     utilities/               # diagnostics compute (pmeasure, periods, precession,
                               # efficiency, functional) + the diagnostic registry
     plotting/                # rendering only -- dispersion, Hough, wave-set maps
-docs/                      # thesis PDF, code guide, per-topic documentation
+docs/                      # thesis PDF, general_guide.md (start here), code_guide.md, per-topic docs
 examples/                  # registries + driver configs (see examples/README.md)
 outputs/                   # generated figures + cached trajectories (gitignored, reproducible)
 tests/                     # pytest suite (structural/exact invariants)
