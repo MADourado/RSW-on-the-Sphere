@@ -13,9 +13,12 @@ import numpy as np
 
 from rsw_sphere.utilities.periods import dominant_periods, low_frequency_power
 from rsw_sphere.utilities.efficiency import wave_set_efficiency, efficiency_variation
-from rsw_sphere.utilities.pmeasure import pairwise_target_diagnostics, p_measure_combined_for_all_targets
+from rsw_sphere.utilities.pmeasure import (
+    pairwise_target_diagnostics, p_measure_combined_for_all_targets, _default_triad_index_for_mode)
 from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_all_targets
 from rsw_sphere.utilities.tables import write_csv
+from rsw_sphere.dynamics.trajectory_cache import _mode_slug
+from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.plotting.novelty_frequency_panel import novelty_frequency_figures
 
 
@@ -137,6 +140,39 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
         'per_mode_unit': per_mode_unit, 'eff_cache': eff_cache,
         'precession': precession, 'pairwise': pairwise, 'final': final,
     }
+
+
+def pairwise_value_for_target(report: dict, spec, target_idx: int, reference_triad: int, field: str):
+    """One row of report['pairwise'] -- the same (target, sub-triad) pair
+    ``pmeasure.wave_set_diagnostics_sweep``'s own single-fixed-reference-triad
+    diagnostics compare against (``pmeasure._default_triad_index_for_mode``'s
+    own selection: ``reference_triad`` if the target is one of its members,
+    else the first triad containing it). Returns NaN if the target belongs
+    to no sub-triad at all (e.g. a plain triad).
+
+    Lets a caller (``run_sweep_sets.py``) reproduce that engine's exact
+    pairwise ``p_measure``/``novelty_period`` values from this module's own
+    report, instead of a separate integration pass -- same formula either
+    way (``pairwise_target_diagnostics``), just read from a different,
+    already-computed place.
+
+    target_idx : positional index into spec.modes (as `wave_set_diagnostics_sweep`'s
+        own `target_indices` takes), not a registry mode key or label.
+    field : 'p_measure_pct', 'efficiency_var_pct', 'spectral_dev_pct',
+        'novelty_period_days', or 'novelty_relevance_pct' (report['pairwise']'s
+        own row keys).
+    """
+    triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
+    t_idx = _default_triad_index_for_mode(triads, reference_triad, target_idx)
+    if t_idx is None:
+        return float('nan')
+    member_p, member_q, _ = spec.sub_triad_modes(t_idx)
+    unit_name = f"triad_{_mode_slug(*member_p)}_{_mode_slug(*member_q)}"
+    target_label = _mode_label(*spec.modes[target_idx])
+    for row in report['pairwise']:
+        if row['mode'] == target_label and row['vs'] == unit_name:
+            return row[field]
+    return float('nan')
 
 
 def write_diagnostics_files(results: dict, report: dict, run_dir: str, run_label: str, spec,

@@ -252,16 +252,20 @@ def _run_sweep_1d_diagnostics(config: RunConfig, requested: list, plot_per_point
     return results
 
 
-def _run_sweep_2d_diagnostics(config: RunConfig, requested: list, plot_per_point: bool,
-                               plot_cfg: dict = None) -> dict:
-    """Sweep config.sweep.axes (2 entries), computing/plotting every
-    diagnostic in `requested` via one run_dynamics() call per grid point
-    -- same worker as the 1D sweep, just called over a 2D grid. Writes
-    outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv,
-    one heatmap panel per mode/triad per diagnostic.
+def compute_2d_grid(config: RunConfig, plot_per_point: bool = True):
+    """Sweep config.sweep.axes (2 entries) via one run_dynamics() call per
+    grid point (same `_run_sweep_point` worker the 1D sweep uses),
+    parallelized across the grid. Pure compute, no plotting/writing beyond
+    each point's own optional --diagnostics-equivalent bundle -- reusable
+    by both `_run_sweep_2d_diagnostics` (below) and any other caller that
+    wants raw per-point data for its own composite figure (e.g.
+    `examples/figures/_triad_panel_row.py`, which embeds a single mode's
+    efficiency heatmap into its own subplot rather than an auto-generated
+    multi-panel PNG).
+
+    Returns (U1, U2, grid_results) -- grid_results[i, j] is `_run_sweep_point`'s
+    own compact per-point dict (`per_mode_unit`, `precession_freq`, `final`).
     """
-    plot_cfg = plot_cfg or {}
-    spec = config.wave_set_spec
     axes = config.sweep.axes
     n_grid = config.sweep.n_grid
     u1 = np.linspace(axes[0].min, axes[0].max, n_grid)
@@ -275,6 +279,22 @@ def _run_sweep_2d_diagnostics(config: RunConfig, requested: list, plot_per_point
     grid_results = np.empty((n_grid, n_grid), dtype=object)
     for idx, r in enumerate(flat_results):
         grid_results[idx // n_grid, idx % n_grid] = r
+
+    return U1, U2, grid_results
+
+
+def _run_sweep_2d_diagnostics(config: RunConfig, requested: list, plot_per_point: bool,
+                               plot_cfg: dict = None) -> dict:
+    """Computes/plots every diagnostic in `requested` over config.sweep.axes
+    (2 entries), via compute_2d_grid(). Writes
+    outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv,
+    one heatmap panel per mode/triad per diagnostic.
+    """
+    plot_cfg = plot_cfg or {}
+    spec = config.wave_set_spec
+    axes = config.sweep.axes
+    n_grid = config.sweep.n_grid
+    U1, U2, grid_results = compute_2d_grid(config, plot_per_point)
 
     mode1_label = _mode_label(*spec.modes[spec.index(axes[0].mode)])
     mode2_label = _mode_label(*spec.modes[spec.index(axes[1].mode)])

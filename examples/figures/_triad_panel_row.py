@@ -5,16 +5,26 @@ triad, one target mode held at rest, the other two swept for an
 efficiency map alongside a fixed-velocity energy time series), so it is
 factored here rather than duplicated.
 
-Built entirely on ``rsw_sphere.utilities.registry.sweep_2d`` (the same
-engine ``run_sweep.py`` calls for its own 2D sweeps) and
-``rsw_sphere.plotting.energy_evolution.wave_set_energy_evolution`` --
-not on the retired ``triad_efficiency.py``/``triad_dynamics.py`` toolchain.
+Built on run_sweep.py's own unified 2D engine (``compute_2d_grid`` --
+the same one ``run_sweep.py --wave-set KEY`` uses for its own 2D sweeps,
+one ``run_dynamics()`` call per grid point) for the efficiency map, and
+``rsw_sphere.plotting.energy_evolution.wave_set_energy_evolution`` for
+the energy panel -- not on the retired ``triad_efficiency.py``/
+``triad_dynamics.py`` toolchain, nor on the older, separate
+``rsw_sphere.utilities.registry.sweep_2d`` engine this used before
+(migrated 2026-08-27; ``plot_efficiency_map``'s own rendering is
+unchanged, only where its input array comes from).
 """
+import dataclasses
+
+import numpy as np
+
+from rsw_sphere.dynamics.run_config import RunConfig, SweepAxis, SweepConfig
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.plotting.functional_map import plot_efficiency_map
 from rsw_sphere.plotting.energy_evolution import wave_set_energy_evolution
 from rsw_sphere.utilities.efficiency import default_velocity_range
-from rsw_sphere.utilities.registry import sweep_2d
+from run_sweep import compute_2d_grid
 
 
 def triad_row(spec, target: int, ax_eff, ax_energy, n_grid: int = 15,
@@ -35,16 +45,28 @@ def triad_row(spec, target: int, ax_eff, ax_energy, n_grid: int = 15,
     u1_range = default_velocity_range(spec.modes[idx1][2])
     u2_range = default_velocity_range(spec.modes[idx2][2])
 
-    result = sweep_2d(
-        spec.modes, triads, spec.h_e, (idx1, idx2), {target: 0.0}, [target],
-        diagnostics=("efficiency",), u1_range=u1_range, u2_range=u2_range,
-        n_grid=n_grid, tf_days=tf_days, h=h, verbose=True, progress_label=spec.key)
+    velocities = list(spec.velocities)
+    velocities[target] = 0.0
+    point_spec = dataclasses.replace(spec, velocities=tuple(velocities))
+    sweep = SweepConfig(
+        axes=(SweepAxis(mode=spec.mode_keys[idx1], min=u1_range[0], max=u1_range[1]),
+              SweepAxis(mode=spec.mode_keys[idx2], min=u2_range[0], max=u2_range[1])),
+        n_grid=n_grid)
+    config = RunConfig.from_wave_set(point_spec, tf_days=tf_days, h=h, sweep=sweep)
+    U1, U2, grid_results = compute_2d_grid(config, plot_per_point=False)
+
+    target_label = _mode_label(*spec.modes[target])
+    # raw 0-1 fraction, matching wave_set_efficiency's own convention --
+    # plot_efficiency_map does its own *100 for display, so this must NOT
+    # be pre-scaled (unlike run_sweep.py's own per-point compact dict,
+    # which pre-scales for its own line/heatmap plots).
+    efficiency = np.array([[grid_results[i, j]['per_mode_unit']['full'][target_label]['efficiency'] / 100
+                             for j in range(n_grid)] for i in range(n_grid)])
 
     label1 = _mode_label(*spec.modes[idx1])
     label2 = _mode_label(*spec.modes[idx2])
-    target_label = _mode_label(*spec.modes[target])
     plot_efficiency_map(
-        result["U1"], result["U2"], result["Efficiency"][..., 0],
+        U1, U2, efficiency,
         xlabel=f"{label1} - zonal velocity (m/s)",
         ylabel=f"{label2} - zonal velocity (m/s)",
         title=f"{spec.display_label}: target {target_label} -- efficiency",
@@ -58,4 +80,4 @@ def triad_row(spec, target: int, ax_eff, ax_energy, n_grid: int = 15,
         tf_days=tf_days, h=h, highlight=target, ax=ax_energy)
     ax_energy.set_title(f"{spec.display_label}: {spec.label} -- energy integration")
 
-    return result, energy_result
+    return {'U1': U1, 'U2': U2, 'Efficiency': efficiency}, energy_result

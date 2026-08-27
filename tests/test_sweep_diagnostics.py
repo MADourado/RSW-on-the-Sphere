@@ -83,6 +83,41 @@ def test_compute_diagnostics_report_shape(tmp_path):
 
 
 @pytest.mark.slow
+def test_pairwise_value_for_target_matches_default_triad_selection(tmp_path):
+    """pairwise_value_for_target must reproduce the OLD engine's own
+    _default_triad_index_for_mode selection (reference_triad if the
+    target is one of its members, else the first containing triad) --
+    run_sweep_sets.py relies on this exact selection to preserve
+    paper_table03's own p_measure numbers."""
+    from run_dynamics import run_dynamics
+    from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, pairwise_value_for_target
+    from rsw_sphere.utilities.pmeasure import _default_triad_index_for_mode
+
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
+    config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
+                                      plot=False, parallel=False)
+    results = run_dynamics(config)
+    report = compute_diagnostics_report(results, spec)
+
+    from rsw_sphere.dynamics.trajectory_cache import _mode_slug
+
+    triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
+    for target_idx in range(spec.n_modes()):
+        t_idx = _default_triad_index_for_mode(triads, spec.reference_triad, target_idx)
+        member_p, member_q, _ = spec.sub_triad_modes(t_idx)
+        expected_unit = f"triad_{_mode_slug(*member_p)}_{_mode_slug(*member_q)}"
+        target_label = results["full"]["labels"][target_idx]
+        expected = next(r["p_measure_pct"] for r in report["pairwise"]
+                         if r["mode"] == target_label and r["vs"] == expected_unit)
+
+        got = pairwise_value_for_target(report, spec, target_idx, spec.reference_triad, "p_measure_pct")
+        if np.isnan(expected):
+            assert np.isnan(got)
+        else:
+            assert got == pytest.approx(expected)
+
+
+@pytest.mark.slow
 def test_compute_diagnostics_report_empty_for_plain_triad(tmp_path):
     from run_dynamics import run_dynamics
     from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report

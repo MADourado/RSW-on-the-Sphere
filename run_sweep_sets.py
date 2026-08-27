@@ -21,7 +21,8 @@ Config:
                                                  # own triad selection rule; n in [m, max_n]; or:
     candidates: [{m: 1, n: 1, alpha: 1}, ...]   # explicit list
     alphas: [1, 2]                              # candidates_from only; default EG+WG
-    diagnostics: [p_measure]                    # subset of registry.ALL_2D
+    diagnostics: [p_measure]                    # subset of {p_measure, p_measure_final,
+                                                 # novelty_period, efficiency, low_frequency_energy}
     tf_days: 20
     h: 0.01
     table: outputs/tables/quartet_rossby_kelvin_candidates.csv
@@ -41,10 +42,24 @@ from concurrent.futures import ProcessPoolExecutor
 import yaml
 
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
+from rsw_sphere.dynamics.run_config import RunConfig
+from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, pairwise_value_for_target
 from rsw_sphere.plotting.labels import _mode_label
-from rsw_sphere.utilities.pmeasure import wave_set_diagnostics_sweep, _DIAGNOSTIC_ARRAY_KEYS as _PAIRWISE_KEYS
-from rsw_sphere.utilities.functional import functional_diagnostics_sweep
-from rsw_sphere.utilities.registry import PAIRWISE, FUNCTIONAL, ALL_2D
+
+from run_dynamics import run_dynamics
+
+#: run_sweep_sets.py's own diagnostic vocabulary -- the "final"-family
+#: names run_sweep.py's own unified engine uses aren't offered here on
+#: purpose: this driver's whole point is comparing a candidate's effect
+#: against ONE specific, caller-chosen reference_triad (paper_table03's
+#: own P_a column depends on exactly that pairwise framing, not the
+#: "final" one -- see pairwise_value_for_target's own docstring).
+_KNOWN_DIAGNOSTICS = frozenset({"p_measure", "p_measure_final", "novelty_period",
+                                 "efficiency", "low_frequency_energy"})
+_ROW_LABELS = {"p_measure": "p_measure (%)", "p_measure_final": "p_measure_final (%)",
+               "novelty_period": "novelty_period (days)"}
+#: report['pairwise']'s own field name for each pairwise diagnostic.
+_PAIRWISE_FIELDS = {"p_measure": "p_measure_pct", "novelty_period": "novelty_period_days"}
 
 
 def _required_m_for_slot(spec, candidate_slot):
@@ -87,9 +102,6 @@ def _build_candidate_spec(spec, candidate_slot, mode_triple, velocity=None):
     return dataclasses.replace(spec, modes=tuple(modes), velocities=tuple(velocities))
 
 
-_ROW_LABELS = {"p_measure": "p_measure (%)"}
-
-
 def _one_candidate(args):
     """Worker: one diagnostic point for one candidate (module-level, picklable).
     Invalid/non-convergent candidates (e.g. no Hough mode at this (m,n,alpha))
@@ -103,35 +115,31 @@ def _one_candidate(args):
 
 
 def _one_candidate_inner(args):
+    """One run_dynamics() + compute_diagnostics_report() call at the
+    candidate's own static registered velocities (no sweep at all --
+    the single point run_sweep_sets.py has always wanted, previously via
+    a degenerate n_grid=1 2D sweep). Every requested diagnostic is read
+    off the SAME report, no per-diagnostic extra integration.
+    """
     cand_spec, target_idx, diagnostics, tf_days, h = args
-    triad_indices = [cand_spec.triad_indices(i) for i in range(cand_spec.n_triads())]
+    target_label = _mode_label(*cand_spec.modes[target_idx])
+
+    config = RunConfig.from_wave_set(cand_spec, tf_days=tf_days, h=h, plot=False, parallel=False)
+    results = run_dynamics(config)
+    report = compute_diagnostics_report(results, cand_spec)
 
     row = {}
-    pairwise = [d for d in diagnostics if d in PAIRWISE]
-    if pairwise:
-        u_fixed = cand_spec.velocities[target_idx]
-        r = wave_set_diagnostics_sweep(
-            cand_spec.modes, triad_indices, cand_spec.h_e, (target_idx, target_idx),
-            {i: cand_spec.velocities[i] for i in range(cand_spec.n_modes()) if i != target_idx},
-            [target_idx], diagnostics=tuple(pairwise),
-            u1_range=(u_fixed, u_fixed), u2_range=(u_fixed, u_fixed),
-            reference_triad=cand_spec.reference_triad, n_grid=1, tf_days=tf_days, h=h)
-        for d in pairwise:
-            row[_ROW_LABELS[d]] = r[_PAIRWISE_KEYS[d]][0, 0, 0]
-
-    functional = [d for d in diagnostics if d in FUNCTIONAL]
-    if functional:
-        r = functional_diagnostics_sweep(
-            cand_spec.modes, triad_indices, cand_spec.h_e, (target_idx, target_idx),
-            {i: cand_spec.velocities[i] for i in range(cand_spec.n_modes()) if i != target_idx},
-            [target_idx], diagnostics=tuple(functional),
-            u1_range=(cand_spec.velocities[target_idx], cand_spec.velocities[target_idx]),
-            u2_range=(cand_spec.velocities[target_idx], cand_spec.velocities[target_idx]),
-            n_grid=1, tf_days=tf_days, h=h)
-        if "efficiency" in functional:
-            row["efficiency (%)"] = 100 * r["Efficiency"][0, 0, 0]
-        if "low_frequency_energy" in functional:
-            row["low_frequency_energy"] = r["LowFreqEnergy"][0, 0, 0]
+    for d in diagnostics:
+        if d in _PAIRWISE_FIELDS:
+            row[_ROW_LABELS[d]] = pairwise_value_for_target(
+                report, cand_spec, target_idx, cand_spec.reference_triad, _PAIRWISE_FIELDS[d])
+        elif d == "p_measure_final":
+            final_row = next((r for r in report["final"] if r["mode"] == target_label), None)
+            row[_ROW_LABELS[d]] = final_row["p_measure_final_pct"] if final_row else float("nan")
+        elif d == "efficiency":
+            row["efficiency (%)"] = 100 * report["per_mode_unit"]["full"][target_label]["efficiency"]
+        elif d == "low_frequency_energy":
+            row["low_frequency_energy"] = report["per_mode_unit"]["full"][target_label]["low_freq_power"]
 
     return row
 
@@ -159,9 +167,9 @@ def run_sweep_sets(config: dict) -> list:
                                             tuple(config.get("alphas", (1, 2))))
 
     diagnostics = tuple(config.get("diagnostics", ("p_measure",)))
-    unknown = set(diagnostics) - ALL_2D
+    unknown = set(diagnostics) - _KNOWN_DIAGNOSTICS
     if unknown:
-        raise ValueError(f"unknown diagnostic(s) {unknown} -- must be a subset of {ALL_2D}")
+        raise ValueError(f"unknown diagnostic(s) {unknown} -- must be a subset of {_KNOWN_DIAGNOSTICS}")
 
     tf_days = config.get("tf_days", spec.settings.get("tf_days", 10))
     h = config.get("h", spec.settings.get("h", 0.01))
