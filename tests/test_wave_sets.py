@@ -14,8 +14,7 @@ G, H_E = 9.8, 10000.0
 N, DEG = 6, 300  # low N -- fast, exact identities regardless of resolution.
 # deg=300 is NOT arbitrary/lowerable here: velocity_to_amplitude's own
 # norm_component uses a hardcoded deg=300 quadrature independent of
-# whatever deg a WaveSet was built with (examples_legacy/raphaldini2022_compare/precession_resonance_broad_search.py
-# documents this same constraint) -- deg MUST stay 300 wherever
+# whatever deg a WaveSet was built with -- deg MUST stay 300 wherever
 # amplitudes_from_velocities is used, or norm_component's quadrature
 # shape mismatches the mode's own uvh arrays.
 

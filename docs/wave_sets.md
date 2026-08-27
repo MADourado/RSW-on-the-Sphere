@@ -522,7 +522,7 @@ previously grouped by a caller-chosen `wave_set_key` string, which a
 few scripts had to hand-coordinate a shared tag for just to get this
 same reuse). Pass an explicit `label` instead of `velocities` when a run
 is driven by something other than per-mode velocities (e.g. a single
-overall amplitude scale — see `examples_legacy/raphaldini2022_compare/precession_resonance_phase_diagnostic.py`'s
+overall amplitude scale — see `examples/raphaldini2022_compare/precession_comparison.py`'s
 own comment on this). Any script computing a `WaveSet` trajectory that
 might be revisited should go through this rather than calling `RK44`
 directly.
@@ -556,7 +556,7 @@ Full flags: `python examples_legacy/make_section3_figures.py --help`.
 The Quartet A/B precession-frequency figure (JFM-template.tex
 `fig: precession_frequency`) has no analogous composite script: it is two
 independent PNGs (`run_sweep.py --wave-set quartet_rh_preference`
-for Quartet A, `examples_legacy/raphaldini2022_compare/borrowed_topology_precession_figure.py`
+for Quartet A, `examples/raphaldini2022_compare/precession_comparison.py`
 for Quartet B, i.e. the registered `quartet_rh_borrowed_topology`) combined
 by LaTeX `subfigure`, not a Python-composited image -- each source script
 already writes its own complete, publication-ready PNG, so no separate

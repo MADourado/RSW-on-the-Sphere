@@ -139,7 +139,7 @@ def individual_phase(Y, j):
     reported "reversal."
 
     A trajectory in the *interaction picture* (e.g.
-    ``examples_legacy/raphaldini2022_compare/reproduce_raphaldini2022_fig2.py``'s barotropic ``A_j(t)``,
+    ``rsw_sphere.utilities.barotropic_vort_model``'s barotropic ``A_j(t)``,
     which is envelope-only) is the opposite convention: there the
     correction ``phi_j_tilde = np.unwrap(np.angle(A_j)) - omega_j * T``
     must be added on top of this function's output -- local to whatever

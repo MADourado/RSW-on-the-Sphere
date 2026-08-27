@@ -69,7 +69,7 @@ def add_outward_twin_axis(ax, x, y, marker_style='v-', color=GREEN, ylabel='', l
     Factored out after the identical "third twin axis, spine pushed
     outward, matching-color label" block was copy-pasted between
     ``precession_plot.plot_dual_axis_frequency_efficiency`` and
-    ``examples_legacy/raphaldini2022_compare/borrowed_topology_precession_figure.py``'s ``plot_sweep``
+    ``examples/raphaldini2022_compare/precession_comparison.py``'s ``plot_sweep``
     and had already drifted (one copy set a log y-scale, the other
     didn't) -- see paper-nonlinear-interactions-SWE-sphere's own code
     review, 2026-08-25.

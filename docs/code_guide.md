@@ -39,7 +39,7 @@ Quartet B's own precession-frequency panels into JFM-template.tex's
 `fig: precession_frequency`) turned out not to need it -- that figure is
 two independent PNGs combined by LaTeX `subfigure`, not a Python
 composite, and each source script (`run_sweep.py` + a config, or
-`examples_legacy/raphaldini2022_compare/borrowed_topology_precession_figure.py`) already writes its own
+`examples/raphaldini2022_compare/precession_comparison.py`) already writes its own
 complete, publication-ready PNG on its own. A `postproc/` wrapper that
 just re-called those same plotting functions added no assembly work,
 only a second code path to keep in sync (2026-08-25 review). Create the
