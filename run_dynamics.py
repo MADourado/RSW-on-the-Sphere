@@ -24,14 +24,15 @@ import numpy as np
 from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.integrators import RK44
-from rsw_sphere.dynamics.trajectory_cache import run_and_cache, _mode_slug
+from rsw_sphere.dynamics.trajectory_cache import run_and_cache, _mode_slug, ic_label, topology_folder
 from rsw_sphere.dynamics.run_config import RunConfig
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics
-from rsw_sphere.plotting.labels import _mode_label
+from rsw_sphere.plotting.labels import _mode_label, mode_fs_label
 from rsw_sphere.plotting.energy_evolution import plot_energy_evolution
 from rsw_sphere.utilities.periods import dominant_periods
-from rsw_sphere.utilities.tables import dynamics_summary_rows, write_csv
+from rsw_sphere.utilities.tables import write_csv
+from rsw_sphere.utilities.efficiency import wave_set_efficiency
 
 
 def _build_units(spec):
@@ -80,7 +81,7 @@ def _build_units(spec):
 def _integrate_and_plot_unit(args):
     """Worker (module-level so it's picklable for ProcessPoolExecutor)."""
     (name, modes, triads, velocities, title, triad_labels,
-     h_e, tf_days, h, output_root, plot, wave_set_key) = args
+     h_e, tf_days, h, output_root, plot, run_dir) = args
 
     gamma = gamma_from_he(h_e, g=G)[1]
     ws = WaveSet(gamma, list(modes), triads, N=10, deg=300)
@@ -108,14 +109,23 @@ def _integrate_and_plot_unit(args):
     if plot:
         import matplotlib.pyplot as plt
         from rsw_sphere.plotting.style import apply_house_style
-        # "full"'s own filename lists every one of its modes (no shared
-        # sum to omit the way a sub-triad's own name does -- there's
-        # only one "full" unit, so no ambiguity to resolve by omitting
-        # anything); a sub-triad's own name (already "triad_<m1>_<m2>")
-        # is used as-is.
-        fig_name = f"full_{'_'.join(_mode_slug(*m) for m in modes)}.png" if name == "full" else f"{name}.png"
-        fig_path = os.path.join(output_root, "figures", "dynamics", wave_set_key, fig_name)
-        os.makedirs(os.path.dirname(fig_path), exist_ok=True)
+        # Filename carries the initial conditions too (run_dir's own
+        # basename, e.g. "rh34_50.00-...-wg79_50.00_tf20_h0.01") since these
+        # figures get pulled into the paper individually -- the run folder
+        # alone wouldn't survive that, but a self-contained filename does.
+        # Every mode is listed (sum mode included, not just a sub-triad's
+        # own two members), sorted the same way trajectory_cache.ic_label
+        # sorts them (by mode tuple) -- matches this run's own trajectory
+        # filename(s) so the two stay recognizably paired.
+        run_label = os.path.basename(run_dir)
+        mode_tag = "_".join(mode_fs_label(*m) for m in sorted(modes))
+        if name == "full":
+            topology = topology_folder(len(modes)).rstrip('s')
+            fig_name = f"evol_{topology}_{mode_tag}_{run_label}.png"
+        else:
+            fig_name = f"evol_triad_{mode_tag}_{run_label}.png"
+        fig_path = os.path.join(run_dir, fig_name)
+        os.makedirs(run_dir, exist_ok=True)
 
         apply_house_style()
         fig, ax = plt.subplots(figsize=(6.5, 4.5))
@@ -128,16 +138,12 @@ def _integrate_and_plot_unit(args):
         'name': name, 'title': title, 't': t_days, 'E': E, 'E_total': E_total,
         'labels': labels, 'drift': float(drift), 'dEK': dEK,
         'omega': ws.omega, 'precession_freq': precession_freq,
-        'trajectory_path': traj_path, 'figure_path': fig_path,
+        'trajectory_path': traj_path, 'figure_path': fig_path, 'run_dir': run_dir,
     }
 
 
-def run_dynamics(config: RunConfig, write_table: bool = True) -> dict:
+def run_dynamics(config: RunConfig) -> dict:
     """Integrate + plot every topology unit of config.wave_set_spec.
-
-    write_table : write a CSV summary to <output_root>/tables/<spec.key>.csv.
-        False when called once per grid point (e.g. run_sweep.py's own
-        per-point pass).
 
     Returns dict: unit name ('full', 'triad_<member1>_<member2>', ...) -> result
     dict (t, E, E_total, labels, drift, dEK, omega, precession_freq,
@@ -145,8 +151,16 @@ def run_dynamics(config: RunConfig, write_table: bool = True) -> dict:
     """
     spec = config.wave_set_spec
     units = _build_units(spec)
+    # run_dir: outputs/dynamics/<wave_set_key>/<run_label>/, shared by every
+    # unit (full + every sub-triad) of this one invocation -- run_label
+    # reuses trajectory_cache's own ic_label/tf/h convention (the same
+    # readable part of a trajectory's own cache filename, minus its hash
+    # suffix, which guards against a numerics-only difference that doesn't
+    # matter for a figures/tables folder name).
+    run_label = f"{ic_label(spec.modes, spec.velocities)}_tf{config.tf_days:.0f}_h{config.h:g}"
+    run_dir = os.path.join(config.output_root, "dynamics", spec.key, run_label)
     args = [(name, modes, triads, velocities, title, triad_labels, spec.h_e, config.tf_days, config.h,
-             config.output_root, config.plot, spec.key)
+             config.output_root, config.plot, run_dir)
             for name, modes, triads, velocities, title, triad_labels in units]
 
     if config.parallel and len(units) > 1:
@@ -156,11 +170,7 @@ def run_dynamics(config: RunConfig, write_table: bool = True) -> dict:
     else:
         results = [_integrate_and_plot_unit(a) for a in args]
 
-    out = {r['name']: r for r in results}
-    if write_table:
-        table_path = os.path.join(config.output_root, "tables", f"{spec.key}.csv")
-        write_csv(dynamics_summary_rows(out, spec), table_path)
-    return out
+    return {r['name']: r for r in results}
 
 
 def main():
@@ -198,95 +208,144 @@ def main():
     if args.wave_set not in specs:
         parser.error(f"--wave-set {args.wave_set!r} not found in {args.specs!r} "
                      f"(available: {list(specs)})")
-    config = RunConfig.from_wave_set(specs[args.wave_set], tf_days=args.tf_days, h=args.h,
+    spec = specs[args.wave_set]
+    config = RunConfig.from_wave_set(spec, tf_days=args.tf_days, h=args.h,
                                       output_root=args.output_root,
                                       plot=not args.no_plot, parallel=not args.no_parallel)
 
     results = run_dynamics(config)
-    for name, r in results.items():
+    # freq_rows_by_unit feeds the single consolidated frequency table printed
+    # after this loop (frequency units are kept consistent throughout --
+    # cycles/day, not rad/day -- so linear/observed/precession frequencies
+    # are all directly comparable at a glance). eff_cache is built here too
+    # (one value per mode per unit, same shape as the frequency table) so it
+    # can be folded into that same table instead of getting its own --
+    # reused as-is later by the --diagnostics pairwise/final tables below.
+    freq_rows_by_unit = {}
+    eff_cache = {}
+    diag_evol_rows = []
+    run_dir = results["full"]["run_dir"]
+    # run_label tags every diag_*.csv/diag_freq_novel_*.png filename below,
+    # same convention as the evol_*.png figures (and, underneath that,
+    # trajectory_cache.ic_label) -- one consistent naming scheme across
+    # everything this run writes.
+    run_label = os.path.basename(run_dir)
+    for idx, (name, r) in enumerate(results.items()):
+        if idx > 0:
+            print()
         print(f"[{name}] {r['title']}: Energy drift={r['drift']:.3e}, "
               f"dEK={dict(zip(r['labels'], r['dEK']))}")
         # Linear period = 1/(2*|omega|) days -- omega is rad per nondim time
         # unit, and 1 day = 4*pi nondim time units throughout this codebase
         # (rsw_sphere.physics.days_from_nondim_time), so period_nondim =
-        # 2*pi/|omega| converts to period_days = period_nondim/(4*pi).
-        linear_periods = {lbl: round(1.0 / (2 * abs(w)), 3) for lbl, w in zip(r['labels'], r['omega'])}
-        print(f"  linear periods (days, own mode frequency): {linear_periods}")
+        # 2*pi/|omega| converts to period_days = period_nondim/(4*pi);
+        # linear frequency (cycles/day) is just its reciprocal, 2*|omega|.
         period_results = [dominant_periods(r['t'], r['E'][:, j]) for j in range(len(r['labels']))]
-        periods = {lbl: round(float(pr['period_global']), 3) for lbl, pr in zip(r['labels'], period_results)}
-        print(f"  periods (days, dominant FFT peak): {periods}")
-        prec = {lbl: round(v, 5) for lbl, v in r['precession_freq'].items()}
-        print(f"  precession_freq (rad/day): {prec}")
+        rows = []
+        for j, (lbl, w, pr, dEK) in enumerate(zip(r['labels'], r['omega'], period_results, r['dEK'])):
+            lin_period = 1.0 / (2 * abs(w))
+            lin_freq = 2 * abs(w)
+            peaks_str = "; ".join(
+                f"{p['period_days']:.3f} ({1.0 / p['period_days']:.4f}, {p['power_frac']:.0f}%)"
+                for p in pr['top_peaks']) or "n/a"
+            eff = wave_set_efficiency(r["E"][:, j], r["E_total"], r["drift"],
+                                       drift_max=args.efficiency_drift_max)
+            eff_cache[(name, lbl)] = eff
+            eff_str = f"{eff:.4f}" if np.isfinite(eff) else "n/a (drift)"
+            rows.append([lbl, name, f"{dEK:.4f}", eff_str, f"{lin_period:.3f}", f"{lin_freq:.4f}", peaks_str])
+
+            # diag_evol.csv: same data as the printed table above, but one
+            # column per value (peak1_period_days, peak1_freq_cpd, ...)
+            # instead of a packed "period (freq, pct); period (freq, pct)"
+            # string -- easier to load into a dataframe/spreadsheet.
+            evol_row = {
+                'wave_set': spec.key, 'unit': name, 'mode': lbl,
+                'dEK': float(dEK), 'efficiency': eff,
+                'linear_period_days': lin_period, 'linear_freq_cpd': lin_freq,
+            }
+            for k in range(3):
+                if k < len(pr['top_peaks']):
+                    p = pr['top_peaks'][k]
+                    evol_row[f'peak{k + 1}_period_days'] = p['period_days']
+                    evol_row[f'peak{k + 1}_freq_cpd'] = 1.0 / p['period_days']
+                    evol_row[f'peak{k + 1}_power_pct'] = p['power_frac']
+                else:
+                    evol_row[f'peak{k + 1}_period_days'] = ''
+                    evol_row[f'peak{k + 1}_freq_cpd'] = ''
+                    evol_row[f'peak{k + 1}_power_pct'] = ''
+            diag_evol_rows.append(evol_row)
+        freq_rows_by_unit[name] = rows
+
+        prec = {lbl: round(v / (2 * np.pi), 5) for lbl, v in r['precession_freq'].items()}
+        print(f"  precession_freq (cycles/day): {prec}")
 
         # Heuristic t_f-adequacy gate -- NOT a rigorous test, just a cheap
-        # warning using numbers already computed above: (a) a mode whose
-        # own dominant FFT period sits within 10% of the full integration
-        # window (dominant_periods' own horizon_limited flag) has too few
-        # cycles resolved to trust that period estimate; (b) a triad whose
-        # dynamical phase hasn't completed even one full 2*pi revolution
-        # over t_f can't yet be told apart from a genuine lock -- a slow
-        # enough drift can look identical to a lock within too short a
-        # window. Neither check can prove a longer run is unnecessary,
+        # warning using numbers already computed above: a mode whose own
+        # top 2 FFT peaks (by power) don't each complete at least 4 full
+        # cycles within t_f has too few cycles resolved to trust that
+        # period estimate. (Deliberately NOT gating on precession_freq
+        # anymore -- a genuinely locked/near-locked triad has a precession
+        # frequency near zero *by construction*, no matter how long t_f
+        # is, so "hasn't completed one revolution yet" was flagging the
+        # expected, physically correct case just as often as a real
+        # under-resolved run.) Can't prove a longer run is unnecessary,
         # only flag when this one clearly isn't enough.
         t_f_days = float(r['t'][-1] - r['t'][0])
-        horizon_limited = [lbl for lbl, pr in zip(r['labels'], period_results) if pr['horizon_limited']]
-        slow_triads = [lbl for lbl, freq in r['precession_freq'].items()
-                       if freq != 0 and (2 * np.pi / abs(freq)) > t_f_days]
-        if horizon_limited or slow_triads:
+        insufficient_cycles = [lbl for lbl, pr in zip(r['labels'], period_results)
+                                if any(p['period_days'] * 4 > t_f_days for p in pr['top_peaks'][:2])]
+        if insufficient_cycles:
             print(f"  WARNING: t_f={t_f_days:.1f}d may not resolve enough cycles (heuristic, not "
                   f"conclusive -- consider a longer run before trusting these numbers)")
-            if horizon_limited:
-                print(f"    dominant period within 10% of t_f for: {horizon_limited}")
-            if slow_triads:
-                print(f"    dynamical phase hasn't completed one full revolution for: {slow_triads}")
+            print(f"    fewer than 4 cycles of a top-2 FFT peak resolved for: {insufficient_cycles}")
 
         print(f"  trajectory -> {r['trajectory_path']}")
         if r['figure_path']:
             print(f"  figure -> {r['figure_path']}")
 
+    # Consolidated frequency table: one row per (mode, unit) -- same
+    # mode/unit shape as the efficiency table below, kept as its own table
+    # (not merged into the pairwise diagnostics table, which compares only
+    # full-vs-sub-triad pairs and would be awkward to fold this into).
+    print("\n=== linear vs. observed (FFT) frequency, per mode per unit ===")
+    freq_headers = ["mode", "unit", "dEK", "efficiency", "linear_period (d)", "linear_freq (cpd)",
+                     "observed peaks (period d, freq cpd, % of dominant peak)"]
+    all_freq_rows = [row for rows in freq_rows_by_unit.values() for row in rows]
+    freq_widths = [max(len(h), *(len(row[i]) for row in all_freq_rows)) if all_freq_rows else len(h)
+                   for i, h in enumerate(freq_headers)]
+    freq_fmt = "  ".join(f"{{:<{w}}}" for w in freq_widths)
+    print(freq_fmt.format(*freq_headers))
+    print(freq_fmt.format(*["-" * w for w in freq_widths]))
+    for idx, rows in enumerate(freq_rows_by_unit.values()):
+        if idx > 0:
+            print()
+        for row in rows:
+            print(freq_fmt.format(*row))
+    diag_evol_path = os.path.join(run_dir, f"diag_evol_{run_label}.csv")
+    write_csv(diag_evol_rows, diag_evol_path)
+    print(f"\n  table -> {diag_evol_path}")
+
     if args.diagnostics:
         from rsw_sphere.utilities.pmeasure import pairwise_target_diagnostics, p_measure_combined_for_all_targets
         from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_all_targets
-        from rsw_sphere.utilities.efficiency import wave_set_efficiency, efficiency_variation
+        from rsw_sphere.utilities.efficiency import efficiency_variation
         from rsw_sphere.plotting.novelty_frequency_panel import novelty_frequency_figures
 
-        spec = specs[args.wave_set]
         full = results["full"]
-
-        def _efficiency(r, j_local):
-            return wave_set_efficiency(r["E"][:, j_local], r["E_total"], r["drift"],
-                                        drift_max=args.efficiency_drift_max)
-
-        # Efficiency (rsw_sphere.utilities.efficiency.wave_set_efficiency): one
-        # value per (mode, integrated unit) -- unlike p_measure/spectral_deviation
-        # this isn't a full-vs-sub comparison, just a property of ONE
-        # already-integrated unit (mean-total-energy-normalized, NaN if that
-        # unit's own energy drift exceeds --efficiency-drift-max), so it gets
-        # its own table rather than a column in the pairwise one below.
-        print("\n=== efficiency (per mode, per integrated unit) ===")
-        eff_rows = []
-        eff_cache = {}
-        for name, r in results.items():
-            for j, label in enumerate(r["labels"]):
-                eff = _efficiency(r, j)
-                eff_cache[(name, label)] = eff
-                eff_rows.append([label, name, f"{eff:.4f}" if np.isfinite(eff) else "n/a (drift)"])
-        eff_headers = ["mode", "unit", "efficiency"]
-        eff_widths = [max(len(h), *(len(r[i]) for r in eff_rows)) if eff_rows else len(h)
-                      for i, h in enumerate(eff_headers)]
-        eff_fmt = "  ".join(f"{{:<{w}}}" for w in eff_widths)
-        print(eff_fmt.format(*eff_headers))
-        print(eff_fmt.format(*["-" * w for w in eff_widths]))
-        for r in eff_rows:
-            print(eff_fmt.format(*r))
+        # eff_cache (mode, unit) -> efficiency was already computed in the
+        # main loop above and folded into the consolidated frequency table
+        # -- reused here as-is rather than a separate efficiency table.
 
         # Dynamical phase (rsw_sphere.dynamics.dynamical_phase): a property
         # of one constituent triad, not a mode -- no shared-triad ambiguity
         # to resolve (a triad is never shared the way a mode can be), so a
         # single full-vs-alone comparison is already well-defined, mirroring
-        # the same "vs." structure as the pairwise table below.
-        print("\n=== dynamical phase (precession frequency, rad/day) ===")
+        # the same "vs." structure as the pairwise table below. Displayed in
+        # cycles/day (not rad/day) to match the frequency table above --
+        # phase_variation is a ratio of two same-unit values, so it's
+        # unaffected by the choice.
+        print("\n=== dynamical phase (precession frequency, cycles/day) ===")
         phase_rows = []
+        diag_prec_freq_rows = []
         for triad_label, prec_full in full["precession_freq"].items():
             prec_alone = None
             for name, r in results.items():
@@ -294,11 +353,18 @@ def main():
                     prec_alone = r["precession_freq"][triad_label]
                     break
             if prec_alone is not None and abs(prec_alone) > 1e-12:
-                var_str = f"{100 * (abs(prec_full) - abs(prec_alone)) / abs(prec_alone):.2f}%"
+                phase_variation = 100 * (abs(prec_full) - abs(prec_alone)) / abs(prec_alone)
+                var_str = f"{phase_variation:.2f}%"
             else:
+                phase_variation = float("nan")
                 var_str = "n/a"
-            alone_str = f"{prec_alone:.5f}" if prec_alone is not None else "n/a"
-            phase_rows.append([triad_label, f"{prec_full:.5f}", alone_str, var_str])
+            alone_str = f"{prec_alone / (2 * np.pi):.5f}" if prec_alone is not None else "n/a"
+            phase_rows.append([triad_label, f"{prec_full / (2 * np.pi):.5f}", alone_str, var_str])
+            diag_prec_freq_rows.append({
+                'triad': triad_label, 'precession_freq_full_cpd': prec_full / (2 * np.pi),
+                'precession_freq_alone_cpd': prec_alone / (2 * np.pi) if prec_alone is not None else '',
+                'phase_variation_pct': phase_variation,
+            })
         phase_headers = ["triad", "precession_freq_full", "precession_freq_alone", "phase_variation"]
         phase_widths = [max(len(h), *(len(r[i]) for r in phase_rows)) if phase_rows else len(h)
                         for i, h in enumerate(phase_headers)]
@@ -307,9 +373,13 @@ def main():
         print(phase_fmt.format(*["-" * w for w in phase_widths]))
         for r in phase_rows:
             print(phase_fmt.format(*r))
+        diag_prec_freq_path = os.path.join(run_dir, f"diag_prec_freq_{run_label}.csv")
+        write_csv(diag_prec_freq_rows, diag_prec_freq_path)
+        print(f"  table -> {diag_prec_freq_path}")
 
         print("\n=== pairwise diagnostics (full wave set vs. each containing sub-triad) ===")
         rows = []
+        diag_pairwise_rows = []
         for j, label in enumerate(full["labels"]):
             amp_full = np.sqrt(full["E"][:, j])
             eff_full = eff_cache[("full", label)]
@@ -331,6 +401,12 @@ def main():
                     f"{d['spectral_deviation']:.2f}%" if np.isfinite(d['spectral_deviation']) else "n/a",
                     novelty_str,
                 ])
+                diag_pairwise_rows.append({
+                    'mode': label, 'vs': name, 'p_measure_pct': d['p_measure'],
+                    'efficiency_var_pct': eff_var, 'spectral_dev_pct': d['spectral_deviation'],
+                    'novelty_period_days': d['novelty_period'] if np.isfinite(d['novelty_period']) else '',
+                    'novelty_relevance_pct': d['novelty_relevance'] if np.isfinite(d['novelty_period']) else '',
+                })
 
         headers = ["mode", "vs.", "p_measure", "efficiency_var", "spectral_dev", "novelty_period (%)"]
         widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h)
@@ -340,6 +416,9 @@ def main():
         print(row_fmt.format(*["-" * w for w in widths]))
         for r in rows:
             print(row_fmt.format(*r))
+        diag_pairwise_path = os.path.join(run_dir, f"diag_pairwise_{run_label}.csv")
+        write_csv(diag_pairwise_rows, diag_pairwise_path)
+        print(f"  table -> {diag_pairwise_path}")
 
         # "Final" diagnostics: one row per target mode, considering every
         # containing sub-triad at once instead of one pairwise comparison
@@ -357,6 +436,7 @@ def main():
             results, min_prominence=args.novelty_min_prominence,
             exclusion_frac=args.novelty_exclusion_frac)
         final_rows = []
+        diag_final_rows = []
         for label in full["labels"]:
             pf = pfinal[label]
             p_str = f"{pf['p_measure']:.2f}%" if np.isfinite(pf['p_measure']) else "n/a"
@@ -369,6 +449,13 @@ def main():
             novelty_str = (f"{peaks[0]['period_days']:.4f}d ({peaks[0]['relevance_pct']:.2f}%)"
                            if peaks else "none detected")
             final_rows.append([label, p_str, eff_var_str, sd_str, ref_str, novelty_str])
+            diag_final_rows.append({
+                'mode': label, 'p_measure_final_pct': pf['p_measure'],
+                'efficiency_var_final_pct': eff_var_final, 'spectral_dev_final_pct': pf['spectral_deviation'],
+                'vs': ref_str,
+                'novelty_period_final_days': peaks[0]['period_days'] if peaks else '',
+                'novelty_relevance_final_pct': peaks[0]['relevance_pct'] if peaks else '',
+            })
 
         final_headers = ["mode", "p_measure_final", "efficiency_var_final", "spectral_dev_final",
                           "vs.", "novelty_period_final (%)"]
@@ -379,10 +466,12 @@ def main():
         print(final_fmt.format(*["-" * w for w in final_widths]))
         for r in final_rows:
             print(final_fmt.format(*r))
+        diag_final_path = os.path.join(run_dir, f"diag_final_{run_label}.csv")
+        write_csv(diag_final_rows, diag_final_path)
+        print(f"  table -> {diag_final_path}")
 
-        novelty_dir = os.path.join(config.output_root, "figures", "dynamics", spec.key)
         novelty_paths = novelty_frequency_figures(
-            results, novelty_dir, min_prominence=args.novelty_min_prominence,
+            results, run_dir, filename_suffix=run_label, min_prominence=args.novelty_min_prominence,
             exclusion_frac=args.novelty_exclusion_frac)
         print(f"\n=== novelty-frequency spectrum figures ({len(novelty_paths)}) ===")
         for p in novelty_paths:

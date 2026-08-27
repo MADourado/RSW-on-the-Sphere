@@ -100,19 +100,25 @@ def novelty_frequency_figure(results: dict, target_label: str, result: dict, pat
     plt.close(fig)
 
 
-def novelty_frequency_figures(results: dict, output_dir: str, xmax: float = 3.0, **kwargs) -> list:
+def novelty_frequency_figures(results: dict, output_dir: str, xmax: float = 3.0,
+                               filename_suffix: str = "", **kwargs) -> list:
     """One combined figure per target mode for a full wave-set
     ``results`` dict (``run_dynamics.run_dynamics()``'s own return
     shape). kwargs (min_prominence, exclusion_frac) pass through to
     ``novel_frequency_content_multi`` via ``novelty_combined_for_all_targets``.
 
+    filename_suffix : appended (with a leading "_") to every filename --
+        e.g. the run's own ic_label/tf/h stamp, to match run_dynamics.py's
+        other diag_*/evol_* filenames.
+
     Returns the list of paths written.
     """
     all_results = novelty_combined_for_all_targets(results, xmax=xmax, **kwargs)
+    suffix = f"_{filename_suffix}" if filename_suffix else ""
 
     paths = []
     for target_label, result in all_results.items():
-        fname = f"novelty_{_filesystem_safe(target_label)}.png"
+        fname = f"diag_freq_novel_{_filesystem_safe(target_label)}{suffix}.png"
         path = os.path.join(output_dir, fname)
         novelty_frequency_figure(results, target_label, result, path, xmax=xmax)
         paths.append(path)

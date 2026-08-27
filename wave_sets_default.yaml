@@ -275,7 +275,7 @@ quartet_gravity_79:
 
 quartet_rossby_gravity_influence:
   label: "RH(3,4)+RH(4,5) and WG(3,9)+RH(4,5), both closed by WG(7,9) as the shared sum mode"
-  display_label: "Quartet D (WG(7,9)-sum, draft)"
+  display_label: "Quartet D (WG(7,9)-sum)"
   role: >-
     Novelty-period metric example. Two triads share both a member
     (RH(4,5)) and their own sum mode (WG(7,9)), not a member-member edge.
@@ -298,7 +298,7 @@ quartet_rossby_gravity_influence:
     n_grid: 10
     diagnostics: [novelty_period, p_measure]
   plot:
-    title: "Quartet D (WG(7,9)-sum, draft) -- novelty-period vs. p_measure"
+    title: "Quartet D (WG(7,9)-sum) -- novelty-period vs. p_measure"
   output: outputs/figures/wave_sets/quartet_rossby_gravity_influence/diagnostics.png
 
 

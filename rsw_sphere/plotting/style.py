@@ -28,15 +28,21 @@ GREY = '0.55'
 # Hue assigned by each mode's *linear* period (fixed, not recomputed at
 # plot time): within a family, the fastest (shortest-period) mode gets the
 # lightest hue and the slowest gets the darkest, so darker == slower reads
-# consistently across figures. Periods used to fix this ordering (computed
-# via ``wave_set_table.wave_set_table``, h_e=10000 m, 2026-08-11):
+# consistently across figures. EG (eastward-gravity) and WG (westward-
+# gravity) get their OWN cool sub-ranges (blue/indigo vs. teal/turquoise)
+# rather than sharing one -- they're a different family in every wave set
+# that uses both (e.g. quartet_rossby_gravity_influence's WG(3,9)/WG(7,9)),
+# not just an eastward/westward relabeling of the same hue. Periods used to
+# fix this ordering (computed via ``wave_set_table.wave_set_table``,
+# h_e=10000 m, 2026-08-11; WG periods added 2026-08-27):
 #   RH(3,4)=3.72d, RH(4,5)=3.99d, RH(1,2)=5.03d, RH(3,6)=7.59d,
 #   RH(3,10)=19.0d, RH(1,7)=30.3d
 #   EG(6,9)=0.156d, EG(7,9)=0.156d, EG(1,1)=1.35d
-# Every mode currently used across §2.2/§3 (6 RH, 3 EG, no WG) has a fixed
-# entry below; a mode not in this dict falls back to GREY (see
-# ``mode_color``) rather than erroring, so new triads/wave sets don't break
-# plotting -- extend this dict when new modes are added.
+#   WG(3,9)=0.152d, WG(7,9)=0.153d, WG(1,1)=0.551d
+# Every mode currently used across §2.2/§3/§4 has a fixed entry below; a
+# mode not in this dict falls back to GREY (see ``mode_color``) rather than
+# erroring, so new triads/wave sets don't break plotting -- extend this
+# dict when new modes are added.
 MODE_COLORS = {
     (3, 4, 3):  '#f1c40f',   # RH(3,4)  -- fastest RH -> yellow
     (4, 5, 3):  '#e67e22',   # RH(4,5)
@@ -47,6 +53,12 @@ MODE_COLORS = {
     (6, 9, 1):  '#5dade2',   # EG(6,9)  -- fastest EG -> light blue
     (7, 9, 1):  '#2e86c1',   # EG(7,9)
     (1, 1, 1):  '#4b3f8f',   # EG(1,1)  -- slowest of the three -> indigo
+    (3, 9, 2):  '#76d7c4',   # WG(3,9)  -- fastest WG -> light turquoise
+    (7, 9, 2):  '#17a589',   # WG(7,9)  -- nearly the same period as WG(3,9)
+                             # (0.152d vs 0.153d) so hue alone can't rely on
+                             # that gap -- given a clearly different shade
+                             # on purpose
+    (1, 1, 2):  '#0b5345',   # WG(1,1)  -- slowest WG -> dark teal
 }
 
 #: Color for non-modal reference lines (e.g. total energy).

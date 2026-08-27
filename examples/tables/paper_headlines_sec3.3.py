@@ -12,18 +12,15 @@ and D, confirmed in `examples/wave_sets_section_3.yaml`).
 
 Run:
 
-    python examples/section33_headline_numbers.py
+    python examples/tables/paper_headlines_sec3.3.py
 """
 import os
 import sys
 import warnings
 
-_ROOT = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
-_REPO = os.path.dirname(_ROOT)
-if _REPO not in sys.path:
-    sys.path.insert(0, _REPO)
 
 import numpy as np
 from scipy.signal import find_peaks

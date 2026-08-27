@@ -39,6 +39,18 @@ def _mode_label(m, n, alpha):
     return {1: 'EG', 2: 'WG', 3: 'RH'}[alpha] + f'({m},{n})'
 
 
+def mode_fs_label(m, n, alpha):
+    """Filesystem-safe ``_mode_label``, e.g. ``RH4_5`` -- for figure/table
+    filenames, which can't hold ``_mode_label``'s own ``(``/``)``/``,``.
+
+    Examples
+    --------
+    >>> mode_fs_label(4, 5, 3)
+    'RH4_5'
+    """
+    return _mode_label(m, n, alpha).replace('(', '').replace(')', '').replace(',', '_')
+
+
 def _fmt_num(x, sig=6):
     """Format a float to ``sig`` significant digits for LaTeX/CSV/markdown
     table cells.

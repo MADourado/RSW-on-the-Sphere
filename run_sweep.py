@@ -26,7 +26,6 @@ worth adding to the registry:
 """
 import argparse
 import dataclasses
-import functools
 import os
 from concurrent.futures import ProcessPoolExecutor
 
@@ -74,11 +73,8 @@ def _run_dynamics_for_grid(config: RunConfig):
         points = [_grid_point_config(config, axes, (u1, u2))
                   for u2 in grids[1] for u1 in grids[0]]
 
-    # write_table=False: every point shares config.wave_set_spec.key, so
-    # writing a table per point would leave only the last point's summary.
-    worker = functools.partial(run_dynamics, write_table=False)
     with ProcessPoolExecutor(max_workers=config.max_workers or max(1, (os.cpu_count() or 2) // 2)) as ex:
-        list(ex.map(worker, points))
+        list(ex.map(run_dynamics, points))
 
 
 def _run_sweep_1d(config: RunConfig, output: str, plot_cfg: dict,
@@ -197,6 +193,8 @@ def main():
                               "no separate config file needed.")
     parser.add_argument("--specs", default=DEFAULT_WAVESETS_PATH, help="used with --wave-set")
     parser.add_argument("--output", default=None, help="override the config's own output")
+    parser.add_argument("--output-root", default="outputs",
+                         help="override the config's own output_root (e.g. for an isolated test run)")
     parser.add_argument("--no-per-point", action="store_true",
                          help="skip the per-grid-point run_dynamics pass (diagnostics only)")
     args = parser.parse_args()
@@ -212,12 +210,13 @@ def main():
         with open(args.specs) as f:
             raw = yaml.safe_load(f)[args.wave_set]
         config = RunConfig.from_registry_entry(args.wave_set, args.specs)
-        default_output = f"outputs/figures/wave_sets/{args.wave_set}/sweep.png"
+        default_output = f"{args.output_root}/figures/wave_sets/{args.wave_set}/sweep.png"
     else:
         with open(args.config) as f:
             raw = yaml.safe_load(f)
         config = RunConfig.from_yaml(args.config)
-        default_output = "outputs/figures/wave_sets/sweep.png"
+        default_output = f"{args.output_root}/figures/wave_sets/sweep.png"
+    config = dataclasses.replace(config, output_root=args.output_root)
 
     output = args.output or raw.get("output") or default_output
     plot_cfg = raw.get("plot", {})

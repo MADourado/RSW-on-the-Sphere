@@ -2,9 +2,10 @@
 
 Registries (YAML) and driver configs for the root drivers
 (`run_linear_modes.py`, `run_dynamics.py`, `run_sweep.py`, `run_sweep_sets.py`).
-Investigation scripts that predate the driver refactor live in
-`../examples_legacy/` (untouched, still runnable, not part of this
-folder's own registries).
+The investigation scripts that predated the driver refactor lived in
+`../examples_legacy/`, deleted 2026-08-27 once everything still valuable
+there had a current-driver reproduction path (see the "moved from
+examples_legacy/" notes throughout this file for where each one landed).
 
 ## Registries
 
@@ -63,18 +64,31 @@ vorticity equation, which has no `WaveSet`/registry representation (see
 *is* registered (`quartet_rh_borrowed_topology`).
 
 Three further §4.3-era scripts whose core computation isn't reducible to a
-`run_sweep.py`/`run_sweep_sets.py` diagnostic (moved here from
-`examples_legacy/special_runs/` 2026-08-26; the other 7 scripts that were
-in that cluster were deleted the same day along with the paper sections
-they backed -- see `examples_legacy/README.md`):
+`run_sweep.py`/`run_sweep_sets.py` diagnostic (moved into `examples/` from
+`examples_legacy/special_runs/` 2026-08-26, then into `tables/` and renamed
+to the `paper_table<NN>_<name>.py`/`paper_headline_<name>.py` convention
+2026-08-27; the other 7 scripts that were in that cluster were deleted the
+same day along with the paper sections they backed -- see
+`examples_legacy/README.md`):
 
-- `regen_gravity_quartet_tables.py` -- Table cap42/cap43 (Quartet C/D
+- `tables/paper_table04_gravity_quartet_coefficients.py` (was
+  `regen_gravity_quartet_tables.py`) -- Table cap42/cap43 (Quartet C/D
   coefficient tables).
-- `gate_i5_headline.py` -- the §Coupled Triads S4 headline number
-  (physical-Joules amplitude/phase error from filtering the gravity mode),
-  via `rsw_sphere.physics.air_density_from_equivalent_depth`.
-- `section33_headline_numbers.py` -- generalizes `gate_i5_headline.py`'s
-  method to both Quartet C and Quartet D.
+- `tables/paper_headline_quartet_c_phaselag.py` (was `gate_i5_headline.py`)
+  -- the §Coupled Triads S4 headline number (physical-Joules
+  amplitude/phase error from filtering the gravity mode), via
+  `rsw_sphere.physics.air_density_from_equivalent_depth` -- Quartet C's own
+  period-shift/peak-KE/phase-lag numbers quoted in `JFM-template.tex`
+  (`-66.5%`/`+14.6%`/`0.9 days` at tf=20d) come from this script; the
+  Hilbert-transform phase lag isn't reproduced by
+  `paper_headlines_sec3.3.py` below, so this one stays live too, not just
+  the origin of a since-generalized method.
+- `tables/paper_headlines_sec3.3.py` (was `section33_headline_numbers.py`)
+  -- generalizes `paper_headline_quartet_c_phaselag.py`'s own method
+  (period shift + peak-KE difference, both tf-independent; $\mathcal{F}_2$
+  at the registered tf_days) to both Quartet C and Quartet D -- reproduces
+  the §3.3.1 period-shift/peak-KE/$\mathcal{F}_2$ numbers quoted in
+  `JFM-template.tex` for both quartets.
 
 `rh_partner_quartet_family.py` is fully migrated: `quartet_rh_preference`
 was already its exact base quartet, so `examples/candidates_rh_partner_family.yaml`

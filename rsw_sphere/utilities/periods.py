@@ -51,7 +51,8 @@ def low_frequency_power(t_days, E_j, period_cutoff_days: float = 10.0, max_perio
     return float(np.sqrt(max(integral, 0.0)))
 
 
-def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_frac: float = 0.01):
+def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_frac: float = 0.01,
+                      n_top: int = 3):
     """Dominant period(s) via FFT.
 
     Returns
@@ -60,7 +61,12 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
         period_global (largest spectral peak, days), period_local_max
         (largest-period local max, or None if same as global),
         periods_days/power (full spectrum), horizon_limited (bool: within
-        10% of max_period_days -- likely a finite-window artifact).
+        10% of max_period_days -- likely a finite-window artifact),
+        top_peaks (up to `n_top` local maxima -- the global peak plus any
+        other `find_peaks`-significant one -- sorted by descending power;
+        each a dict with period_days and power_frac, that peak's power as
+        a percentage of the global peak's own power, so the first entry
+        is always 100%).
     """
     periods_days, power = _power_spectrum(t_days, E_j, max_period_days)
     if max_period_days is None:
@@ -68,7 +74,8 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
 
     if len(power) == 0:
         return {'period_global': np.nan, 'period_local_max': None,
-                'periods_days': periods_days, 'power': power, 'horizon_limited': False}
+                'periods_days': periods_days, 'power': power, 'horizon_limited': False,
+                'top_peaks': []}
 
     i_global = int(np.argmax(power))
     period_global = periods_days[i_global]
@@ -86,12 +93,23 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
     horizon_limited = (period_global >= 0.9 * max_period_days) or \
         (period_local_max is not None and period_local_max >= 0.9 * max_period_days)
 
+    # top_peaks: `find_peaks` alone can miss the global maximum itself
+    # (e.g. a spectrum still rising at the lowest resolvable frequency,
+    # so there's no interior local max there to detect) -- union it in
+    # before ranking so the reported #1 peak always matches period_global.
+    all_idx = np.union1d(peak_idx, [i_global])
+    order = all_idx[np.argsort(-power[all_idx])][:n_top]
+    top_peaks = [{'period_days': float(periods_days[idx]),
+                  'power_frac': float(100 * power[idx] / power[i_global])}
+                 for idx in order]
+
     return {
         'period_global': period_global,
         'period_local_max': period_local_max,
         'periods_days': periods_days,
         'power': power,
         'horizon_limited': horizon_limited,
+        'top_peaks': top_peaks,
     }
 
 

@@ -74,7 +74,6 @@ rsw_sphere/                 # the installable package
     plotting/                # rendering only -- dispersion, Hough, wave-set maps
 docs/                      # thesis PDF, code guide, per-topic documentation
 examples/                  # registries + driver configs (see examples/README.md)
-examples_legacy/           # scripts predating the driver refactor, still runnable
 outputs/                   # generated figures + cached trajectories (gitignored, reproducible)
 tests/                     # pytest suite (structural/exact invariants)
 run_linear_modes.py         # dispersion relation + per-mode Hough plots

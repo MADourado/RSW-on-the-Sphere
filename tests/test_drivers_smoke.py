@@ -83,7 +83,6 @@ def test_run_dynamics_smoke(tmp_path):
     assert all(np.isfinite(r["drift"]) for r in result.values())
     assert all(os.path.exists(r["trajectory_path"]) for r in result.values())
     assert all(os.path.exists(r["figure_path"]) for r in result.values())
-    assert os.path.exists(os.path.join(str(tmp_path), "tables", f"{spec.key}.csv"))
 
 
 @pytest.mark.slow
@@ -140,7 +139,8 @@ def test_run_sweep_wave_set_cli_smoke(tmp_path):
     output = str(tmp_path / "sweep_out.png")
     result = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "run_sweep.py"), "--wave-set", "tiny_quartet",
-         "--specs", str(specs_path), "--output", output, "--no-per-point"],
+         "--specs", str(specs_path), "--output", output, "--output-root", str(tmp_path),
+         "--no-per-point"],
         capture_output=True, text=True, cwd=_ROOT)
     assert result.returncode == 0, result.stderr
     assert os.path.exists(output)

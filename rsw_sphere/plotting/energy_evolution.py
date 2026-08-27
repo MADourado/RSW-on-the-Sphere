@@ -1,17 +1,17 @@
 """Energy-evolution figures for a wave set (triad/quartet/quintet).
 
 Panels plot each mode's own SHARE of the run's own mean total energy,
-100*E_j(t)/<E_total>_t -- not raw, unnormalized |A_j|^2 -- alongside
-E_total(t) on that same normalized scale, so its own fluctuation around
-100% (a wave set with 2+ constituent triads does not conserve energy
-exactly, see rsw_sphere.dynamics.wave_sets) stays directly visible.
-Normalizing this way (rather than by the initial total energy) is what
-makes panels comparable across different runs/wave sets with different
-total-energy budgets -- the same fix `rsw_sphere.utilities.efficiency
-.wave_set_efficiency` already applies to the efficiency diagnostic
-itself. The underlying data (`E`, `E_total`, `dEK`, ...) returned/cached
-elsewhere stays raw/unnormalized -- only this figure's own rendering is
-affected.
+E_j(t)/<E_total>_t (1.0 == the mean total) -- not raw, unnormalized
+|A_j|^2 -- alongside E_total(t) on that same normalized scale, so its own
+fluctuation around 1.0 (a wave set with 2+ constituent triads does not
+conserve energy exactly, see rsw_sphere.dynamics.wave_sets) stays
+directly visible. Normalizing this way (rather than by the initial total
+energy) is what makes panels comparable across different runs/wave sets
+with different total-energy budgets -- the same fix
+`rsw_sphere.utilities.efficiency.wave_set_efficiency` already applies to
+the efficiency diagnostic itself. The underlying data (`E`, `E_total`,
+`dEK`, ...) returned/cached elsewhere stays raw/unnormalized -- only this
+figure's own rendering is affected.
 
 ``plot_energy_evolution`` draws from an already-integrated trajectory
 (used by run_dynamics.py, which integrates via trajectory_cache). The
@@ -38,8 +38,8 @@ _OTHER_LINESTYLE = '--'
 def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
                            path: str = None, ax=None):
     """Draw each mode's own share of the run's own mean total energy,
-    100*E_j(t)/<E_total>_t, plus E_total(t) on that same normalized scale,
-    from an already-integrated trajectory.
+    E_j(t)/<E_total>_t (1.0 == the mean total), plus E_total(t) on that
+    same normalized scale, from an already-integrated trajectory.
 
     Parameters
     ----------
@@ -48,8 +48,10 @@ def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
         applied here for display only).
     E_total : ndarray (len(t),) -- raw, unnormalized.
     labels : sequence of str
-    modes : sequence of (m, n, alpha) -- for mode_color()
-    highlight : int or None -- index drawn solid; others dashed.
+    modes : sequence of (m, n, alpha) -- for mode_color()/mode_linestyle()
+    highlight : int or None -- index drawn solid with others dashed; if
+        None, every mode gets its own stable linestyle instead (see
+        ``mode_linestyle``).
     path, ax : see save_or_show.
 
     Returns (fig, ax, lines) -- lines: {label: Line2D}.
@@ -62,8 +64,8 @@ def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
         fig = ax.figure
 
     mean_total = E_total.mean()
-    E_share = 100 * E / mean_total
-    E_total_share = 100 * E_total / mean_total
+    E_share = E / mean_total
+    E_total_share = E_total / mean_total
 
     lines = {}
     for j, (m, n, alpha) in enumerate(modes):
@@ -71,7 +73,7 @@ def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
         lines[labels[j]], = ax.plot(t, E_share[:, j], label=labels[j], color=mode_color(m, n, alpha), ls=ls)
     lines['Total'], = ax.plot(t, E_total_share, label='Total', color=TOTAL_ENERGY_COLOR, ls=':', lw=1)
     ax.set_xlabel('Time (days)')
-    ax.set_ylabel('Share of mean total energy (%)')
+    ax.set_ylabel('Share of mean total energy (1.0 = total)')
     ax.legend(loc='upper right', fontsize=7)
 
     if own_fig:

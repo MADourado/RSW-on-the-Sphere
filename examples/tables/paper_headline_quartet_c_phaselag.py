@@ -58,18 +58,15 @@ rescale" is moot, per the 2026-08-12 finding).
 
 Run:
 
-    python examples/gate_i5_headline.py
+    python examples/tables/paper_headline_quartet_c_phaselag.py
 """
 import os
 import sys
 import warnings
 
-_ROOT = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
-_REPO = os.path.dirname(_ROOT)
-if _REPO not in sys.path:
-    sys.path.insert(0, _REPO)
 
 import numpy as np
 from scipy.signal import find_peaks, hilbert

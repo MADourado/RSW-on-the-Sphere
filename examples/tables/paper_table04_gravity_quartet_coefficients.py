@@ -13,17 +13,14 @@ one-off column pair.
 
 Run:
 
-    python examples/regen_gravity_quartet_tables.py
+    python examples/tables/paper_table04_gravity_quartet_coefficients.py
 """
 import os
 import sys
 
-_ROOT = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
-_REPO = os.path.dirname(_ROOT)
-if _REPO not in sys.path:
-    sys.path.insert(0, _REPO)
 
 import numpy as np
 
@@ -31,6 +28,8 @@ from rsw_sphere.physics import gamma_from_he, G
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
 from rsw_sphere.plotting.wave_set_table import wave_set_properties
+
+DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "tables", "paper_table04_gravity_quartet_coefficients.tex")
 
 
 def build_table(spec, label, tab_label):
@@ -45,7 +44,8 @@ def build_table(spec, label, tab_label):
     lines = [
         r'\begin{table}',
         r'    \centering',
-        rf'  % python examples/regen_gravity_quartet_tables.py (rsw_sphere.plotting.wave_set_table.wave_set_properties',
+        rf'  % python examples/tables/paper_table04_gravity_quartet_coefficients.py'
+        rf' (rsw_sphere.plotting.wave_set_table.wave_set_properties',
         r'    % + WaveSet.amplitudes_from_velocities, same generation discipline as Table \ref{tab: cap41})',
         r'    \begin{tabular}{|c|c|c|c|c|c|c|c|}\hline',
         r'    & Mode  & Freq. & Period (days) & Coeff.$_1$ &  Coeff.$_2$  & Zonal&$A_0$\\\hline',
@@ -93,6 +93,7 @@ if __name__ == "__main__":
         "cap43")
     print(tex43)
 
-    with open(os.path.join(_ROOT, "gravity_quartet_tables.tex"), 'w') as f:
+    os.makedirs(os.path.dirname(DEFAULT_OUTPUT), exist_ok=True)
+    with open(DEFAULT_OUTPUT, 'w') as f:
         f.write(tex42 + "\n\n" + tex43 + "\n")
-    print("\nSaved to examples/gravity_quartet_tables.tex")
+    print(f"\nSaved to {os.path.relpath(DEFAULT_OUTPUT, _ROOT)}")
