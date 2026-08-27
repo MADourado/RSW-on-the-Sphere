@@ -30,9 +30,7 @@ from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVE
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics
 from rsw_sphere.plotting.labels import _mode_label, mode_fs_label
 from rsw_sphere.plotting.energy_evolution import plot_energy_evolution
-from rsw_sphere.utilities.periods import dominant_periods
-from rsw_sphere.utilities.tables import write_csv
-from rsw_sphere.utilities.efficiency import wave_set_efficiency
+from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, write_diagnostics_files
 
 
 def _build_units(spec):
@@ -214,66 +212,46 @@ def main():
                                       plot=not args.no_plot, parallel=not args.no_parallel)
 
     results = run_dynamics(config)
-    # freq_rows_by_unit feeds the single consolidated frequency table printed
-    # after this loop (frequency units are kept consistent throughout --
-    # cycles/day, not rad/day -- so linear/observed/precession frequencies
-    # are all directly comparable at a glance). eff_cache is built here too
-    # (one value per mode per unit, same shape as the frequency table) so it
-    # can be folded into that same table instead of getting its own --
-    # reused as-is later by the --diagnostics pairwise/final tables below.
-    freq_rows_by_unit = {}
-    eff_cache = {}
-    diag_evol_rows = []
     run_dir = results["full"]["run_dir"]
     # run_label tags every diag_*.csv/diag_freq_novel_*.png filename below,
     # same convention as the evol_*.png figures (and, underneath that,
     # trajectory_cache.ic_label) -- one consistent naming scheme across
     # everything this run writes.
     run_label = os.path.basename(run_dir)
+
+    # compute_diagnostics_report always computes everything (cheap -- FFT
+    # and a handful of numpy calls, no integration) -- shared with
+    # run_sweep.py's own per-grid-point diagnostics so both source from the
+    # exact same engine. Printing/table selection below still follows
+    # args.diagnostics, same as before this was factored out.
+    report = compute_diagnostics_report(
+        results, spec, novelty_exclusion_frac=args.novelty_exclusion_frac,
+        novelty_min_prominence=args.novelty_min_prominence,
+        efficiency_drift_max=args.efficiency_drift_max)
+
+    # freq_rows_by_unit feeds the single consolidated frequency table printed
+    # after this loop (frequency units are kept consistent throughout --
+    # cycles/day, not rad/day -- so linear/observed/precession frequencies
+    # are all directly comparable at a glance).
+    freq_rows_by_unit = {}
     for idx, (name, r) in enumerate(results.items()):
         if idx > 0:
             print()
         print(f"[{name}] {r['title']}: Energy drift={r['drift']:.3e}, "
               f"dEK={dict(zip(r['labels'], r['dEK']))}")
-        # Linear period = 1/(2*|omega|) days -- omega is rad per nondim time
-        # unit, and 1 day = 4*pi nondim time units throughout this codebase
-        # (rsw_sphere.physics.days_from_nondim_time), so period_nondim =
-        # 2*pi/|omega| converts to period_days = period_nondim/(4*pi);
-        # linear frequency (cycles/day) is just its reciprocal, 2*|omega|.
-        period_results = [dominant_periods(r['t'], r['E'][:, j]) for j in range(len(r['labels']))]
+
         rows = []
-        for j, (lbl, w, pr, dEK) in enumerate(zip(r['labels'], r['omega'], period_results, r['dEK'])):
-            lin_period = 1.0 / (2 * abs(w))
-            lin_freq = 2 * abs(w)
+        insufficient_cycles = []
+        for lbl in r['labels']:
+            m = report['per_mode_unit'][name][lbl]
             peaks_str = "; ".join(
                 f"{p['period_days']:.3f} ({1.0 / p['period_days']:.4f}, {p['power_frac']:.0f}%)"
-                for p in pr['top_peaks']) or "n/a"
-            eff = wave_set_efficiency(r["E"][:, j], r["E_total"], r["drift"],
-                                       drift_max=args.efficiency_drift_max)
-            eff_cache[(name, lbl)] = eff
-            eff_str = f"{eff:.4f}" if np.isfinite(eff) else "n/a (drift)"
-            rows.append([lbl, name, f"{dEK:.4f}", eff_str, f"{lin_period:.3f}", f"{lin_freq:.4f}", peaks_str])
-
-            # diag_evol.csv: same data as the printed table above, but one
-            # column per value (peak1_period_days, peak1_freq_cpd, ...)
-            # instead of a packed "period (freq, pct); period (freq, pct)"
-            # string -- easier to load into a dataframe/spreadsheet.
-            evol_row = {
-                'wave_set': spec.key, 'unit': name, 'mode': lbl,
-                'dEK': float(dEK), 'efficiency': eff,
-                'linear_period_days': lin_period, 'linear_freq_cpd': lin_freq,
-            }
-            for k in range(3):
-                if k < len(pr['top_peaks']):
-                    p = pr['top_peaks'][k]
-                    evol_row[f'peak{k + 1}_period_days'] = p['period_days']
-                    evol_row[f'peak{k + 1}_freq_cpd'] = 1.0 / p['period_days']
-                    evol_row[f'peak{k + 1}_power_pct'] = p['power_frac']
-                else:
-                    evol_row[f'peak{k + 1}_period_days'] = ''
-                    evol_row[f'peak{k + 1}_freq_cpd'] = ''
-                    evol_row[f'peak{k + 1}_power_pct'] = ''
-            diag_evol_rows.append(evol_row)
+                for p in m['top_peaks']) or "n/a"
+            eff_str = f"{m['efficiency']:.4f}" if np.isfinite(m['efficiency']) else "n/a (drift)"
+            rows.append([lbl, name, f"{m['dEK']:.4f}", eff_str,
+                         f"{m['linear_period_days']:.3f}", f"{m['linear_freq_cpd']:.4f}", peaks_str])
+            if m['insufficient_cycles']:
+                insufficient_cycles.append(lbl)
         freq_rows_by_unit[name] = rows
 
         prec = {lbl: round(v / (2 * np.pi), 5) for lbl, v in r['precession_freq'].items()}
@@ -290,10 +268,8 @@ def main():
         # expected, physically correct case just as often as a real
         # under-resolved run.) Can't prove a longer run is unnecessary,
         # only flag when this one clearly isn't enough.
-        t_f_days = float(r['t'][-1] - r['t'][0])
-        insufficient_cycles = [lbl for lbl, pr in zip(r['labels'], period_results)
-                                if any(p['period_days'] * 4 > t_f_days for p in pr['top_peaks'][:2])]
         if insufficient_cycles:
+            t_f_days = float(r['t'][-1] - r['t'][0])
             print(f"  WARNING: t_f={t_f_days:.1f}d may not resolve enough cycles (heuristic, not "
                   f"conclusive -- consider a longer run before trusting these numbers)")
             print(f"    fewer than 4 cycles of a top-2 FFT peak resolved for: {insufficient_cycles}")
@@ -320,21 +296,14 @@ def main():
             print()
         for row in rows:
             print(freq_fmt.format(*row))
-    diag_evol_path = os.path.join(run_dir, f"diag_evol_{run_label}.csv")
-    write_csv(diag_evol_rows, diag_evol_path)
-    print(f"\n  table -> {diag_evol_path}")
+
+    paths = write_diagnostics_files(
+        results, report, run_dir, run_label, spec, diagnostics=args.diagnostics,
+        novelty_exclusion_frac=args.novelty_exclusion_frac,
+        novelty_min_prominence=args.novelty_min_prominence)
+    print(f"\n  table -> {paths['diag_evol']}")
 
     if args.diagnostics:
-        from rsw_sphere.utilities.pmeasure import pairwise_target_diagnostics, p_measure_combined_for_all_targets
-        from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_all_targets
-        from rsw_sphere.utilities.efficiency import efficiency_variation
-        from rsw_sphere.plotting.novelty_frequency_panel import novelty_frequency_figures
-
-        full = results["full"]
-        # eff_cache (mode, unit) -> efficiency was already computed in the
-        # main loop above and folded into the consolidated frequency table
-        # -- reused here as-is rather than a separate efficiency table.
-
         # Dynamical phase (rsw_sphere.dynamics.dynamical_phase): a property
         # of one constituent triad, not a mode -- no shared-triad ambiguity
         # to resolve (a triad is never shared the way a mode can be), so a
@@ -344,27 +313,12 @@ def main():
         # phase_variation is a ratio of two same-unit values, so it's
         # unaffected by the choice.
         print("\n=== dynamical phase (precession frequency, cycles/day) ===")
-        phase_rows = []
-        diag_prec_freq_rows = []
-        for triad_label, prec_full in full["precession_freq"].items():
-            prec_alone = None
-            for name, r in results.items():
-                if name != "full" and triad_label in r["precession_freq"]:
-                    prec_alone = r["precession_freq"][triad_label]
-                    break
-            if prec_alone is not None and abs(prec_alone) > 1e-12:
-                phase_variation = 100 * (abs(prec_full) - abs(prec_alone)) / abs(prec_alone)
-                var_str = f"{phase_variation:.2f}%"
-            else:
-                phase_variation = float("nan")
-                var_str = "n/a"
-            alone_str = f"{prec_alone / (2 * np.pi):.5f}" if prec_alone is not None else "n/a"
-            phase_rows.append([triad_label, f"{prec_full / (2 * np.pi):.5f}", alone_str, var_str])
-            diag_prec_freq_rows.append({
-                'triad': triad_label, 'precession_freq_full_cpd': prec_full / (2 * np.pi),
-                'precession_freq_alone_cpd': prec_alone / (2 * np.pi) if prec_alone is not None else '',
-                'phase_variation_pct': phase_variation,
-            })
+        phase_rows = [
+            [triad_label, f"{p['freq_full_cpd']:.5f}",
+             f"{p['freq_alone_cpd']:.5f}" if p['freq_alone_cpd'] is not None else "n/a",
+             f"{p['phase_variation_pct']:.2f}%" if np.isfinite(p['phase_variation_pct']) else "n/a"]
+            for triad_label, p in report['precession'].items()
+        ]
         phase_headers = ["triad", "precession_freq_full", "precession_freq_alone", "phase_variation"]
         phase_widths = [max(len(h), *(len(r[i]) for r in phase_rows)) if phase_rows else len(h)
                         for i, h in enumerate(phase_headers)]
@@ -373,41 +327,18 @@ def main():
         print(phase_fmt.format(*["-" * w for w in phase_widths]))
         for r in phase_rows:
             print(phase_fmt.format(*r))
-        diag_prec_freq_path = os.path.join(run_dir, f"diag_prec_freq_{run_label}.csv")
-        write_csv(diag_prec_freq_rows, diag_prec_freq_path)
-        print(f"  table -> {diag_prec_freq_path}")
+        if 'diag_prec_freq' in paths:
+            print(f"  table -> {paths['diag_prec_freq']}")
 
         print("\n=== pairwise diagnostics (full wave set vs. each containing sub-triad) ===")
-        rows = []
-        diag_pairwise_rows = []
-        for j, label in enumerate(full["labels"]):
-            amp_full = np.sqrt(full["E"][:, j])
-            eff_full = eff_cache[("full", label)]
-            for name, r in results.items():
-                if name == "full" or label not in r["labels"]:
-                    continue
-                j_sub = r["labels"].index(label)
-                amp_sub = np.sqrt(r["E"][:, j_sub])
-                d = pairwise_target_diagnostics(
-                    full["t"], amp_full, amp_sub, full["E_total"], r["E_total"],
-                    novelty_exclusion_frac=args.novelty_exclusion_frac,
-                    novelty_min_prominence=args.novelty_min_prominence)
-                eff_var = efficiency_variation(eff_full, eff_cache[(name, label)])
-                novelty_str = (f"{d['novelty_period']:.4f}d ({d['novelty_relevance']:.2f}%)"
-                               if np.isfinite(d['novelty_period']) else "none detected")
-                rows.append([
-                    label, name, f"{d['p_measure']:.2f}%",
-                    f"{eff_var:.2f}%" if np.isfinite(eff_var) else "n/a",
-                    f"{d['spectral_deviation']:.2f}%" if np.isfinite(d['spectral_deviation']) else "n/a",
-                    novelty_str,
-                ])
-                diag_pairwise_rows.append({
-                    'mode': label, 'vs': name, 'p_measure_pct': d['p_measure'],
-                    'efficiency_var_pct': eff_var, 'spectral_dev_pct': d['spectral_deviation'],
-                    'novelty_period_days': d['novelty_period'] if np.isfinite(d['novelty_period']) else '',
-                    'novelty_relevance_pct': d['novelty_relevance'] if np.isfinite(d['novelty_period']) else '',
-                })
-
+        rows = [
+            [d['mode'], d['vs'], f"{d['p_measure_pct']:.2f}%",
+             f"{d['efficiency_var_pct']:.2f}%" if np.isfinite(d['efficiency_var_pct']) else "n/a",
+             f"{d['spectral_dev_pct']:.2f}%" if np.isfinite(d['spectral_dev_pct']) else "n/a",
+             (f"{d['novelty_period_days']:.4f}d ({d['novelty_relevance_pct']:.2f}%)"
+              if np.isfinite(d['novelty_period_days']) else "none detected")]
+            for d in report['pairwise']
+        ]
         headers = ["mode", "vs.", "p_measure", "efficiency_var", "spectral_dev", "novelty_period (%)"]
         widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h)
                   for i, h in enumerate(headers)]
@@ -416,9 +347,8 @@ def main():
         print(row_fmt.format(*["-" * w for w in widths]))
         for r in rows:
             print(row_fmt.format(*r))
-        diag_pairwise_path = os.path.join(run_dir, f"diag_pairwise_{run_label}.csv")
-        write_csv(diag_pairwise_rows, diag_pairwise_path)
-        print(f"  table -> {diag_pairwise_path}")
+        if 'diag_pairwise' in paths:
+            print(f"  table -> {paths['diag_pairwise']}")
 
         # "Final" diagnostics: one row per target mode, considering every
         # containing sub-triad at once instead of one pairwise comparison
@@ -431,32 +361,16 @@ def main():
         # read against the same reference -- their signs can still
         # differ, though (see efficiency_variation's own docstring).
         print("\n=== final diagnostics (per target, across all containing sub-triads) ===")
-        pfinal = p_measure_combined_for_all_targets(results)
-        novelty_final = novelty_combined_for_all_targets(
-            results, min_prominence=args.novelty_min_prominence,
-            exclusion_frac=args.novelty_exclusion_frac)
-        final_rows = []
-        diag_final_rows = []
-        for label in full["labels"]:
-            pf = pfinal[label]
-            p_str = f"{pf['p_measure']:.2f}%" if np.isfinite(pf['p_measure']) else "n/a"
-            ref_str = pf['reference'] or "none"
-            eff_var_final = (efficiency_variation(eff_cache[("full", label)], eff_cache[(ref_str, label)])
-                              if pf['reference'] else np.nan)
-            eff_var_str = f"{eff_var_final:.2f}%" if np.isfinite(eff_var_final) else "n/a"
-            sd_str = f"{pf['spectral_deviation']:.2f}%" if np.isfinite(pf['spectral_deviation']) else "n/a"
-            peaks = novelty_final[label]['novel_peaks']
-            novelty_str = (f"{peaks[0]['period_days']:.4f}d ({peaks[0]['relevance_pct']:.2f}%)"
-                           if peaks else "none detected")
-            final_rows.append([label, p_str, eff_var_str, sd_str, ref_str, novelty_str])
-            diag_final_rows.append({
-                'mode': label, 'p_measure_final_pct': pf['p_measure'],
-                'efficiency_var_final_pct': eff_var_final, 'spectral_dev_final_pct': pf['spectral_deviation'],
-                'vs': ref_str,
-                'novelty_period_final_days': peaks[0]['period_days'] if peaks else '',
-                'novelty_relevance_final_pct': peaks[0]['relevance_pct'] if peaks else '',
-            })
-
+        final_rows = [
+            [d['mode'],
+             f"{d['p_measure_final_pct']:.2f}%" if np.isfinite(d['p_measure_final_pct']) else "n/a",
+             f"{d['efficiency_var_final_pct']:.2f}%" if np.isfinite(d['efficiency_var_final_pct']) else "n/a",
+             f"{d['spectral_dev_final_pct']:.2f}%" if np.isfinite(d['spectral_dev_final_pct']) else "n/a",
+             d['vs'] or "none",
+             (f"{d['novelty_period_final_days']:.4f}d ({d['novelty_relevance_final_pct']:.2f}%)"
+              if np.isfinite(d['novelty_period_final_days']) else "none detected")]
+            for d in report['final']
+        ]
         final_headers = ["mode", "p_measure_final", "efficiency_var_final", "spectral_dev_final",
                           "vs.", "novelty_period_final (%)"]
         final_widths = [max(len(h), *(len(r[i]) for r in final_rows)) if final_rows else len(h)
@@ -466,13 +380,10 @@ def main():
         print(final_fmt.format(*["-" * w for w in final_widths]))
         for r in final_rows:
             print(final_fmt.format(*r))
-        diag_final_path = os.path.join(run_dir, f"diag_final_{run_label}.csv")
-        write_csv(diag_final_rows, diag_final_path)
-        print(f"  table -> {diag_final_path}")
+        if 'diag_final' in paths:
+            print(f"  table -> {paths['diag_final']}")
 
-        novelty_paths = novelty_frequency_figures(
-            results, run_dir, filename_suffix=run_label, min_prominence=args.novelty_min_prominence,
-            exclusion_frac=args.novelty_exclusion_frac)
+        novelty_paths = paths.get('novelty', [])
         print(f"\n=== novelty-frequency spectrum figures ({len(novelty_paths)}) ===")
         for p in novelty_paths:
             print(f"  {p}")

@@ -141,9 +141,11 @@ python run_linear_modes.py --run-all
 # plus each sub-triad, each cached and plotted separately)
 python run_dynamics.py --wave-set quartet_rossby_kelvin
 
-# sweep 1-2 modes' initial velocities + diagnostics (P-measure, filtering
-# error, frequency shift, efficiency, low-frequency energy, precession) --
-# reads the wave set's own registry entry
+# sweep 1-2 modes' initial velocities + diagnostics (efficiency, dominant
+# frequency/period, low-frequency energy, dynamical phase, P-measure,
+# efficiency/spectral-deviation/novelty variation) -- one shared
+# vocabulary for 1D (line plots) and 2D (heatmaps); reads the wave set's
+# own registry entry
 python run_sweep.py --wave-set quartet_rossby_kelvin
 
 # screen a list of candidate modes filling one slot of a registered wave set
@@ -168,14 +170,17 @@ e.g. `examples/wave_sets_custom.yaml`). See [`examples/`](examples/) for
 thesis figures/tables.
 
 `run_sweep.py --wave-set KEY` is a general driver for parameter sweeps
-over a registered wave set (precession frequency, P-measure, or
-efficiency vs. a swept velocity) — a registry `sweep:` block per sweep
-instead of a new script per sweep; see `docs/wave_sets.md` §6.1. Every
-swept trajectory is cached under `outputs/trajectories/`, so re-running
-the same sweep is fast. It writes its figure to the registry entry's own
-`output:` path under `outputs/`; copying a finished PNG into the paper
-repo's `Figures/` is a separate, manual step (as with every other
-figure-generating script in this repository).
+over a registered wave set (dynamical phase, efficiency, dominant
+frequency/period, low-frequency energy, or P-measure/efficiency/spectral-
+deviation/novelty variation vs. one or two swept velocities) — a registry
+`sweep:` block per sweep instead of a new script per sweep; see
+`docs/wave_sets.md` §6.1. Every swept trajectory is cached under
+`outputs/trajectories/`, so re-running the same sweep is fast. Each
+requested diagnostic writes its own
+`outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv` —
+there's no single "the" output for a sweep to override. Copying a
+finished PNG into the paper repo's `Figures/` is a separate, manual step
+(as with every other figure-generating script in this repository).
 
 The standalone dispersion-relation figure is documented separately in
 [`docs/dispersion_relation.md`](docs/dispersion_relation.md) (also runnable

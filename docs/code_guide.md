@@ -109,20 +109,30 @@ tables saved as CSV alongside the figures.
     python run_dynamics.py --wave-set quartet_rossby_kelvin
 
 ### `run_sweep.py`
-Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). Calls
-`run_dynamics` per grid point (cache + optional per-point figure, per
-`sweep.save_point_figures`), then computes/plots every diagnostic in
-`sweep.diagnostics`: 1D supports `precession` only
-(`rsw_sphere.utilities.precession.precession_frequency_efficiency`,
-natively 1D); 2D supports `p_measure`/`p_measure_final`/
-`novelty_period`/`efficiency`/`low_frequency_energy` via
-`rsw_sphere.utilities.registry.sweep_2d`.
-Swept/target modes for a 2D sweep default to the wave set's own "private"
-modes (`WaveSetSpec.shared_and_private_modes()`). `--wave-set KEY` reads
-`sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad` straight
-from that wave set's own `wave_sets_default.yaml` entry -- a wave set
-not yet worth adding to the default registry can be swept via `--specs
-path.yaml` instead (same registry schema).
+Sweeps 1 or 2 modes' velocities (`config.sweep.axes`). One `run_dynamics()`
+call per grid point (via `rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`,
+no separate integration path per dimensionality), then plots/writes every
+diagnostic in `sweep.diagnostics` -- one shared vocabulary for 1D and 2D:
+`efficiency`/`dominant_freq`/`dominant_period`/`low_frequency_energy`
+(1D: one line per (mode, unit); 2D: one heatmap per mode), `dynamical_phase`
+(1D: one line per triad; 2D: one heatmap per triad), and the "final"
+scalars `p_measure` (alias `energy_var`)/`efficiency_var`/`spectral_dev_var`/
+`novel_freq`/`novel_period` (one line/heatmap per mode). `diagnostics:
+[all]` expands to every name. Swept/target modes for a 2D sweep default
+to the wave set's own "private" modes (`WaveSetSpec.shared_and_private_modes()`).
+`--wave-set KEY` reads `sweep`/`tf_days`/`h`/`plot` straight from that
+wave set's own `wave_sets_default.yaml` entry -- a wave set not yet
+worth adding to the default registry can be swept via `--specs
+path.yaml` instead (same registry schema). Every diagnostic writes its
+own `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv`
+-- there's no single "the" output for a sweep to override. A composite
+figure combining several diagnostics (e.g. the paper's own
+precession-frequency-and-efficiency figure) is a separate script's job
+(`examples/figures/paper_figure006_quartet_a_precession.py`), not
+something this driver special-cases. See `docs/wave_sets.md` §6.1 for
+the full vocabulary and for the *separate*, older 2D-only engine
+(`rsw_sphere.utilities.registry.sweep_2d`) that `run_sweep_sets.py` and
+`examples/figures/_triad_panel_row.py` still call directly.
 
     python run_sweep.py --wave-set quartet_rossby_kelvin
     python run_sweep.py --wave-set quartet_rh_preference

@@ -92,14 +92,16 @@ def test_run_dynamics_smoke(tmp_path):
 def test_run_sweep_1d_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rh_preference"]
     sweep = SweepConfig(axes=(SweepAxis(mode="d", min=80.0, max=90.0),), n_grid=2,
-                         diagnostics=("precession",), save_point_figures=False)
+                         diagnostics=("efficiency", "dynamical_phase"), save_point_figures=False)
     config = RunConfig.from_wave_set(spec, tf_days=2.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
-    output = str(tmp_path / "sweep_1d.png")
-    result = run_sweep(config, output, run_per_point=False)
-    assert os.path.exists(output)
-    assert len(result["u_values"]) == 2
+    result = run_sweep(config, plot_per_point=False)
+    assert set(result) == {"efficiency", "dynamical_phase"}
+    for r in result.values():
+        assert os.path.exists(r["path"])
+        assert os.path.exists(r["csv_path"])
+        assert len(r["u_values"]) == 2
 
 
 @pytest.mark.slow
@@ -111,10 +113,13 @@ def test_run_sweep_2d_smoke(tmp_path):
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
-    output = str(tmp_path / "sweep_2d.png")
-    result = run_sweep(config, output, run_per_point=False)
-    assert os.path.exists(output)
-    assert result["P"].shape == (2, 2, 2)
+    result = run_sweep(config, plot_per_point=False)
+    assert set(result) == {"p_measure"}
+    assert os.path.exists(result["p_measure"]["path"])
+    assert os.path.exists(result["p_measure"]["csv_path"])
+    assert result["p_measure"]["U1"].shape == (2, 2)
+    # one heatmap panel per mode -- quartet_rossby_kelvin has 4
+    assert len(result["p_measure"]["series"]) == 4
 
 
 @pytest.mark.slow
@@ -139,14 +144,17 @@ def test_run_sweep_wave_set_cli_smoke(tmp_path):
             diagnostics: [p_measure]
           plot: {title: "tiny test"}
         """))
-    output = str(tmp_path / "sweep_out.png")
     result = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "run_sweep.py"), "--wave-set", "tiny_quartet",
-         "--specs", str(specs_path), "--output", output, "--output-root", str(tmp_path),
-         "--no-per-point"],
+         "--specs", str(specs_path), "--output-root", str(tmp_path),
+         "--no-plot-per-point"],
         capture_output=True, text=True, cwd=_ROOT)
     assert result.returncode == 0, result.stderr
-    assert os.path.exists(output)
+    out_dir = tmp_path / "sweep" / "tiny_quartet"
+    pngs = list(out_dir.glob("sweep_diag_p_measure_*.png"))
+    csvs = list(out_dir.glob("sweep_diag_p_measure_*.csv"))
+    assert len(pngs) == 1, list(out_dir.iterdir())
+    assert len(csvs) == 1
 
 
 def test_run_sweep_requires_wave_set(tmp_path):

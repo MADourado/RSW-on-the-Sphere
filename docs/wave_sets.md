@@ -1,11 +1,55 @@
 # Quartet/quintet ("wave set") tools
 
-**Driver interface note (updated 2026-08-26):** `run_sweep.py`'s
-diagnostic switch is `sweep.diagnostics: [...]` (values: `p_measure`,
-`p_measure_final`, `novelty_period`, `efficiency`,
-`low_frequency_energy` for a 2D sweep; `precession` for 1D) -- any `quartet_diagnostics`
-mentioned below is stale, from before that switch existed. The wave-set
-registry moved to repo-root `wave_sets_default.yaml` (was
+**Driver interface note (updated 2026-08-27):** `run_sweep.py` now has
+**one diagnostic vocabulary for both 1D and 2D sweeps**, `sweep.diagnostics:
+[...]`, all sourced from `run_dynamics.py`'s own per-grid-point results via
+`rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report` --
+`efficiency`/`dominant_freq`/`dominant_period`/`low_frequency_energy`
+(1D: one line per (mode, unit); 2D: one heatmap per mode, `full` unit's
+own value only), `dynamical_phase` (1D: one line per triad; 2D: one
+heatmap per triad), and the "final"/combined-across-sub-triads scalars
+`p_measure` (alias `energy_var`)/`efficiency_var`/`spectral_dev_var`/
+`novel_freq`/`novel_period` (also aliased from `novelty_freq`/
+`novelty_period` -- one line/heatmap per mode; skipped with a warning
+for a plain triad, which has no sub-triad to compare against).
+`diagnostics: [all]` expands to every name above. Output:
+`outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv`
+either way (1D `sweep_label`: swept mode + range; 2D: both). There is no
+single "the output" for a sweep to override any more -- every diagnostic
+manages its own path; `--no-plot-per-point` skips every per-grid-point
+file output (each grid point otherwise also writes its own full
+`run_dynamics.py --diagnostics`-equivalent bundle under its own
+`outputs/dynamics/<key>/<run_label>/`).
+
+The **old** 2D-only engine (`rsw_sphere.utilities.registry.sweep_2d`,
+`pmeasure.wave_set_diagnostics_sweep`, `functional.functional_diagnostics_sweep`
+-- `p_measure`/`p_measure_final`/`novelty_period` as *pairwise*,
+single-fixed-`reference_triad` diagnostics, distinct in meaning from the
+same-spelled names above) **still exists and is still load-bearing** --
+`run_sweep.py` itself no longer calls it, but `run_sweep_sets.py` (candidate
+screening) and `examples/figures/_triad_panel_row.py` (backing
+`paper_figure003`/`paper_figure004`) do, directly. Don't delete it when
+touching `run_sweep.py`'s own engine -- confirmed live during the 2026-08-27
+port (missed on the first pass of that work, since neither of those two
+consumers goes through `paper_figure010`/`011`, the ones checked at the
+time).
+
+`precession`, the previous legacy dual-axis frequency+efficiency
+diagnostic (its own independent trajectory loop, kept separate to protect
+`paper_figure006_quartet_a_precession.py`), is retired as a `run_sweep.py`
+diagnostic name entirely -- that figure is now composed by
+`paper_figure006` itself, which requests `[dynamical_phase, efficiency]`
+from the unified engine (one shared computation) and builds its own
+dual-axis figure from the two results, reusing
+`rsw_sphere.plotting.precession_plot.plot_dual_axis_frequency_efficiency`
+unchanged. That render function, and the compute behind it
+(`rsw_sphere.utilities.precession.precession_frequency_efficiency`), are
+themselves untouched and still back the independent `rsw-waveset-precession`
+CLI and `examples/raphaldini2022_compare/precession_comparison.py`
+(Quartet B) -- neither goes through `run_sweep.py`.
+
+Any `quartet_diagnostics` mentioned below is stale, from before that
+switch existed. The wave-set registry moved to repo-root `wave_sets_default.yaml` (was
 `examples/wave_sets_section_3.yaml`) and now also covers plain triads
 (the §2.2 triad registry's own 4 headline triads are registered there
 too). `run_linear_modes.py`/`run_dynamics.py` read the registry directly
@@ -484,10 +528,12 @@ Re-running the same sweep a second time reads from cache rather than
 re-integrating. `precession_frequency_efficiency`'s own optional
 `sweep_cache_path` additionally caches the sweep's summary arrays
 (frequency/efficiency/individual-phase-slope vs. swept velocity) so a
-re-plot never re-derives them from 45+ trajectory loads --
-`run_sweep.py` (§6.1) does not currently pass this (each point still
-reads its own cached trajectory, just doesn't re-derive the summary
-arrays cheaply); wire it up if a sweep's own re-plot turnaround matters.
+re-plot never re-derives them from 45+ trajectory loads. `run_sweep.py`
+(§6.1) no longer calls this function at all (its own `dynamical_phase`/
+`efficiency` diagnostics go through the unified `compute_diagnostics_report`
+engine instead) -- `individual_phase`/`low_freq_period_cutoff_days` (the
+Raphaldini-reproduction extras) remain available only through this
+module directly, e.g. `examples/raphaldini2022_compare/precession_comparison.py`.
 
 ```bash
 python rsw_sphere/plotting/precession_plot.py outputs/figures/wave_sets/quartet_rh_preference_precession.png --wave-set quartet_rh_preference --sweep-mode d --target c
@@ -504,65 +550,87 @@ al. 2022's own Fig. 3 layout).
 ### 6.1. `run_sweep.py` (repo root) — general sweep driver
 
 Reads a `RunConfig` (registry key, `rsw_sphere.dynamics.run_config`)
-with a `sweep:` block naming 1-2 modes to sweep and which
-diagnostic(s) to compute, and produces a cached `.npz` + a figure — a
-dispatcher over the sweep functions above (`registry.sweep_2d` for 2D,
-`precession_frequency_efficiency` for 1D), not a reimplementation of
-their math. Replaces the need for a new bespoke `examples/*.py` script
-every time someone wants a new sweep combination. `--wave-set KEY` reads
-the `sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad`
-keys straight from that wave set's own `wave_sets_default.yaml` entry
-(e.g. `quartet_rh_preference`'s own sweep, the migrated replacement for
-`examples_legacy/legacy/precession_sweep_figure.py`'s own
-`precession_sweep_figures.yaml` entry, verified to reproduce that
-script's output pixel-for-pixel) — no separate config file needed; a
-wave set not yet worth adding to the default registry can be swept via
-`--specs path.yaml` instead (same registry schema, e.g.
-`examples/wave_sets_custom.yaml`).
+with a `sweep:` block naming 1-2 modes to sweep and which diagnostic(s)
+to compute. One `run_dynamics()` call per grid point
+(`rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`),
+parallelized across grid points, feeds every diagnostic -- 1D and 2D
+share the exact same per-point compute; only the rendering differs (line
+plot vs. heatmap). `--wave-set KEY` reads the `sweep`/`tf_days`/`h`/`plot`
+keys straight from that wave set's own `wave_sets_default.yaml` entry --
+no separate config file needed; a wave set not yet worth adding to the
+default registry can be swept via `--specs path.yaml` instead (same
+registry schema, e.g. `examples/wave_sets_custom.yaml`).
 
 ```bash
-python run_sweep.py --wave-set quartet_rh_preference
+python run_sweep.py --wave-set quartet_rossby_kelvin
 ```
 
-**2D sweeps** (`sweep.axes` has 2 entries) dispatch to
-`rsw_sphere.utilities.registry.sweep_2d`, wrapping §5's
-`wave_set_diagnostics_sweep` (`p_measure`/`p_measure_final`/
-`novelty_period`) and §-less `functional_diagnostics_sweep`
-(`efficiency`/`low_frequency_energy`) behind one shared diagnostic list
--- one combined panel (one row per requested diagnostic, one column per
-swept mode, which doubles as the target). If `sweep.axes` is omitted
-entirely, it auto-derives from the wave set's own "private" modes
-(`WaveSetSpec.shared_and_private_modes()` -- a mode common to every
-constituent triad is "shared" and held fixed at its own registered
-velocity; a mode private to exactly one triad is a swept axis/target),
-so an ordinary quartet needs no `axes` at all:
+**Diagnostic vocabulary** (`sweep.diagnostics: [...]`, same names for 1D
+and 2D): `efficiency`/`dominant_freq`/`dominant_period`/`low_frequency_energy`
+(1D: one line per (mode, unit); 2D: one heatmap per mode, `full` unit's
+own value only -- a heatmap grid doesn't have a line plot's spare room
+for a per-unit breakdown), `dynamical_phase` (1D: one line per triad; 2D:
+one heatmap per triad), and the "final"/combined-across-sub-triads
+scalars `p_measure` (alias `energy_var`)/`efficiency_var`/`spectral_dev_var`/
+`novel_freq`/`novel_period` (also aliased from `novelty_freq`/
+`novelty_period`, despite those names also belonging to a *different*
+2D-only pairwise diagnostic elsewhere, see below -- one line/heatmap per
+mode, combining every containing sub-triad the same way
+`run_dynamics.py --diagnostics`'s own "final diagnostics" table does;
+undefined, warned and skipped for a plain triad with no sub-triad to
+compare against). `diagnostics: [all]` expands to every name above.
+Output: `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png`
++ a matching long/tidy `.csv`, one pair per requested diagnostic -- there
+is no single "the" output for a sweep to override, every diagnostic
+manages its own path, and each write prints a `figure ->`/`table ->`
+line. `--no-plot-per-point` skips every per-grid-point file output
+(each grid point otherwise also writes its own full
+`run_dynamics.py --diagnostics`-equivalent bundle under its own
+`outputs/dynamics/<key>/<run_label>/`).
+
+If `sweep.axes` is omitted entirely, it auto-derives from the wave set's
+own "private" modes (`WaveSetSpec.shared_and_private_modes()` -- a mode
+common to every constituent triad is "shared" and held fixed at its own
+registered velocity; a mode private to exactly one triad is a swept
+axis/target), so an ordinary quartet needs no `axes` at all:
 
 ```yaml
 # inside wave_sets_default.yaml's own quartet_rossby_kelvin entry:
 sweep:
   diagnostics: [p_measure]
   n_grid: 10
-output: outputs/figures/wave_sets/quartet_rossby_kelvin_diagnostics.png
-```
-
-```bash
-python run_sweep.py --wave-set quartet_rossby_kelvin
 ```
 
 Only the 2-private-mode case (an ordinary quartet) auto-derives --
 otherwise (a quintet's 3 private modes, or any other pair) pass
 `sweep.axes` explicitly, e.g.
 `axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]`.
-This panel is a draft for analysis, not copied into the paper repository
-(see the module docstring convention above).
+These figures are a draft for analysis, not copied into the paper
+repository (see the module docstring convention above).
 
-**1D sweeps** (`sweep.axes` has 1 entry) only support
-`sweep.diagnostics: [precession]` -- `precession_frequency_efficiency`,
-already natively 1D. `target_mode`/`plot_triad` (top-level keys, sibling
-to `sweep:`) pick which mode's own efficiency to report and which
-constituent triad to plot, respectively -- see `quartet_rh_preference`'s
-own `wave_sets_default.yaml` entry for a worked example. See
-`run_sweep.py`'s own module docstring for the full config schema.
+**A composite figure combining two or more diagnostics** (e.g. the
+paper's own precession-frequency-and-efficiency figure) is a separate,
+paper-specific script's job, not something `run_sweep.py` special-cases
+-- see `examples/figures/paper_figure006_quartet_a_precession.py`, which
+calls `run_sweep()` once for `[dynamical_phase, efficiency]` (one shared
+computation) and composes its own dual-axis figure from the two results,
+reusing `rsw_sphere.plotting.precession_plot.plot_dual_axis_frequency_efficiency`
+unchanged.
+
+**A separate, older 2D-only engine still exists and is still
+load-bearing**, just no longer called by `run_sweep.py`:
+`rsw_sphere.utilities.registry.sweep_2d` (wrapping §5's
+`wave_set_diagnostics_sweep` and `functional_diagnostics_sweep`) computes
+`p_measure`/`p_measure_final`/`novelty_period`/`efficiency`/
+`low_frequency_energy` as their original, *pairwise*
+(single-fixed-`reference_triad`) or single-trajectory-only meanings --
+distinct from the same-spelled names above, which are always the "final"
+combined meaning now. `run_sweep_sets.py` (candidate-mode screening) and
+`examples/figures/_triad_panel_row.py` (backing `paper_figure003`/
+`paper_figure004`) both call it directly -- don't remove it when touching
+`run_sweep.py`'s own engine.
+
+See `run_sweep.py`'s own module docstring for the full config schema.
 
 ### 6.2. `rsw_sphere/dynamics/trajectory_cache.py` — raw trajectory caching
 
