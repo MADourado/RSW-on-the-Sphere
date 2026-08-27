@@ -134,7 +134,6 @@ quartet_rossby_kelvin:
   settings:
     tf_days: 20
     h: 0.01
-    n_grid: 10
 ```
 
 Mode keys are **symbolic letters** (`a`, `b`, `c`, ...), not positional
@@ -150,7 +149,7 @@ wavenumber constraint for you.
 | `triads` | list of constituent triads; each names `sum` + `members` by mode letter, plus an optional `display_label` and documentary `triad_key` (pointing at a §2.2 triad registry role-key, if this constituent triad happens to also be independently registered there — not resolved automatically) |
 | `reference_triad` | index into `triads` — the default P-measure denominator for a mode that belongs to it (see `rsw_sphere/utilities/pmeasure.py`'s module docstring for the full per-mode rule) |
 | `h_e` | equivalent height, m |
-| `settings` | per-wave-set `tf_days`/`h`/`n_grid`, read by the `examples/figures/paper_figureNNN_*.py` scripts (§7) — the single source of truth for how long/finely to integrate this particular configuration, not a shared default |
+| `settings` | per-wave-set `tf_days`/`h`, read by the `examples/figures/paper_figureNNN_*.py` scripts (§7) — the single source of truth for how long/finely to integrate this particular configuration, not a shared default. (Not the Hough-eigenproblem truncation order `N` -- every driver hardcodes `N=10`, independent of any registry entry.) |
 
 **Velocity caps**: Rossby (RH) mode velocities up to 100 m/s, gravity
 (EG/WG) mode velocities up to 50 m/s
@@ -163,9 +162,9 @@ wavenumber constraint for you.
 2. Run the physics gate on it (§0) — `python rsw_sphere/utilities/check_wave_set_physics.py --wave-set your_new_key`.
    Fix any hard-check failure before proceeding; read the C6 report even
    though it can't fail the run.
-3. Add `tf_days`/`h`/`n_grid` to its `settings` block based on its own
-   nonlinear exchange period, not a copy-pasted default — an integration
-   horizon shorter than the true exchange period silently under-reports
+3. Add `tf_days`/`h` to its `settings` block based on its own nonlinear
+   exchange period, not a copy-pasted default — an integration horizon
+   shorter than the true exchange period silently under-reports
    `ΔEK`/`P` without erroring (the exact failure mode logged for §2.2's
    triad registry; the same risk applies here).
 4. Regenerate its table (§2) and figures (§3-5) in isolation first
@@ -504,7 +503,7 @@ al. 2022's own Fig. 3 layout).
 
 ### 6.1. `run_sweep.py` (repo root) — general sweep driver
 
-Reads a `RunConfig` (registry key or inline `modes:`, `rsw_sphere.dynamics.run_config`)
+Reads a `RunConfig` (registry key, `rsw_sphere.dynamics.run_config`)
 with a `sweep:` block naming 1-2 modes to sweep and which
 diagnostic(s) to compute, and produces a cached `.npz` + a figure — a
 dispatcher over the sweep functions above (`registry.sweep_2d` for 2D,
@@ -516,9 +515,10 @@ keys straight from that wave set's own `wave_sets_default.yaml` entry
 (e.g. `quartet_rh_preference`'s own sweep, the migrated replacement for
 `examples_legacy/legacy/precession_sweep_figure.py`'s own
 `precession_sweep_figures.yaml` entry, verified to reproduce that
-script's output pixel-for-pixel) — no separate config file needed;
-`--config path.yaml` (a standalone YAML) is only for an ad-hoc sweep not
-worth registering.
+script's output pixel-for-pixel) — no separate config file needed; a
+wave set not yet worth adding to the default registry can be swept via
+`--specs path.yaml` instead (same registry schema, e.g.
+`examples/wave_sets_custom.yaml`).
 
 ```bash
 python run_sweep.py --wave-set quartet_rh_preference

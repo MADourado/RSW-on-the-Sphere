@@ -122,7 +122,7 @@ def run_family(family_key, yaml_path=DEFAULT_FAMILIES_PATH, tf_days=None):
         r = triad_efficiency_point(
             gamma, mode_a, mode_b, mode_c, spec.velocities, target=1,
             h_e=spec.h_e, tf_days=tf_days if tf_days is not None else settings.get('tf_days', 30.0),
-            h=settings.get('h', 0.01), N=settings.get('n_grid', 10), deg=settings.get('deg', 300))
+            h=settings.get('h', 0.01), N=10, deg=settings.get('deg', 300))
         r['n'] = mode_b[1]
         results.append(r)
     return results
@@ -169,7 +169,7 @@ if __name__ == "__main__":
         long_r = triad_efficiency_point(
             gamma, mode_a, mode_b, mode_c, spec.velocities, target=1,
             h_e=spec.h_e, tf_days=8 * base_tf,
-            h=settings.get('h', 0.01), N=settings.get('n_grid', 10), deg=settings.get('deg', 300))
+            h=settings.get('h', 0.01), N=10, deg=settings.get('deg', 300))
         long_run = np.real(long_r['efficiency'])
         moved = abs(long_run - base) > max(0.02 * abs(long_run), 1e-4)
         flag = " [NOT CONVERGED]" if moved else ""

@@ -132,7 +132,7 @@ def test_run_sweep_wave_set_cli_smoke(tmp_path):
             - {sum: a, members: [b, c], display_label: "Triad 1", triad_key: null}
             - {sum: a, members: [b, d], display_label: "Triad 2", triad_key: null}
           reference_triad: 0
-          settings: {tf_days: 1, h: 0.05, n_grid: 10}
+          settings: {tf_days: 1, h: 0.05}
           sweep:
             axes: [{mode: c, min: 0.0, max: 20.0}, {mode: d, min: 0.0, max: 10.0}]
             n_grid: 2
@@ -149,7 +149,7 @@ def test_run_sweep_wave_set_cli_smoke(tmp_path):
     assert os.path.exists(output)
 
 
-def test_run_sweep_requires_config_or_wave_set(tmp_path):
+def test_run_sweep_requires_wave_set(tmp_path):
     result = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "run_sweep.py")],
         capture_output=True, text=True, cwd=_ROOT)

@@ -1,5 +1,4 @@
-"""RunConfig/SweepConfig parsing: registry key, inline wave set, and
-auto-derived sweep axes."""
+"""RunConfig/SweepConfig parsing: registry key and auto-derived sweep axes."""
 import pytest
 import yaml
 
@@ -21,7 +20,7 @@ _TINY_REGISTRY = {
             {"sum": "a", "members": ["b", "d"]},
         ],
         "reference_triad": 0,
-        "settings": {"tf_days": 20, "h": 0.01, "n_grid": 10},
+        "settings": {"tf_days": 20, "h": 0.01},
         # sweep-specific tf_days deliberately differs from settings.tf_days,
         # matching quartet_rh_preference's own registry entry (run_dynamics.py
         # needs a short horizon, its own precession sweep needs a long one).
@@ -46,52 +45,22 @@ def test_has_subtriads_true_for_quartet_false_for_triad():
     assert specs["quartet_rossby_kelvin"].has_subtriads() is True
 
 
-def test_from_yaml_registry_key(tmp_path):
-    p = tmp_path / "config.yaml"
-    p.write_text(yaml.safe_dump({"wave_set": "quartet_rossby_kelvin", "tf_days": 5, "h": 0.02}))
-    config = RunConfig.from_yaml(str(p))
-    assert config.wave_set_spec.key == "quartet_rossby_kelvin"
-    assert config.tf_days == 5
-    assert config.h == 0.02
+def test_sweep_axes_auto_derived_from_private_modes():
+    from rsw_sphere.dynamics.run_config import _sweep_from_dict
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
+    sweep = _sweep_from_dict({"n_grid": 5, "diagnostics": ["p_measure"]}, spec)
+    assert {a.mode for a in sweep.axes} == {"c", "d"}
+    assert sweep.n_grid == 5
+    assert sweep.diagnostics == ("p_measure",)
 
 
-def test_from_yaml_inline_wave_set_is_single_triad(tmp_path):
-    p = tmp_path / "config.yaml"
-    p.write_text(yaml.safe_dump({
-        "modes": {
-            "a": {"m": 4, "n": 5, "alpha": 3, "u": 30.0},
-            "b": {"m": 3, "n": 4, "alpha": 3, "u": 30.0},
-            "c": {"m": 1, "n": 2, "alpha": 3, "u": 0.0},
-        },
-        "triads": [{"sum": "a", "members": ["b", "c"]}],
-        "tf_days": 5, "h": 0.02,
-    }))
-    config = RunConfig.from_yaml(str(p))
-    assert config.wave_set_spec.n_modes() == 3
-    assert config.wave_set_spec.has_subtriads() is False
-
-
-def test_sweep_axes_auto_derived_from_private_modes(tmp_path):
-    p = tmp_path / "config.yaml"
-    p.write_text(yaml.safe_dump({
-        "wave_set": "quartet_rossby_kelvin",
-        "sweep": {"n_grid": 5, "diagnostics": ["p_measure"]},
-    }))
-    config = RunConfig.from_yaml(str(p))
-    assert {a.mode for a in config.sweep.axes} == {"c", "d"}
-    assert config.sweep.n_grid == 5
-    assert config.sweep.diagnostics == ("p_measure",)
-
-
-def test_sweep_axes_explicit_override(tmp_path):
-    p = tmp_path / "config.yaml"
-    p.write_text(yaml.safe_dump({
-        "wave_set": "quartet_rossby_kelvin",
-        "sweep": {"axes": [{"mode": "c", "min": 10.0, "max": 20.0}], "diagnostics": ["p_measure"]},
-    }))
-    config = RunConfig.from_yaml(str(p))
-    assert len(config.sweep.axes) == 1
-    axis = config.sweep.axes[0]
+def test_sweep_axes_explicit_override():
+    from rsw_sphere.dynamics.run_config import _sweep_from_dict
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
+    sweep = _sweep_from_dict(
+        {"axes": [{"mode": "c", "min": 10.0, "max": 20.0}], "diagnostics": ["p_measure"]}, spec)
+    assert len(sweep.axes) == 1
+    axis = sweep.axes[0]
     assert (axis.mode, axis.min, axis.max) == ("c", 10.0, 20.0)
 
 

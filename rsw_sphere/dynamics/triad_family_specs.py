@@ -93,7 +93,7 @@ def load_triad_family(key: str, yaml_path: str = DEFAULT_FAMILIES_PATH) -> list:
     list of TriadSpec
         One per value in ``varying.n_values``, keyed
         ``f"{key}_n{n}"``, each carrying the family's ``settings`` dict
-        (``tf_days``, ``h``, ``n_grid``, ``deg``).
+        (``tf_days``, ``h``, ``deg``).
     """
     with open(yaml_path) as f:
         raw = yaml.safe_load(f)

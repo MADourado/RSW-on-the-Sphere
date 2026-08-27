@@ -143,8 +143,7 @@ python run_dynamics.py --wave-set quartet_rossby_kelvin
 
 # sweep 1-2 modes' initial velocities + diagnostics (P-measure, filtering
 # error, frequency shift, efficiency, low-frequency energy, precession) --
-# reads the wave set's own registry entry; --config path.yaml for an
-# ad-hoc sweep not worth registering
+# reads the wave set's own registry entry
 python run_sweep.py --wave-set quartet_rossby_kelvin
 
 # screen a list of candidate modes filling one slot of a registered wave set
@@ -154,27 +153,29 @@ python run_sweep_sets.py --config examples/candidates_quartet_rossby_kelvin.yaml
 All four drivers select from the same `wave_sets_default.yaml` registry
 (`--wave-set KEY [--specs path.yaml]`, or `--run-all`/a `RunConfig`
 sweeping every wave set). `run_dynamics.py`/`run_sweep.py`/`run_sweep_sets.py`
-additionally share one config class (`rsw_sphere.dynamics.run_config.RunConfig`)
-— a registry key + `specs_path`, or an inline wave set. See
-`docs/code_guide.md`'s "Entry points" section.
+additionally share one config class (`rsw_sphere.dynamics.run_config.RunConfig`),
+built from a registry key + `specs_path` (`RunConfig.from_registry_entry`/
+`from_wave_set`). See `docs/code_guide.md`'s "Entry points" section.
 
 To add a triad/quartet/quintet, add an entry to `wave_sets_default.yaml`
 (equivalent height `h_e`, modes `(m, n, alpha)` with `alpha`: 1 = EIG,
 2 = WIG, 3 = RH, initial zonal velocities, and the constituent triad(s))
 — no separate config file needed, a triad is just the registry's own
-1-triad case. See [`examples/`](examples/) for `run_sweep.py`/
-`run_sweep_sets.py` config variants reproducing specific thesis
-figures/tables.
+1-triad case. A wave set not yet worth adding to the default registry
+can be pointed at with `--specs path/to/other.yaml` instead (same schema,
+e.g. `examples/wave_sets_custom.yaml`). See [`examples/`](examples/) for
+`run_sweep.py`/`run_sweep_sets.py` config variants reproducing specific
+thesis figures/tables.
 
-`run_sweep.py --config path.yaml` is a general driver for parameter sweeps
+`run_sweep.py --wave-set KEY` is a general driver for parameter sweeps
 over a registered wave set (precession frequency, P-measure, or
-efficiency vs. a swept velocity) — a config file per sweep instead of a
-new script per sweep; see `docs/wave_sets.md` §6.1. Every swept trajectory
-is cached under `outputs/trajectories/`, so re-running the same sweep is
-fast. It writes its figure to the YAML's own `output:` path under
-`outputs/`; copying a finished PNG into the paper repo's `Figures/` is a
-separate, manual step (as with every other figure-generating script in
-this repository).
+efficiency vs. a swept velocity) — a registry `sweep:` block per sweep
+instead of a new script per sweep; see `docs/wave_sets.md` §6.1. Every
+swept trajectory is cached under `outputs/trajectories/`, so re-running
+the same sweep is fast. It writes its figure to the registry entry's own
+`output:` path under `outputs/`; copying a finished PNG into the paper
+repo's `Figures/` is a separate, manual step (as with every other
+figure-generating script in this repository).
 
 The standalone dispersion-relation figure is documented separately in
 [`docs/dispersion_relation.md`](docs/dispersion_relation.md) (also runnable

@@ -81,9 +81,9 @@ def build(spec, gamma):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ws_full = WaveSet(gamma, list(spec.modes), [spec.triad_indices(i) for i in range(spec.n_triads())],
-                           N=spec.settings.get('n_grid', 10), deg=300)
+                           N=10, deg=300)
         ws_triad1 = WaveSet(gamma, list(spec.modes[:3]), [spec.triad_indices(0)],
-                             N=spec.settings.get('n_grid', 10), deg=300)
+                             N=10, deg=300)
     return ws_full, ws_triad1
 
 

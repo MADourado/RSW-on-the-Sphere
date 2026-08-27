@@ -36,7 +36,6 @@ triad_near_zero_coupling:
   settings:
     tf_days: 10
     h: 0.001
-    n_grid: 10
 
 triad_kelvin_gravity_energy_flow:
   label: "RH -> EG energy flow via the Kelvin wave "
@@ -57,7 +56,6 @@ triad_kelvin_gravity_energy_flow:
   settings:
     tf_days: 10
     h: 0.001
-    n_grid: 10
 
 triad_rossby_only_near_resonant:
   label: "Rossby-only, near-resonant, long period"
@@ -74,7 +72,6 @@ triad_rossby_only_near_resonant:
   settings:
     tf_days: 200
     h: 0.01
-    n_grid: 15
 
 triad_rossby_only_non_resonant:
   label: "Rossby-only, non-resonant, short period"
@@ -91,7 +88,6 @@ triad_rossby_only_non_resonant:
   settings:
     tf_days: 15
     h: 0.01
-    n_grid: 15
 
 triad_kelvin_rossby_flow:
   label: "RH <-> EG flow via the Kelvin wave"
@@ -110,7 +106,6 @@ triad_kelvin_rossby_flow:
   settings:
     tf_days: 20
     h: 0.01
-    n_grid: 15
 
 triad_gravity_with_rossby_catalyst:
   label: "EG <-> EG with RH catalyst"
@@ -131,7 +126,6 @@ triad_gravity_with_rossby_catalyst:
   settings:
     tf_days: 60
     h: 0.01
-    n_grid: 15
 
 quartet_rh_preference:
   label: "RH(1,2)+RH(4,5) choosing between RH(3,4) and RH(3,6)"
@@ -152,7 +146,6 @@ quartet_rh_preference:
   settings:
     tf_days: 30
     h: 0.01
-    n_grid: 10
   sweep:
     axes: [{mode: d, min: 10.0, max: 150.0}]
     n_grid: 45
@@ -186,7 +179,6 @@ quartet_rh_alt_partner:
   settings:
     tf_days: 30
     h: 0.01
-    n_grid: 10
   sweep:
     axes: [{mode: d, min: 10.0, max: 150.0}]
     n_grid: 30
@@ -221,7 +213,6 @@ quartet_rh_borrowed_topology:
   settings:
     tf_days: 30
     h: 0.01
-    n_grid: 10
 
 quartet_rossby_kelvin:
   label: "RH(4,5)+RH(3,4)+RH(1,2) with the Kelvin mode EG(1,1)"
@@ -242,7 +233,6 @@ quartet_rossby_kelvin:
   settings:
     tf_days: 20
     h: 0.01
-    n_grid: 10
   sweep:
     axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
     n_grid: 10
@@ -270,7 +260,6 @@ quartet_gravity_79:
   settings:
     tf_days: 10
     h: 0.01
-    n_grid: 10
 
 
 quartet_rossby_gravity_influence:
@@ -292,13 +281,13 @@ quartet_rossby_gravity_influence:
   settings:
     tf_days: 20
     h: 0.01
-    n_grid: 10
   sweep:
-    axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 100.0}]
-    n_grid: 10
+    #axes: [{mode: d, min: 0.0, max: 50.0}, {mode: c, min: 0.0, max: 50.0}]
+    axes: [{mode: d, min: 0.0, max: 50.0}]
+    n_grid: 6
     diagnostics: [novelty_period, p_measure]
   plot:
-    title: "Quartet D (WG(7,9)-sum) -- novelty-period vs. p_measure"
+    title: "Quartet D (WG(7,9)) "
   output: outputs/figures/wave_sets/quartet_rossby_gravity_influence/diagnostics.png
 
 
@@ -335,7 +324,6 @@ quartet_gravity_wg11:
   settings:
     tf_days: 20
     h: 0.01
-    n_grid: 10
   sweep:
     diagnostics: [p_measure]
     n_grid: 10
@@ -359,7 +347,6 @@ quartet_dual_gravity_edge:
   settings:
     tf_days: 20
     h: 0.01
-    n_grid: 10
   sweep:
     diagnostics: [p_measure]
     n_grid: 10
@@ -387,4 +374,3 @@ quintet_gravity_star:
   settings:
     tf_days: 10
     h: 0.01
-    n_grid: 8

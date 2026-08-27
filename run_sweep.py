@@ -12,17 +12,15 @@ requested diagnostic as its own figure:
 - 2 swept modes (2D): p_measure, p_measure_final, novelty_period,
   efficiency, low_frequency_energy, via rsw_sphere.utilities.registry.sweep_2d.
 
-Run, if the wave set's own registry entry already carries its own
+Reads the wave set's own registry entry, which carries its own
 sweep:/tf_days/h/plot/output/target_mode/plot_triad keys (see
 wave_sets_default.yaml's quartet_rossby_kelvin/quartet_rh_preference
-entries), no separate config file is needed:
+entries) -- no separate config file needed. A wave set not yet worth
+adding to the default registry can be swept via a standalone `--specs`
+file instead (any YAML in the same registry schema, e.g.
+examples/wave_sets_custom.yaml).
 
     python run_sweep.py --wave-set quartet_rossby_kelvin
-
-or point at a standalone RunConfig YAML for an ad-hoc/one-off sweep not
-worth adding to the registry:
-
-    python run_sweep.py --config path/to/sweep.yaml
 """
 import argparse
 import dataclasses
@@ -186,8 +184,7 @@ def run_sweep(config: RunConfig, output: str, plot_cfg: dict = None, run_per_poi
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default=None, help="path to a RunConfig YAML with a sweep: block")
-    parser.add_argument("--wave-set", default=None,
+    parser.add_argument("--wave-set", required=True,
                          help="registry role key -- reads sweep/tf_days/h/plot/output/target_mode/"
                               "plot_triad straight from that wave_sets_default.yaml entry, "
                               "no separate config file needed.")
@@ -199,23 +196,14 @@ def main():
                          help="skip the per-grid-point run_dynamics pass (diagnostics only)")
     args = parser.parse_args()
 
-    if bool(args.config) == bool(args.wave_set):
-        parser.error("exactly one of --config or --wave-set is required")
-
-    if args.wave_set:
-        specs = load_wave_set_specs(args.specs)
-        if args.wave_set not in specs:
-            parser.error(f"--wave-set {args.wave_set!r} not found in {args.specs!r} "
-                         f"(available: {list(specs)})")
-        with open(args.specs) as f:
-            raw = yaml.safe_load(f)[args.wave_set]
-        config = RunConfig.from_registry_entry(args.wave_set, args.specs)
-        default_output = f"{args.output_root}/figures/wave_sets/{args.wave_set}/sweep.png"
-    else:
-        with open(args.config) as f:
-            raw = yaml.safe_load(f)
-        config = RunConfig.from_yaml(args.config)
-        default_output = f"{args.output_root}/figures/wave_sets/sweep.png"
+    specs = load_wave_set_specs(args.specs)
+    if args.wave_set not in specs:
+        parser.error(f"--wave-set {args.wave_set!r} not found in {args.specs!r} "
+                     f"(available: {list(specs)})")
+    with open(args.specs) as f:
+        raw = yaml.safe_load(f)[args.wave_set]
+    config = RunConfig.from_registry_entry(args.wave_set, args.specs)
+    default_output = f"{args.output_root}/figures/wave_sets/{args.wave_set}/sweep.png"
     config = dataclasses.replace(config, output_root=args.output_root)
 
     output = args.output or raw.get("output") or default_output

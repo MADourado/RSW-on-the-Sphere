@@ -48,31 +48,12 @@ class RunConfig:
     sweep: SweepConfig = None
 
     @classmethod
-    def from_yaml(cls, path: str) -> "RunConfig":
-        with open(path) as f:
-            cfg = yaml.safe_load(f)
-
-        if "wave_set" in cfg:
-            specs_path = cfg.get("specs_path", DEFAULT_WAVESETS_PATH)
-            specs = load_wave_set_specs(specs_path)
-            key = cfg["wave_set"]
-            if key not in specs:
-                raise ValueError(f"{key!r} not found in {specs_path!r} (available: {list(specs)})")
-            spec = specs[key]
-        elif "modes" in cfg:
-            spec = _load_inline_spec(cfg)
-        else:
-            raise ValueError(f"{path!r}: needs either 'wave_set' (registry key) or 'modes' (inline spec)")
-
-        return cls._from_cfg(cfg, spec)
-
-    @classmethod
     def from_registry_entry(cls, key: str, specs_path: str = DEFAULT_WAVESETS_PATH) -> "RunConfig":
         """Build straight from one wave_sets_default.yaml entry's own
         tf_days/h/sweep (if it has one) -- no separate wrapper config file
         needed, e.g. for run_sweep.py --wave-set KEY. Falls back to the
         entry's settings block for tf_days/h if not overridden at the
-        entry's own top level (same fallback from_yaml uses)."""
+        entry's own top level."""
         with open(specs_path) as f:
             raw = yaml.safe_load(f)
         if key not in raw:
@@ -133,20 +114,6 @@ def _sweep_from_dict(raw, spec: WaveSetSpec):
         diagnostics=tuple(raw.get("diagnostics", ())),
         save_point_figures=raw.get("save_point_figures", True),
     )
-
-
-def _load_inline_spec(cfg) -> WaveSetSpec:
-    """One inline wave-set entry (no registry key) -- reuses
-    load_wave_set_specs' own YAML-dict parser via a single-item wrap.
-    """
-    import tempfile
-    with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
-        yaml.safe_dump({"_inline": cfg}, f)
-        tmp_path = f.name
-    try:
-        return load_wave_set_specs(tmp_path)["_inline"]
-    finally:
-        os.remove(tmp_path)
 
 
 if __name__ == "__main__":

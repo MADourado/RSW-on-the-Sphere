@@ -84,10 +84,14 @@ class WaveSetSpec:
         Human-readable label / short tag ("Quartet A"/"Quintet A") for
         figures and tables.
     settings : dict
-        Per-wave-set tuned ``tf_days``/``h``/``n_grid`` etc. (the
-        ``TRIAD_SETTINGS`` analogue from ``make_section22_figures.py``) --
-        stored here rather than hardcoded in a plotting script so the
-        registry stays the single source of truth.
+        Per-wave-set tuned ``tf_days``/``h`` etc. (the ``TRIAD_SETTINGS``
+        analogue from ``make_section22_figures.py``) -- stored here rather
+        than hardcoded in a plotting script so the registry stays the
+        single source of truth. The Hough-eigenproblem truncation order
+        ``N`` is NOT one of these -- every driver hardcodes ``N=10``
+        (converged to ~1e-13 relative error even for the highest-``l``
+        registered mode; verified 2026-08-27), independent of any
+        registry entry.
     """
     key: str
     mode_keys: tuple

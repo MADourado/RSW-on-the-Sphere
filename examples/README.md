@@ -18,10 +18,10 @@ examples_legacy/" notes throughout this file for where each one landed).
 ## Driver configs
 
 `candidates_*.yaml` are `run_sweep_sets.py` configs (a candidate-screening
-block). `run_sweep.py` sweeps don't need their own config file when the
-wave set's own `wave_sets_default.yaml` entry already carries a `sweep:`
-block (`--wave-set KEY`); a standalone `RunConfig`-shaped YAML (`--config
-path.yaml`) is only for an ad-hoc/one-off sweep not worth registering.
+block). `run_sweep.py` sweeps read the wave set's own `wave_sets_default.yaml`
+entry, which carries its own `sweep:` block (`--wave-set KEY`); a wave set
+not yet worth adding to the default registry can be swept via `--specs
+path.yaml` instead (same registry schema, e.g. `wave_sets_custom.yaml`).
 
 ```bash
 python run_sweep.py --wave-set quartet_rossby_kelvin

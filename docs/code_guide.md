@@ -67,11 +67,9 @@ config anymore) via `--wave-set KEY [--specs path.yaml]`.
 time integration). `run_dynamics.py`/`run_sweep.py` build a
 `rsw_sphere.dynamics.run_config.RunConfig` (`tf_days`/`h`/`output_root`/
 `plot`/`parallel`; a `sweep:` block for `run_sweep.py`) straight from the
-registry entry (`RunConfig.from_registry_entry`/`from_wave_set`);
-`run_sweep.py` alone also accepts a standalone `RunConfig` YAML
-(`--config path.yaml`, `RunConfig.from_yaml`) for an ad-hoc sweep not
-worth registering. `run_sweep_sets.py` reads its own, differently-shaped
-YAML directly (`--config`, required). See `examples/` for configs.
+registry entry (`RunConfig.from_registry_entry`/`from_wave_set`).
+`run_sweep_sets.py` reads its own, differently-shaped YAML directly
+(`--config`, required). See `examples/` for configs.
 
 ### `run_linear_modes.py` (renamed from `run_diagnostics.py`)
 Creates the output directory (`<output-root>/figures/`), then optionally:
@@ -122,9 +120,9 @@ natively 1D); 2D supports `p_measure`/`p_measure_final`/
 Swept/target modes for a 2D sweep default to the wave set's own "private"
 modes (`WaveSetSpec.shared_and_private_modes()`). `--wave-set KEY` reads
 `sweep`/`tf_days`/`h`/`plot`/`output`/`target_mode`/`plot_triad` straight
-from that wave set's own `wave_sets_default.yaml` entry -- `--config
-path.yaml` (a standalone `RunConfig` YAML) is only for an ad-hoc sweep
-not worth registering.
+from that wave set's own `wave_sets_default.yaml` entry -- a wave set
+not yet worth adding to the default registry can be swept via `--specs
+path.yaml` instead (same registry schema).
 
     python run_sweep.py --wave-set quartet_rossby_kelvin
     python run_sweep.py --wave-set quartet_rh_preference
