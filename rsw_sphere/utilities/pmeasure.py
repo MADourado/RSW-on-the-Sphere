@@ -51,11 +51,8 @@ def final_p_measure(dEK_full, dEK_subs):
     fixed reference triad, which for a mode shared across triads can be
     wildly inflated: the mode may happen to be a weak or off-resonance
     participant in THAT one triad even while a different containing
-    triad drives it hard (found 2026-08-27, ``quartet_rossby_gravity_influence``:
-    both WG(7,9) and RH(4,5) showed P in the hundreds-to-thousands of
-    percent against one specific sub-triad, while F2 against the
-    same reference stayed modest -- the tell that the reference triad's
-    own dEK, not a genuinely huge effect, was driving the number).
+    triad drives it hard, so the fixed reference's own small dEK (not a
+    genuinely large effect) is what drives the number.
 
     Broadcastable: ``dEK_full``/each ``dEK_subs`` value can be a scalar
     (single-run reporting) or an ndarray of matching shape (an entire 2D

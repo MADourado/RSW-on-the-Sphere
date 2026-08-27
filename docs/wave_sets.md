@@ -69,8 +69,9 @@ Output convention: every script defaults to printing/showing (`stdout` or
 tell it to — by convention `outputs/figures/wave_sets/` (gitignored).
 **None of these scripts ever write into the paper repository**; copying a
 finished figure into `paper-nonlinear-interactions-SWE-sphere/Figures/` is
-a separate, manual step (`examples_legacy/make_section3_figures.py`, §7, prints
-the exact `cp` commands it needs rather than performing the copy itself).
+a separate, manual step -- see §7 for the dedicated per-figure scripts
+(`examples/figures/paper_figure007_*.py` onward) that cover §4.3/§5's
+composite wave-set figures.
 
 ---
 
@@ -149,7 +150,7 @@ wavenumber constraint for you.
 | `triads` | list of constituent triads; each names `sum` + `members` by mode letter, plus an optional `display_label` and documentary `triad_key` (pointing at a §2.2 triad registry role-key, if this constituent triad happens to also be independently registered there — not resolved automatically) |
 | `reference_triad` | index into `triads` — the default P-measure denominator for a mode that belongs to it (see `rsw_sphere/utilities/pmeasure.py`'s module docstring for the full per-mode rule) |
 | `h_e` | equivalent height, m |
-| `settings` | per-wave-set `tf_days`/`h`/`n_grid`, read by `examples_legacy/make_section3_figures.py` — the single source of truth for how long/finely to integrate this particular configuration, not a shared default |
+| `settings` | per-wave-set `tf_days`/`h`/`n_grid`, read by the `examples/figures/paper_figureNNN_*.py` scripts (§7) — the single source of truth for how long/finely to integrate this particular configuration, not a shared default |
 
 **Velocity caps**: Rossby (RH) mode velocities up to 100 m/s, gravity
 (EG/WG) mode velocities up to 50 m/s
@@ -168,9 +169,9 @@ wavenumber constraint for you.
    `ΔEK`/`P` without erroring (the exact failure mode logged for §2.2's
    triad registry; the same risk applies here).
 4. Regenerate its table (§2) and figures (§3-5) in isolation first
-   (`--wave-set your_new_key`) before adding it to
-   `examples_legacy/make_section3_figures.py`'s `PMEASURE_WAVE_SETS` dict or any
-   paper composite.
+   (`--wave-set your_new_key`) before wiring it into a dedicated
+   `examples/figures/paper_figureNNN_*.py` script (§7) or any paper
+   composite.
 
 ### Testing a triad, quartet, or quintet that isn't in any registry at all
 
@@ -592,29 +593,35 @@ directly.
 
 ---
 
-## 7. `examples_legacy/make_section3_figures.py` — paper composite figures
+## 7. §4.3/§5 paper composite figures
 
-Builds, per registered wave set: a comparison panel (§3), a period panel
-(§4), and — for the wave sets listed in `PMEASURE_WAVE_SETS` — a P-measure
-sweep (§5). Mirrors `examples_legacy/make_section22_figures.py`'s structure
-(`*_SETTINGS` dict, CLI overrides, `outputs/`-only writes, prints the `cp`
-commands rather than copying itself).
+Each composite figure for the gravity-Rossby quartets (§4.3) and the star
+quintet (§5) has its own dedicated `examples/figures/paper_figureNNN_*.py`
+script (retiring the earlier composite assembler
+`make_section3_figures.py`, deleted 2026-08-27 once every wave set it
+covered that is actually cited in the paper had its own script):
+
+| Script | Figure | Wave set |
+|---|---|---|
+| `paper_figure007_quartet_rossby_kelvin_panel.py` | `fig: cap4ex1` | `quartet_rossby_kelvin` |
+| `paper_figure008_quartet_rossby_kelvin_periods.py` | `fig: power1` | `quartet_rossby_kelvin` (imports 007's `compute()`, same trajectory) |
+| `paper_figure009_quartet_gravity_79_panel.py` | `fig: cap43panel` | `quartet_gravity_79` |
+| `paper_figure010_quintet_gravity_star_panel.py` | `fig: quintetpanel` | `quintet_gravity_star` |
+| `paper_figure011_quintet_gravity_star_pmeasure.py` | `fig: 4eff3` | `quintet_gravity_star` (P-measure sweep, `n_grid=10` per the figure's own caption) |
+
+Each is runnable standalone and writes under
+`outputs/figures/wave_sets/<key>/`; copying the finished PNG into
+`paper-nonlinear-interactions-SWE-sphere/Figures/` under the filename the
+paper's own `\includegraphics` expects is a separate, manual step (each
+script's own module docstring names the target file).
 
 ```bash
-# everything, current tuned settings
-python examples_legacy/make_section3_figures.py
-
-# fast/coarse look while iterating
-python examples_legacy/make_section3_figures.py --n-grid 5 --tf-scale 0.5
-
-# just one wave set
-python examples_legacy/make_section3_figures.py --wave-set quartet_rossby_kelvin
-
-# skip the (expensive) P-measure sweeps entirely
-python examples_legacy/make_section3_figures.py --skip-pmeasure
+python examples/figures/paper_figure007_quartet_rossby_kelvin_panel.py
+python examples/figures/paper_figure008_quartet_rossby_kelvin_periods.py
+python examples/figures/paper_figure009_quartet_gravity_79_panel.py
+python examples/figures/paper_figure010_quintet_gravity_star_panel.py
+python examples/figures/paper_figure011_quintet_gravity_star_pmeasure.py
 ```
-
-Full flags: `python examples_legacy/make_section3_figures.py --help`.
 
 The Quartet A/B precession-frequency figure (JFM-template.tex
 `fig: precession_frequency`) has no analogous composite script: it is two

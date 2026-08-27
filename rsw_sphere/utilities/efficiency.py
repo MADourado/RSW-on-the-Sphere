@@ -37,12 +37,14 @@ def efficiency_variation(efficiency_full, efficiency_sub):
     """% change in efficiency, full wave set vs. one reference sub-triad
     -- same formula as the P-measure (`rsw_sphere.utilities.pmeasure`),
     applied to `wave_set_efficiency`'s own drift-gated, mean-total-energy
-    -normalized quantity instead of the raw energy variation dEK. Tracks
-    P closely whenever total energy stays close to constant between the
-    two runs (efficiency's own <E_total> denominator then barely differs,
-    and the drift gate rarely trips); diverges from it only when total-
-    energy non-conservation (Appendix "Energy conservation of the
-    four-wave truncation") actually matters for this target.
+    -normalized quantity instead of the raw energy variation dEK. This
+    answers a different question than P, and its sign can genuinely
+    differ: the reference triad has strictly fewer active modes than the
+    full wave set, so it has a smaller total-energy budget to share
+    (<E_total> smaller for the triad) -- a target's raw swing can grow
+    from triad to full wave set (P>0) while its *share* of the now-larger
+    budget shrinks (this quantity <0). Both are legitimate; read them
+    together, not as two noisy estimates of the same number.
 
     NaN if either input is NaN (e.g. one run's own drift gate tripped) or
     ``efficiency_sub`` is zero.

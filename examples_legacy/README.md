@@ -111,7 +111,13 @@ investigation; git history has every deleted script if ever needed again.
 plus `make_section3_figures.py`/`regen_gravity_quartet_tables.py` from
 the "§3.3 rewrite" section below, were moved out to `examples/` directly
 (2026-08-26, same day as the deletions above) once nothing else in the
-folder still needed grouping with them. See `examples/README.md`.
+folder still needed grouping with them. **`make_section3_figures.py`
+itself was later deleted (2026-08-27)**, once every wave set it built a
+figure for that is actually cited in the paper (`quartet_rossby_kelvin`,
+`quartet_gravity_79`, `quintet_gravity_star`) had its own dedicated
+`examples/figures/paper_figure00{7,8,9,10,11}_*.py` script and
+`JFM-template.tex`'s own regenerate comments were repointed at them.
+`regen_gravity_quartet_tables.py` survives. See `examples/README.md`.
 
 Continuation of the same-day inspection work above, per
 `PLAN-section-3-experiments.md` Phases I2/I5/I6:

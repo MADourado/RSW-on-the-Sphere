@@ -212,39 +212,26 @@ def novel_frequency_content(t_full, E_full, t_sub, E_sub, **kwargs):
 def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = 3.0, n_grid: int = 4000):
     """Spectral, share-normalized replacement for the retired time-domain
     "filtering error" (RMS trajectory-tracking error) -- built on the
-    exact same primitive (``_power_spectrum``) as
-    ``novel_frequency_content``, per the same 2026-08-26 design
-    philosophy: compare POWER SPECTRA, not raw point-by-point time series.
+    same primitive (``_power_spectrum``) as ``novel_frequency_content``:
+    compare power spectra, not raw point-by-point time series.
 
-    Retires two failure modes the time-domain version had (found
-    2026-08-27, ``quartet_rossby_gravity_influence``):
-
-    1. **Unfairness**: comparing raw ``|A_full(t)|`` against
-       ``|A_sub(t)|`` penalizes a sub-triad simply for having fewer active
-       modes and therefore less total energy in play, not for behaving
-       differently. Fixed by requiring the CALLER to pass each series'
-       own amplitude *share* instead of raw amplitude -- ``q =
-       |A_target| / sqrt(E_total.mean())`` for its own run (mirrors
-       ``rsw_sphere.utilities.efficiency.wave_set_efficiency``'s own fix
-       for the same problem in P-measure; using the amplitude share
-       ``q`` rather than the energy share ``E/E_total.mean()`` keeps a
-       given relative amplitude difference from being quadratically
-       amplified before it reaches the ratio below).
-    2. **Non-convergence with t_f**: a point-by-point RMS error is
-       dominated by wherever the two trajectories happen to be out of
-       phase at the integration's own arbitrary cutoff -- for a
-       near-resonant sub-triad whose own dynamical phase drifts on an
-       ~2000-day timescale (``rsw_sphere.dynamics.dynamical_phase``'s
-       own precession frequency), no practical ``t_f`` ever converges.
-       A spectral comparison is far less sensitive to the exact cutoff,
-       since the periodogram integrates coherently over the whole window.
+    Two fixes over the retired version: (1) the caller passes each
+    series' own amplitude *share*, ``q = |A_target|/sqrt(E_total.mean())``,
+    not raw amplitude -- otherwise a sub-triad with fewer active modes
+    (and therefore less total energy) reads as "different" just for
+    having a smaller budget (mirrors ``wave_set_efficiency``'s own fix;
+    amplitude share rather than energy share also avoids quadratically
+    amplifying a given relative difference). (2) comparing spectra rather
+    than raw time series avoids the old metric's dependence on wherever
+    the two trajectories happen to be out of phase at the integration's
+    arbitrary cutoff ``t_f`` -- a periodogram integrates coherently over
+    the whole window instead.
 
     Parameters
     ----------
-    t_full, Q_full : full wave set's own trajectory -- pass whichever
-        share-normalized series the caller wants compared (typically
-        amplitude share ``q = |A|/sqrt(E_total.mean())``, NOT raw
-        amplitude or raw energy).
+    t_full, Q_full : full wave set's own trajectory -- pass a share-
+        normalized series (typically amplitude share ``q``), NOT raw
+        amplitude or raw energy.
     t_sub, Q_sub : one sub-triad's own trajectory, same convention.
     xmax : upper period (days) considered (matches
         ``novel_frequency_content``'s own default range).
@@ -255,21 +242,15 @@ def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = 3.0, n_grid: 
     float
         Relative L2 distance between the two (peak-unnormalized, share-
         normalized) power spectra on a common period grid, as a
-        PERCENTAGE (matching P-measure/efficiency_variation's own
+        percentage (matching P-measure/efficiency_variation's own
         convention) --
-        ``100 * sqrt(sum((Qhat_full-Qhat_sub)^2)) / max(norm_full, norm_sub)``
-        -- normalizing by whichever of the two has the LARGER own
-        spectral power, not the reference alone (found 2026-08-27: a
-        reference triad that leaves the target only weakly excited has
-        almost no spectral power to normalize by, inflating the ratio by
-        orders of magnitude for exactly the same reason a mode shared
-        across triads inflates P/efficiency_variation against a weak
-        fixed reference -- see ``final_p_measure``'s own docstring; using
-        the larger of the two norms here fixes it directly in the
-        formula, for every caller, rather than needing a separate
-        "final"/best-reference selection). 0 if the spectra are
-        identical, NaN if both ``Q_full`` and ``Q_sub`` have no resolvable
-        spectral power at all.
+        ``100 * sqrt(sum((Qhat_full-Qhat_sub)^2)) / max(norm_full, norm_sub)``.
+        Normalizing by whichever side has the LARGER spectral power
+        (not the reference alone) avoids the same "weak fixed reference"
+        inflation ``final_p_measure`` guards against for P/efficiency --
+        a reference that barely excites the target has almost no power
+        to normalize by. 0 if the spectra are identical, NaN if neither
+        side has any resolvable spectral power.
     """
     p_full_raw, pow_full_raw = _power_spectrum(t_full, Q_full)
     p_sub_raw, pow_sub_raw = _power_spectrum(t_sub, Q_sub)

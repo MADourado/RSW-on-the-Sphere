@@ -9,9 +9,9 @@ Normalizing this way (rather than by the initial total energy) is what
 makes panels comparable across different runs/wave sets with different
 total-energy budgets -- the same fix `rsw_sphere.utilities.efficiency
 .wave_set_efficiency` already applies to the efficiency diagnostic
-itself (2026-08-27). The underlying data (`E`, `E_total`, `dEK`, ...)
-returned/cached elsewhere stays raw/unnormalized -- only this figure's
-own rendering is affected.
+itself. The underlying data (`E`, `E_total`, `dEK`, ...) returned/cached
+elsewhere stays raw/unnormalized -- only this figure's own rendering is
+affected.
 
 ``plot_energy_evolution`` draws from an already-integrated trajectory
 (used by run_dynamics.py, which integrates via trajectory_cache). The

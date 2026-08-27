@@ -45,27 +45,33 @@ def _build_units(spec):
     a dict key, a figure filename, a table row) without needing the
     registry's own display_label for context. The shared sum mode is
     left out of the SLUG since it's often common to every constituent
-    triad in a quartet/quintet and wouldn't help distinguish them --
-    but every human-facing LABEL below still names it explicitly (all
-    three modes, not just the two members): a triad is only fully
-    identified once its sum mode is named too.
+    triad in a quartet/quintet and wouldn't help distinguish them -- but
+    every human-facing LABEL below names all three modes plainly (e.g.
+    ``Triad 1 (RH(3,4)+RH(4,5)+WG(7,9))``), built directly from the
+    modes themselves rather than the registry's own free-text
+    display_label: once every mode is named, a "(RH-only)"/"(with
+    WG(1,1))"-style annotation is redundant, and listing all three reads
+    the same way regardless of which registry entry it came from.
 
     triad_labels : one display label per entry in this unit's own
     ``triads`` (the full wave set carries every constituent triad's own
     label; a sub-triad unit carries just its own, matching its title) --
     used to key each unit's own dynamical-phase precession frequency."""
-    def _labeled(t, i, sum_mode):
-        return f"{t.display_label or f'Triad {i + 1}'} → {_mode_label(*sum_mode)}"
+    def _triad_label(i, mode_p, mode_q, mode_sum):
+        return (f"Triad {i + 1} ({_mode_label(*mode_p)}+{_mode_label(*mode_q)}"
+                f"+{_mode_label(*mode_sum)})")
 
-    full_triad_labels = [_labeled(t, i, spec.modes[spec.triad_indices(i)[0]])
-                          for i, t in enumerate(spec.triads)]
+    full_triad_labels = []
+    for i in range(spec.n_triads()):
+        i_sum, i_p, i_q = spec.triad_indices(i)
+        full_triad_labels.append(_triad_label(i, spec.modes[i_p], spec.modes[i_q], spec.modes[i_sum]))
     units = [("full", spec.modes, [spec.triad_indices(i) for i in range(spec.n_triads())],
               spec.velocities, spec.display_label or spec.key, full_triad_labels)]
     if spec.has_subtriads():
-        for i, t in enumerate(spec.triads):
+        for i in range(spec.n_triads()):
             member_p, member_q, sum_mode = spec.sub_triad_modes(i)
             name = f"triad_{_mode_slug(*member_p)}_{_mode_slug(*member_q)}"
-            label = _labeled(t, i, sum_mode)
+            label = _triad_label(i, member_p, member_q, sum_mode)
             units.append((name, spec.sub_triad_modes(i), [(2, 0, 1)],
                           spec.sub_triad_velocities(i), label, [label]))
     return units
@@ -206,17 +212,39 @@ def main():
         # 2*pi/|omega| converts to period_days = period_nondim/(4*pi).
         linear_periods = {lbl: round(1.0 / (2 * abs(w)), 3) for lbl, w in zip(r['labels'], r['omega'])}
         print(f"  linear periods (days, own mode frequency): {linear_periods}")
-        periods = {lbl: round(float(dominant_periods(r['t'], r['E'][:, j])['period_global']), 3)
-                   for j, lbl in enumerate(r['labels'])}
+        period_results = [dominant_periods(r['t'], r['E'][:, j]) for j in range(len(r['labels']))]
+        periods = {lbl: round(float(pr['period_global']), 3) for lbl, pr in zip(r['labels'], period_results)}
         print(f"  periods (days, dominant FFT peak): {periods}")
         prec = {lbl: round(v, 5) for lbl, v in r['precession_freq'].items()}
         print(f"  precession_freq (rad/day): {prec}")
+
+        # Heuristic t_f-adequacy gate -- NOT a rigorous test, just a cheap
+        # warning using numbers already computed above: (a) a mode whose
+        # own dominant FFT period sits within 10% of the full integration
+        # window (dominant_periods' own horizon_limited flag) has too few
+        # cycles resolved to trust that period estimate; (b) a triad whose
+        # dynamical phase hasn't completed even one full 2*pi revolution
+        # over t_f can't yet be told apart from a genuine lock -- a slow
+        # enough drift can look identical to a lock within too short a
+        # window. Neither check can prove a longer run is unnecessary,
+        # only flag when this one clearly isn't enough.
+        t_f_days = float(r['t'][-1] - r['t'][0])
+        horizon_limited = [lbl for lbl, pr in zip(r['labels'], period_results) if pr['horizon_limited']]
+        slow_triads = [lbl for lbl, freq in r['precession_freq'].items()
+                       if freq != 0 and (2 * np.pi / abs(freq)) > t_f_days]
+        if horizon_limited or slow_triads:
+            print(f"  WARNING: t_f={t_f_days:.1f}d may not resolve enough cycles (heuristic, not "
+                  f"conclusive -- consider a longer run before trusting these numbers)")
+            if horizon_limited:
+                print(f"    dominant period within 10% of t_f for: {horizon_limited}")
+            if slow_triads:
+                print(f"    dynamical phase hasn't completed one full revolution for: {slow_triads}")
+
         print(f"  trajectory -> {r['trajectory_path']}")
         if r['figure_path']:
             print(f"  figure -> {r['figure_path']}")
 
     if args.diagnostics:
-        import numpy as np
         from rsw_sphere.utilities.pmeasure import pairwise_target_diagnostics, p_measure_combined_for_all_targets
         from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_all_targets
         from rsw_sphere.utilities.efficiency import wave_set_efficiency, efficiency_variation
@@ -320,11 +348,9 @@ def main():
         # sub-triad happens to leave it weakly excited (see
         # final_p_measure's own docstring). efficiency_var_final reuses
         # the SAME winning sub-triad p_measure_final already picked
-        # (rather than an independent selection), so the two stay
-        # directly comparable -- they should read similarly whenever the
-        # full wave set's own total energy stays close to constant, and
-        # diverge only when it doesn't (see efficiency_variation's own
-        # docstring).
+        # (rather than an independent selection), so both are always
+        # read against the same reference -- their signs can still
+        # differ, though (see efficiency_variation's own docstring).
         print("\n=== final diagnostics (per target, across all containing sub-triads) ===")
         pfinal = p_measure_combined_for_all_targets(results)
         novelty_final = novelty_combined_for_all_targets(
