@@ -44,19 +44,32 @@ against the paper's own numbering, plus a stable descriptive name since
 LaTeX numbering drifts). Populated so far for everything through §4.2
 "Rossby-only quartet" (JFM-template.tex, `sec: quartet_rh`) -- see each
 script's own module docstring for exactly which `\label{...}` it
-reproduces. §4.3 "Gravity-Rossby quartets" (`sec: gravity`) onward is not
-yet covered here (mid-redesign elsewhere); Table `precession_comparison`
-and Figure `borrowed_topology_precession` (Quartet B, §4.2.2) are also not
-covered -- both depend on `examples_legacy/raphaldini2022_compare/`'s
-bespoke comparison against Raphaldini et al. (2022)'s own barotropic
-vorticity-equation system, which has no `WaveSet`/registry representation
-in this repo and so isn't reproducible via the current drivers alone.
+reproduces. §4.3 "Gravity-Rossby quartets" (`sec: gravity`) onward is covered by the
+four scripts below, not yet by a `paper_table<NN>`/`paper_figure<NNN>`
+script of their own; Table `precession_comparison` and Figure
+`borrowed_topology_precession` (Quartet B, §4.2.2) are also not covered --
+both depend on `raphaldini2022_compare/`'s bespoke comparison against
+Raphaldini et al. (2022)'s own barotropic vorticity-equation system, which
+has no `WaveSet`/registry representation in this repo and so isn't
+reproducible via the current drivers alone.
 
-`examples_legacy/special_runs/` (2026-08-26): the 10-script cluster whose
-core computation isn't reducible to a `run_sweep.py`/`run_sweep_sets.py`
-diagnostic (power-law fits, Hilbert phase lag, dual-estimator agreement
-checks, tf-convergence studies, physical-Joules conversion) -- see
-`examples_legacy/README.md`'s own note on this move.
+Four §4.3-era scripts whose core computation isn't reducible to a
+`run_sweep.py`/`run_sweep_sets.py` diagnostic (moved here from
+`examples_legacy/special_runs/` 2026-08-26; the other 7 scripts that were
+in that cluster were deleted the same day along with the paper sections
+they backed -- see `examples_legacy/README.md`):
+
+- `make_section3_figures.py` -- composite comparison/period-spectrum
+  panels + P-measure sweeps for §3-§5's registered wave sets
+  (`examples/wave_sets_section_3.yaml`).
+- `regen_gravity_quartet_tables.py` -- Table cap42/cap43 (Quartet C/D
+  coefficient tables).
+- `gate_i5_headline.py` -- the §Coupled Triads S4 headline number
+  (physical-Joules amplitude/phase error from filtering the gravity mode),
+  via `rsw_sphere.physics.air_density_from_equivalent_depth`.
+- `section33_headline_numbers.py` -- generalizes `gate_i5_headline.py`'s
+  method to both Quartet C and Quartet D.
+
 `rh_partner_quartet_family.py` is fully migrated: `quartet_rh_preference`
 was already its exact base quartet, so `examples/candidates_rh_partner_family.yaml`
 (`run_sweep_sets.py --config`) reproduces it with no registry change.
@@ -64,6 +77,7 @@ was already its exact base quartet, so `examples/candidates_rh_partner_family.ya
 corrected candidate `quartet_gravity_wg11` (WG(1,1), not the retracted
 WG(7,9) claim the script itself made -- see that registry entry's own
 `role` note).
-`examples_legacy/raphaldini2022_compare/` (the 7-script external
-barotropic-model comparison cluster) has also been moved into its own
-subfolder.
+`raphaldini2022_compare/` (the 7-script external barotropic-model
+comparison cluster) has also moved here from `examples_legacy/`
+(2026-08-26) -- still not reducible to a registry entry, per the
+`precession_comparison`/`borrowed_topology_precession` note above.

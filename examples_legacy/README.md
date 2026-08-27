@@ -15,12 +15,23 @@ retired 2026-08-26 — see [`docs/triads.md`](../docs/triads.md) for the
 old-to-new command mapping. `make_section22_figures.py` depended on it
 directly and was rewritten the same day against the unified
 `functional_diagnostics_sweep`/`wave_set_energy_evolution` functions.
+**`make_section22_figures.py` itself was deleted 2026-08-26** (a later
+pass, once `JFM-template.tex`'s own regenerate comments for `fig:
+rossby_only`/`fig: combined` were repointed at the dedicated per-figure
+scripts that superseded it, `examples/figures/paper_figure003_rossby_only_triads.py`/
+`paper_figure004_combined_triads.py`) — confirmed nothing else imports it
+as a module first.
 
 ## Precession resonance (2026-08-12)
 
 `raphaldini2022_compare/`: the same-day precession-resonance
 investigation, moved into its own subfolder as a unit (2026-08-26) since
-the scripts import each other by bare module name.
+the scripts import each other by bare module name. **Moved again the same
+day**, this time out of `examples_legacy/` entirely to
+`examples/raphaldini2022_compare/` — it still backs live paper content
+(Table `precession_comparison`/Figure `borrowed_topology_precession`,
+§4.2.2) that has no `WaveSet`/registry representation yet, see
+`examples/README.md`.
 
 - `reproduce_raphaldini2022_fig2.py` — direct, dependency-free
   reproduction of Raphaldini, Peixoto, Teruya, Raupp & Bustamante (2022,
@@ -96,6 +107,12 @@ plumbing. `gate_i5_headline.py`/`section33_headline_numbers.py` survive
 sections). The narrative below is left as a historical record of that
 investigation; git history has every deleted script if ever needed again.
 
+**`special_runs/` is now empty and retired** — the two survivors above,
+plus `make_section3_figures.py`/`regen_gravity_quartet_tables.py` from
+the "§3.3 rewrite" section below, were moved out to `examples/` directly
+(2026-08-26, same day as the deletions above) once nothing else in the
+folder still needed grouping with them. See `examples/README.md`.
+
 Continuation of the same-day inspection work above, per
 `PLAN-section-3-experiments.md` Phases I2/I5/I6:
 
@@ -160,7 +177,8 @@ the Gate I2 map's previously-uncalibrated `d1_proxy`.
   `d1_proxy`; adds the three cut dissertation examples (Table cap4ex) as
   labeled points on the EG(1,1) curve. Output:
   `gate_i2_map_calibrated.png`.
-- `regen_gravity_quartet_tables.py` — regenerates Table cap42/cap43
+- `regen_gravity_quartet_tables.py` (now `examples/regen_gravity_quartet_tables.py`)
+  — regenerates Table cap42/cap43
   (Quartet C/D coefficient tables) in Table cap41's own format
   (Mode/Freq/Period/Coeff.1/Coeff.2/Zonal/$A_0$), via
   `rsw_sphere.plotting.wave_set_table.wave_set_properties` +
