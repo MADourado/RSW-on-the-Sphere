@@ -92,7 +92,7 @@ def test_run_dynamics_smoke(tmp_path):
 def test_run_sweep_1d_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rh_preference"]
     sweep = SweepConfig(axes=(SweepAxis(mode="d", min=80.0, max=90.0),), n_grid=2,
-                         diagnostics=("efficiency", "dynamical_phase"), save_point_figures=False)
+                         diagnostics=("efficiency", "dynamical_phase"))
     config = RunConfig.from_wave_set(spec, tf_days=2.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
@@ -109,7 +109,7 @@ def test_run_sweep_2d_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=0.0, max=20.0),
                                SweepAxis(mode="d", min=0.0, max=10.0)),
-                         n_grid=2, diagnostics=("p_measure",), save_point_figures=False)
+                         n_grid=2, diagnostics=("p_measure",))
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep

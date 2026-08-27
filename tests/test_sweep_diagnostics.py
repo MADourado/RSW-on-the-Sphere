@@ -210,7 +210,7 @@ def test_run_sweep_2d_diagnostics_matches_1d_for_same_point(tmp_path):
 
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=spec.velocities[spec.index("c")],
                                          max=spec.velocities[spec.index("c")]),), n_grid=1,
-                         diagnostics=("p_measure",), save_point_figures=False)
+                         diagnostics=("p_measure",))
     sweep_config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                             plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
