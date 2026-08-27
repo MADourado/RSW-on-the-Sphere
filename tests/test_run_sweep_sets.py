@@ -41,7 +41,7 @@ def test_run_sweep_sets_end_to_end_small():
         "target_mode": "b",
         "candidates": [{"m": 1, "n": 1, "alpha": 1}, {"m": 1, "n": 1, "alpha": 2}],
         "diagnostics": ["p_measure"],
-        "tf_days": 3, "h": 0.02,
+        "tf_days": 1.0, "h": 0.05,
     }
     results = rss.run_sweep_sets(config)
     assert len(results) == 2

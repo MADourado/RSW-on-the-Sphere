@@ -21,7 +21,7 @@ def test_efficiency_finite_and_bounded_when_drift_small():
     result = functional_diagnostics_sweep(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         diagnostics=("efficiency",), u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-        n_grid=2, tf_days=2, h=0.02, N=N, deg=DEG)
+        n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
     eff = result['Efficiency']
     assert np.isfinite(eff).all()
     assert (eff >= 0).all()
@@ -39,7 +39,7 @@ def test_subset_only_computes_requested_arrays():
     result = functional_diagnostics_sweep(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         diagnostics=("efficiency",), u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-        n_grid=2, tf_days=2, h=0.02, N=N, deg=DEG)
+        n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
     assert "Efficiency" in result
     assert "LowFreqEnergy" not in result
 

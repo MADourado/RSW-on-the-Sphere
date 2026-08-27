@@ -1,14 +1,13 @@
 """§3.3.1 headline numbers for BOTH Quartet C (EG(1,1)) and Quartet D
-(EG(7,9)), reusing ``gate_i5_headline.py``'s own methodology (period
+(EG(7,9)), using the same methodology as the Quartet C headline (period
 shift + peak-KE difference, both tf-independent; $\\mathcal{F}_2$ at the
-registered tf_days; Hilbert phase lag) rather than re-deriving it, per
-``PLAN-section-3.3.md`` Phase 3a/3e (Quartet D needs its own headline
+registered tf_days; Hilbert phase lag). Quartet D needs its own headline
 number -- the original dissertation prose never computed one, going
-straight from Table `cap43` to the P-measure sweep).
+straight from Table `cap43` to the P-measure sweep.
 
 Target mode is b=RH(3,4) for both quartets (index 1 in the registry's
 own a,b,c,d ordering -- shared edge RH(4,5)+RH(3,4) for both Quartet C
-and D, confirmed in `examples/wave_sets_section_3.yaml`).
+and D, confirmed in `wave_sets_default.yaml`).
 
 Run:
 

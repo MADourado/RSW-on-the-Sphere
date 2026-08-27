@@ -1,7 +1,10 @@
-"""End-to-end smoke tests for all five root drivers, at small/fast
+"""End-to-end smoke tests for the root drivers, at small/fast
 parameters (short tf_days, coarse h, tiny n_grid) -- checks each driver
 runs correctly end-to-end, not full-resolution physics (that's
-rsw_sphere/utilities/check_wave_set_physics.py's job)."""
+rsw_sphere/utilities/check_wave_set_physics.py's job). run_sweep_sets.py
+is covered by tests/test_run_sweep_sets.py instead -- no separate smoke
+test here, it would just re-run the same function with trivially
+different parameters."""
 import os
 import subprocess
 import sys
@@ -152,22 +155,6 @@ def test_run_sweep_requires_config_or_wave_set(tmp_path):
         capture_output=True, text=True, cwd=_ROOT)
     assert result.returncode != 0
     assert "required" in result.stderr
-
-
-@pytest.mark.slow
-def test_run_sweep_sets_smoke():
-    import run_sweep_sets as rss
-    config = {
-        "base_wave_set": "quartet_rossby_kelvin",
-        "candidate_slot": "d",
-        "target_mode": "b",
-        "candidates": [{"m": 1, "n": 1, "alpha": 1}, {"m": 1, "n": 1, "alpha": 2}],
-        "diagnostics": ["p_measure"],
-        "tf_days": 1.0, "h": 0.05,
-    }
-    results = rss.run_sweep_sets(config)
-    assert len(results) == 2
-    assert all("p_measure (%)" in r and "error" not in r for r in results)
 
 
 def test_run_mode_search_edge_smoke():

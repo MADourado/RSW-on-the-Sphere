@@ -33,8 +33,7 @@ in the first version):**
    reported below alongside the original (correctly-labelled, now
    time-horizon-qualified) D1.
 
-Four quantities now, per the plan's own request for "one sentence a
-modeller can act on":
+Four quantities now, aiming for "one sentence a modeller can act on":
 
 1. **Period shift (%, tf-independent)**: target mode b=RH(3,4)'s own
    exchange period (peak-to-peak KE timing), quartet vs. RH-only triad.
@@ -183,10 +182,10 @@ if __name__ == "__main__":
     print(f"Delta EK_b (max-min, quartet)    = {EK_b_full.max()-EK_b_full.min():.4e} J")
     print(f"Delta EK_b (max-min, triad-only) = {EK_b_triad.max()-EK_b_triad.min():.4e} J")
 
-    print(f"\n--- Gate I6 check: does D1 saturate with tf, or keep growing? ---")
-    print(f"(PLAN-section-3-experiments.md Phase I6 risk #1: 'DeltaEK is monotone "
-          f"non-decreasing in tf and may never saturate' -- checking whether the "
-          f"same applies to D1 itself before treating any single number as final.\n"
+    print(f"\n--- Does D1 saturate with tf, or keep growing? ---")
+    print(f"(DeltaEK is monotone non-decreasing in tf and may never saturate -- "
+          f"checking whether the same applies to D1 itself before treating any "
+          f"single number as final.\n"
           f"CORRECTED 2026-08-13: the first version of this check stopped at "
           f"tf=160d and concluded D1 'does not saturate' -- wrong. It saturates, "
           f"just later. Extended below to show the actual plateau.)")

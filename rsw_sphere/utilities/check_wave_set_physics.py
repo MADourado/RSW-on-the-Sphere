@@ -19,8 +19,10 @@ matters):
         analogue exists; see wave_sets.py's module docstring)
     C6  energy-drift validity gate: report drift and drift/dEK per mode
         (advisory -- flags loudly, does not hard-fail)
-    C7  reproduce the dissertation's hand-typed quartet tables, flag
-        discrepancies to NUMBERS-CHECK-section-3.md (advisory)
+    C7  reproduce the dissertation's hand-typed quartet tables (advisory,
+        currently a no-op -- superseded once the paper started generating
+        every quartet number from code directly instead of comparing
+        against hand-typed values, see C7's own docstring)
     C8  batched WaveSet.f/RK44 == looped scalar calls
 
 Every check is a standalone function taking explicit ``(modes, triads,
@@ -322,12 +324,14 @@ def check_c6(case, gamma, N, deg, t_f=40.0, h=0.01):
 
 def check_c7(specs=None):
     """Advisory: reproduce published (dissertation/paper) quartet tables
-    from fresh code and report discrepancies. Placeholder until Phase B
-    (harvest) supplies the actual mode tuples and hand-typed values to
-    compare against -- flags itself as not-yet-runnable rather than
-    silently passing.
+    from fresh code and report discrepancies. No hand-typed comparison
+    values are registered -- the paper generates its quartet numbers
+    directly from this code rather than checking them against typed-in
+    dissertation values, so there is nothing to diff against. Kept in the
+    battery (rather than removed) so the check number stays stable if a
+    real comparison table is ever added.
     """
-    return True, "skipped (Phase B harvest not yet done -- no published values registered to compare against)"
+    return True, "skipped (no hand-typed comparison values registered -- paper numbers are code-generated directly, not diffed against typed-in values)"
 
 
 def check_c8(case, gamma, N, deg, rtol=1e-12):

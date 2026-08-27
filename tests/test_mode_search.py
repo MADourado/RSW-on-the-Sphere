@@ -12,7 +12,7 @@ A_MODE, B_MODE = (4, 5, 3), (3, 4, 3)  # quartet_rossby_kelvin's own edge
 def test_member_role_matches_quartet_rossby_kelvin():
     # d=EG(1,1) is quartet_rossby_kelvin's own registered member-role
     # completion of this edge -- locks each mode's own coupling value
-    # against the already-validated 2026-08-26 session result. A_MODE
+    # against the already-validated registry value. A_MODE
     # (m=4) is the pump here (bigger than B_MODE's m=3).
     cands = edge_completions(A_MODE, B_MODE, max_n=1, alphas=(1,), compute_coupling=True)
     assert len(cands) == 1

@@ -24,8 +24,7 @@ def test_triad_energy_conservation():
     """A 3-mode/1-triad WaveSet's total energy (E2+E3) is conserved to
     ~machine precision -- an *exact* identity for any 3-wave truncation
     regardless of resonance (re-confirmed numerically after an initial
-    mistake; see paper-nonlinear-interactions-SWE-sphere's own memory
-    'Paper §2.2 refactor status' / project history)."""
+    mistake computing E2/E3)."""
     gamma = gamma_from_he(H_E, g=G)[1]
     modes = [(4, 5, 3), (1, 2, 3), (3, 4, 3)]
     ws = WaveSet(gamma, modes, [(0, 1, 2)], N=N, deg=DEG)

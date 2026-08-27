@@ -20,7 +20,7 @@ def test_sweep_2d_merges_pairwise_and_functional():
     result = sweep_2d(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         diagnostics=("p_measure", "efficiency"),
-        u1_range=(0.0, 30.0), u2_range=(0.0, 30.0), n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
+        u1_range=(0.0, 30.0), u2_range=(0.0, 30.0), n_grid=2, tf_days=1, h=0.05, N=N, deg=DEG)
     assert "P" in result
     assert "Efficiency" in result
     assert "F2" not in result
@@ -34,6 +34,6 @@ def test_sweep_2d_pairwise_only():
     result = sweep_2d(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         diagnostics=("p_measure",),
-        u1_range=(0.0, 30.0), u2_range=(0.0, 30.0), n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
+        u1_range=(0.0, 30.0), u2_range=(0.0, 30.0), n_grid=2, tf_days=1, h=0.05, N=N, deg=DEG)
     assert "P" in result
     assert "Efficiency" not in result

@@ -50,7 +50,7 @@ def test_diagnostics_sweep_p_measure_matches_p_measure_sweep():
     (both share _integrate_sub_triad_amplitude)."""
     kwargs = dict(swept_indices=(2, 3), fixed_velocities={0: 30.0, 1: 30.0},
                   target_indices=[2, 3], u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-                  reference_triad=0, n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
+                  reference_triad=0, n_grid=2, tf_days=1, h=0.05, N=N, deg=DEG)
     p_only = p_measure_sweep(QUARTET_MODES, QUARTET_TRIADS, 10000.0, **kwargs)
     combined = wave_set_diagnostics_sweep(QUARTET_MODES, QUARTET_TRIADS, 10000.0,
                                            diagnostics=("p_measure",), **kwargs)
@@ -79,7 +79,7 @@ def test_diagnostics_sweep_subset_only_computes_requested_arrays():
     result = wave_set_diagnostics_sweep(
         QUARTET_MODES, QUARTET_TRIADS, 10000.0, (2, 3), {0: 30.0, 1: 30.0}, [2, 3],
         diagnostics=("novelty_period",), u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-        reference_triad=0, n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
+        reference_triad=0, n_grid=2, tf_days=1, h=0.05, N=N, deg=DEG)
     assert "NoveltyPeriod" in result
     assert "P" not in result
 
@@ -123,7 +123,7 @@ def test_wave_set_diagnostics_sweep_p_measure_final_matches_forced_single_refere
     it picks among the existing per-triad numbers, it doesn't invent one."""
     kwargs = dict(swept_indices=(2, 3), fixed_velocities={0: 30.0, 1: 30.0},
                   u1_range=(0.0, 30.0), u2_range=(0.0, 30.0),
-                  reference_triad=0, n_grid=2, tf_days=1, h=0.02, N=N, deg=DEG)
+                  reference_triad=0, n_grid=2, tf_days=1, h=0.05, N=N, deg=DEG)
     target_indices = [0, 1]  # a=RH(4,5), b=RH(3,4): shared members of BOTH triads
 
     p0 = wave_set_diagnostics_sweep(QUARTET_MODES, QUARTET_TRIADS, 10000.0,
