@@ -71,7 +71,7 @@ def novelty_frequency_figure(results: dict, target_label: str, result: dict, pat
         pow_sub_n = pow_sub / pow_sub.max() if pow_sub.max() > 0 else pow_sub
         ax.plot(p_sub, np.maximum(pow_sub_n, _Y_FLOOR), color=_SUB_COLORS[i % len(_SUB_COLORS)],
                 ls=_SUB_DASH_STYLES[i % len(_SUB_DASH_STYLES)], lw=1.3,
-                label=f"mode energy in {sub_name}")
+                label=f"mode energy in {sub['title']}")
 
     ax.plot(p_full, np.maximum(pow_full_n, _Y_FLOOR), color="black", lw=2.2,
             label="mode energy in quartet")
