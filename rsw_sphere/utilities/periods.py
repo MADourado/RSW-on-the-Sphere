@@ -217,9 +217,9 @@ def novel_frequency_content(t_full, E_full, t_sub, E_sub, **kwargs):
     equivalent -- an envelope of one spectrum is just that spectrum, and
     the excluded window is just that one sub-triad's own). Kept as its
     own name since most callers only ever have one sub-triad in hand
-    (e.g. the ``sweep_2d``/``pmeasure.py`` per-grid-point diagnostic,
-    which -- like every other pairwise diagnostic there -- compares
-    against one reference triad per target, not every containing triad).
+    (e.g. ``pmeasure.pairwise_target_diagnostics``'s own per-target-point
+    diagnostic, which compares against one reference triad per target,
+    not every containing triad).
     """
     return novel_frequency_content_multi(t_full, E_full, [(t_sub, E_sub)], **kwargs)
 

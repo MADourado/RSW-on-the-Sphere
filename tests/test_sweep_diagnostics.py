@@ -24,10 +24,11 @@ def test_normalize_alias():
 
 
 def test_normalize_novelty_aliases():
-    # 'novelty_period'/'novelty_freq' also name a DIFFERENT, existing
-    # 2D-only pairwise diagnostic (rsw_sphere.utilities.registry.ALL_2D,
-    # still used by run_sweep_sets.py/_triad_panel_row.py) -- aliased here
-    # to this engine's own final/combined variant anyway, on request.
+    # 'novelty_period'/'novelty_freq' also name a DIFFERENT, now-retired
+    # pairwise diagnostic (rsw_sphere.utilities.registry.ALL_2D, deleted
+    # once run_sweep_sets.py/_triad_panel_row.py migrated off it) --
+    # aliased here to this engine's own final/combined variant anyway,
+    # on request.
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     result = _normalize_diagnostics(("novelty_period", "novelty_freq"), spec)
     assert result == ["novel_period", "novel_freq"]
@@ -140,7 +141,7 @@ def test_compute_diagnostics_report_empty_for_plain_triad(tmp_path):
 def test_run_sweep_1d_diagnostics_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     sweep = SweepConfig(axes=(SweepAxis(mode="d", min=0.0, max=20.0),), n_grid=2,
-                         diagnostics=("all",), save_point_figures=False)
+                         diagnostics=("all",))
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep

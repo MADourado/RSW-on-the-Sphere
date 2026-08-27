@@ -25,14 +25,15 @@ The **old** 2D-only engine (`rsw_sphere.utilities.registry.sweep_2d`,
 `pmeasure.wave_set_diagnostics_sweep`, `functional.functional_diagnostics_sweep`
 -- `p_measure`/`p_measure_final`/`novelty_period` as *pairwise*,
 single-fixed-`reference_triad` diagnostics, distinct in meaning from the
-same-spelled names above) **still exists and is still load-bearing** --
-`run_sweep.py` itself no longer calls it, but `run_sweep_sets.py` (candidate
-screening) and `examples/figures/_triad_panel_row.py` (backing
-`paper_figure003`/`paper_figure004`) do, directly. Don't delete it when
-touching `run_sweep.py`'s own engine -- confirmed live during the 2026-08-27
-port (missed on the first pass of that work, since neither of those two
-consumers goes through `paper_figure010`/`011`, the ones checked at the
-time).
+same-spelled names above) **has been retired and deleted** (2026-08-27):
+its last two direct consumers, `run_sweep_sets.py` (candidate screening)
+and `examples/figures/_triad_panel_row.py` (backing `paper_figure003`/
+`paper_figure004`), were migrated onto `run_dynamics()` +
+`compute_diagnostics_report()` first. The old engine's exact pairwise
+semantics (needed for `paper_table03_rh_partner_family.py`'s live
+`p_measure` numbers) are reproduced from the new engine's own
+`report['pairwise']` by
+`rsw_sphere.dynamics.diagnostics_report.pairwise_value_for_target`.
 
 `precession`, the previous legacy dual-axis frequency+efficiency
 diagnostic (its own independent trajectory loop, kept separate to protect
@@ -78,7 +79,7 @@ reference implementation `WaveSet` is checked against (see §0 below).
 | `rsw_sphere/plotting/wave_set_table.py` | Batch table: per-mode frequency/period, one coupling-coefficient column per constituent triad, per-triad mismatch `δ` and pump mode |
 | `rsw_sphere/plotting/energy_evolution.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
 | `rsw_sphere/plotting/period_panel.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
-| `rsw_sphere/utilities/pmeasure.py` | P-measure (%) and filtering error ($\mathcal{F}_2^a$): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value or a 2D sweep over two initial velocities. Both diagnostics share one sweep loop (`wave_set_diagnostics_sweep`) so computing both costs one integration pass, not two |
+| `rsw_sphere/utilities/pmeasure.py` | P-measure (%): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange, as a single value (`p_measure_sweep`) or read off `rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`'s own per-grid-point report (`run_sweep.py`'s unified engine) |
 | `rsw_sphere/utilities/precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity, with every swept trajectory cached (§6) |
 
 `run_sweep.py` (repo root, §6.1) is a thin YAML-driven dispatcher over
@@ -86,10 +87,10 @@ these scripts' own sweep functions — prefer it over calling a
 `wave_set_*.py` script directly when the sweep is a one-off tied to a
 specific figure, so the config (not a new script) is what's committed.
 Its `sweep.diagnostics: [p_measure]` is the entry point for §5's
-P-measure panel ($\mathcal{F}_2^a$/filtering error was retired
-2026-08-27, replaced by the single-run-only spectral, share-normalized
-`spectral_deviation` -- not yet wired into this 2D sweep engine, see
-`rsw_sphere.utilities.periods.spectral_deviation`'s own docstring).
+P-measure panel ($\mathcal{F}_2^a$/filtering error was retired 2026-08-27,
+replaced by the spectral, share-normalized `spectral_deviation` -- wired
+into this 2D sweep engine as the `spectral_dev_var` scalar diagnostic;
+see `rsw_sphere.utilities.periods.spectral_deviation`'s own docstring).
 
 All five load their wave sets from a **registry YAML** rather than
 hardcoding mode numbers — by default
@@ -403,27 +404,29 @@ one session. **Always check `p_measure_sweep`'s returned array directly** (e.g.
 `(result['P'] < 0).mean()`) rather than answering "does this figure show
 inhibition" by looking at the rendered PNG.
 
-**Computing several diagnostics together: `wave_set_diagnostics_sweep`.**
+**Computing several diagnostics together: `run_sweep.py`'s unified engine.**
 Calling `p_measure_sweep` and a separate diagnostic-only sweep back to
 back would integrate the same full-wave-set and reference-triad
-trajectories twice for no reason. `wave_set_diagnostics_sweep(...,
-diagnostics=("p_measure", "novelty_period"))` shares **one** grid loop
-across whichever diagnostics are requested — the switch `run_sweep.py`'s
-own `sweep.diagnostics: [...]` (§6.1) exposes as YAML. `p_measure_sweep`
+trajectories twice for no reason. `run_sweep.py`'s own engine
+(`rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`)
+computes every diagnostic from **one** `run_dynamics()` call per grid
+point, whichever `sweep.diagnostics: [...]` (§6.1) requests. `p_measure_sweep`
 itself is kept as its own separate, unchanged function rather than
-replaced, since its `.npz` cache format is pinned to figures already on
-disk (`rsw_sphere.plotting.sweeps`'s own docstring) — `wave_set_diagnostics_sweep`
-is for a new combined-panel use case, not a drop-in replacement.
+folded in, since its `.npz` cache format is pinned to figures already on
+disk (`rsw_sphere.plotting.sweeps`'s own docstring).
 
 ```bash
 python -c "
+from rsw_sphere.dynamics.run_config import RunConfig, SweepAxis, SweepConfig
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
-from rsw_sphere.utilities.pmeasure import wave_set_diagnostics_sweep
+from run_sweep import run_sweep
 spec = load_wave_set_specs()['quartet_rossby_kelvin']
-triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
-result = wave_set_diagnostics_sweep(spec.modes, triads, spec.h_e, (2, 3),
-                                     {0: 30.0, 1: 30.0}, [2, 3], n_grid=5, tf_days=20, h=0.01)
-print(result['P'])
+sweep = SweepConfig(axes=(SweepAxis(mode='c', min=0.0, max=30.0),
+                           SweepAxis(mode='d', min=0.0, max=30.0)),
+                     n_grid=5, diagnostics=('p_measure', 'novel_period'))
+config = RunConfig.from_wave_set(spec, tf_days=20, h=0.01, sweep=sweep)
+result = run_sweep(config)
+print(result['p_measure']['series'])
 "
 ```
 
@@ -451,7 +454,8 @@ or a whole sweep-grid ndarray) — `p_measure_combined_for_target`/
 `_for_all_targets` wrap it around `run_dynamics.py`'s own results dict
 for single-run reporting (mirrors
 `rsw_sphere.utilities.novelty_frequency.novelty_combined_for_target`'s
-convention); `wave_set_diagnostics_sweep` wraps it for a 2D sweep.
+convention); `compute_diagnostics_report`'s own `final` list wraps it for
+a sweep (`run_sweep.py`'s `p_measure`/`p_measure_final` diagnostics).
 `run_dynamics.py --diagnostics`'s "final diagnostics" table section uses
 the single-run wrapper, alongside the equivalent multi-sub-triad-combined
 novelty-period result.
@@ -459,9 +463,9 @@ novelty-period result.
 **`spectral_deviation`** (`rsw_sphere.utilities.periods.spectral_deviation`,
 gated wrapper `_spectral_deviation` in `pmeasure.py`): retired the
 time-domain "filtering error"/F2 entirely 2026-08-27 (`plot_filtering_error_map`
-and the `"filtering_error"` sweep diagnostic are both gone -- not yet
-replaced in `wave_set_diagnostics_sweep`, single-run reporting only for
-now). F2 had two real problems: (1) comparing raw `|A_full(t)|` against
+and the `"filtering_error"` sweep diagnostic are both gone, replaced by
+the `spectral_dev_var` scalar diagnostic in `run_sweep.py`'s unified
+engine). F2 had two real problems: (1) comparing raw `|A_full(t)|` against
 `|A_sub(t)|` penalizes a sub-triad simply for having fewer active modes
 and therefore a smaller total-energy budget, not for behaving
 differently; (2) as a point-by-point time-domain RMS error, it never
@@ -617,18 +621,20 @@ computation) and composes its own dual-axis figure from the two results,
 reusing `rsw_sphere.plotting.precession_plot.plot_dual_axis_frequency_efficiency`
 unchanged.
 
-**A separate, older 2D-only engine still exists and is still
-load-bearing**, just no longer called by `run_sweep.py`:
-`rsw_sphere.utilities.registry.sweep_2d` (wrapping §5's
-`wave_set_diagnostics_sweep` and `functional_diagnostics_sweep`) computes
-`p_measure`/`p_measure_final`/`novelty_period`/`efficiency`/
+**The older, separate 2D-only engine has been retired and deleted**
+(2026-08-27): `rsw_sphere.utilities.registry.sweep_2d` (which wrapped
+§5's `wave_set_diagnostics_sweep` and `functional_diagnostics_sweep`)
+computed `p_measure`/`p_measure_final`/`novelty_period`/`efficiency`/
 `low_frequency_energy` as their original, *pairwise*
 (single-fixed-`reference_triad`) or single-trajectory-only meanings --
 distinct from the same-spelled names above, which are always the "final"
-combined meaning now. `run_sweep_sets.py` (candidate-mode screening) and
+combined meaning now. Its last two direct consumers,
+`run_sweep_sets.py` (candidate-mode screening) and
 `examples/figures/_triad_panel_row.py` (backing `paper_figure003`/
-`paper_figure004`) both call it directly -- don't remove it when touching
-`run_sweep.py`'s own engine.
+`paper_figure004`), were migrated onto `run_dynamics()` +
+`compute_diagnostics_report()` first; the old engine's exact pairwise
+selection is now reproduced by
+`rsw_sphere.dynamics.diagnostics_report.pairwise_value_for_target`.
 
 See `run_sweep.py`'s own module docstring for the full config schema.
 

@@ -34,7 +34,7 @@ def test_build_candidate_spec_velocity_override():
 
 
 @pytest.mark.slow
-def test_run_sweep_sets_end_to_end_small():
+def test_run_sweep_sets_end_to_end_small(tmp_path):
     config = {
         "base_wave_set": "quartet_rossby_kelvin",
         "candidate_slot": "d",
@@ -42,6 +42,7 @@ def test_run_sweep_sets_end_to_end_small():
         "candidates": [{"m": 1, "n": 1, "alpha": 1}, {"m": 1, "n": 1, "alpha": 2}],
         "diagnostics": ["p_measure"],
         "tf_days": 1.0, "h": 0.05,
+        "output_root": str(tmp_path),
     }
     results = rss.run_sweep_sets(config)
     assert len(results) == 2

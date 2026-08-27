@@ -26,8 +26,7 @@ Config:
     tf_days: 20
     h: 0.01
     table: outputs/tables/quartet_rossby_kelvin_candidates.csv
-    output: outputs/figures/wave_sets/quartet_rossby_kelvin_candidates.png
-    output_root: outputs
+    output_root: outputs                        # trajectory-cache/dynamics output root
 
 Run:
 
@@ -42,7 +41,7 @@ from concurrent.futures import ProcessPoolExecutor
 import yaml
 
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
-from rsw_sphere.dynamics.run_config import RunConfig
+from rsw_sphere.dynamics.run_config import RunConfig, default_max_workers
 from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, pairwise_value_for_target
 from rsw_sphere.plotting.labels import _mode_label
 
@@ -121,10 +120,11 @@ def _one_candidate_inner(args):
     a degenerate n_grid=1 2D sweep). Every requested diagnostic is read
     off the SAME report, no per-diagnostic extra integration.
     """
-    cand_spec, target_idx, diagnostics, tf_days, h = args
+    cand_spec, target_idx, diagnostics, tf_days, h, output_root = args
     target_label = _mode_label(*cand_spec.modes[target_idx])
 
-    config = RunConfig.from_wave_set(cand_spec, tf_days=tf_days, h=h, plot=False, parallel=False)
+    config = RunConfig.from_wave_set(cand_spec, tf_days=tf_days, h=h, output_root=output_root,
+                                      plot=False, parallel=False)
     results = run_dynamics(config)
     report = compute_diagnostics_report(results, cand_spec)
 
@@ -175,10 +175,11 @@ def run_sweep_sets(config: dict) -> list:
     h = config.get("h", spec.settings.get("h", 0.01))
 
     candidate_velocity = config.get("candidate_velocity")
+    output_root = config.get("output_root", "outputs")
     cand_specs = [_build_candidate_spec(spec, slot, m, velocity=candidate_velocity) for m in candidates]
-    args = [(cs, target_idx, diagnostics, tf_days, h) for cs in cand_specs]
+    args = [(cs, target_idx, diagnostics, tf_days, h, output_root) for cs in cand_specs]
 
-    max_workers = config.get("max_workers") or max(1, (os.cpu_count() or 2) // 2)
+    max_workers = config.get("max_workers") or default_max_workers()
     with ProcessPoolExecutor(max_workers=max_workers) as ex:
         rows = list(ex.map(_one_candidate, args))
 

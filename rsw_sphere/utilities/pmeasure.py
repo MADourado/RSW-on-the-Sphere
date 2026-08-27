@@ -324,10 +324,12 @@ def pairwise_target_diagnostics(T_days, amp_full, amp_sub, E_total_full, E_total
                                  novelty_min_prominence: float = 0.02,
                                  spectral_xmax: float = 3.0) -> dict:
     """Every pairwise (full wave set vs. one sub-triad) diagnostic for a
-    SINGLE already-integrated target-mode comparison -- reuses the exact
-    same per-grid-point formulas ``wave_set_diagnostics_sweep`` computes
-    at each cell, just for one point rather than a swept grid (single-run
-    reporting, e.g. ``run_dynamics.py --diagnostics``).
+    SINGLE already-integrated target-mode comparison -- the same formulas
+    the now-deleted ``wave_set_diagnostics_sweep`` engine used to compute
+    at each grid cell, just for one point rather than a swept grid
+    (single-run reporting, e.g. ``run_dynamics.py --diagnostics``, and
+    ``rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report``'s
+    own per-point call).
 
     amp_full, amp_sub : |A_target(t)|, full wave set / one sub-triad
         alone, on the SAME time grid (same tf_days/h for both).

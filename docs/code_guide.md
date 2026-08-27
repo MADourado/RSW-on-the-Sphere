@@ -20,17 +20,18 @@ run_sweep_sets.py            driver: loop a diagnostic over candidate-mode varia
        ├─ dynamics/          WaveSet/TRIAD, integrator, trajectory cache, RunConfig
        │    └─ periods/      analytic-period / Hamiltonian diagnostics
        ├─ utilities/         compute: diagnostics (pmeasure, periods, precession,
-       │                     efficiency, functional), the diagnostic registry
+       │                     efficiency)
        └─ plotting/          rendering only -- every plot_* fn takes already-computed
                               arrays, returns (fig, ax, ...), never integrates
 ```
 
 `rsw_sphere/utilities/` vs. `rsw_sphere/plotting/`: a function that returns
 numbers goes in `utilities/`; a function that only draws (given
-already-computed arrays) goes in `plotting/`. `utilities/registry.py` maps
-diagnostic name -> compute engine + plot function, used by
-`run_sweep.py`/`run_sweep_sets.py` -- adding a diagnostic is one registry
-entry, not a new sweep loop.
+already-computed arrays) goes in `plotting/`. `run_sweep.py`'s own
+diagnostic vocabulary (`_MODE_UNIT_DIAGNOSTICS`/`_TRIAD_DIAGNOSTICS`/
+`_SCALAR_DIAGNOSTICS`) maps diagnostic name -> report field + render
+function -- adding a diagnostic is one table entry, not a new sweep loop
+(see `docs/wave_sets.md`'s driver-interface note).
 
 No `postproc/` folder: an earlier reorg plan called for one (bespoke,
 paper-specific figure *assembly*, distinct from the general-analysis
@@ -130,9 +131,11 @@ figure combining several diagnostics (e.g. the paper's own
 precession-frequency-and-efficiency figure) is a separate script's job
 (`examples/figures/paper_figure006_quartet_a_precession.py`), not
 something this driver special-cases. See `docs/wave_sets.md` §6.1 for
-the full vocabulary and for the *separate*, older 2D-only engine
-(`rsw_sphere.utilities.registry.sweep_2d`) that `run_sweep_sets.py` and
-`examples/figures/_triad_panel_row.py` still call directly.
+the full vocabulary; the older, separate 2D-only engine
+(`rsw_sphere.utilities.registry.sweep_2d`) has been retired -- both
+`run_sweep_sets.py` and `examples/figures/_triad_panel_row.py` now go
+through this same unified engine (`run_dynamics()` +
+`compute_diagnostics_report()`/`compute_2d_grid()`).
 
     python run_sweep.py --wave-set quartet_rossby_kelvin
     python run_sweep.py --wave-set quartet_rh_preference
@@ -317,17 +320,18 @@ here. Fully documented in [`../docs/wave_sets.md`](../docs/wave_sets.md).
 
 ## `rsw_sphere/utilities/` — diagnostics compute
 
-`pmeasure.py` (P-measure, filtering error, frequency shift -- pairwise:
-full wave set vs. one constituent triad), `functional.py` (efficiency,
-low-frequency energy -- full wave set alone), `periods.py`
-(`dominant_periods`, `low_frequency_power`), `precession.py`
-(`precession_frequency_efficiency`), `efficiency.py`
-(`wave_set_efficiency`, drift-gated), `registry.py` (diagnostic name ->
-compute engine + plot function, used by `run_sweep.py`/`run_sweep_sets.py`).
-Every `*_sweep`/`*_diagnostics_sweep` function here takes a `cache_path`
-(`.npz`, cache-if-absent/load-if-present) and reads
-`rsw_sphere.utilities.efficiency.default_velocity_range` for its own
-default sweep range.
+`pmeasure.py` (P-measure, pairwise/final full-wave-set-vs-constituent-triad
+comparisons -- `p_measure_sweep`, `final_p_measure`,
+`pairwise_target_diagnostics`), `periods.py` (`dominant_periods`,
+`low_frequency_power`, novelty-frequency content, `spectral_deviation`),
+`precession.py` (`precession_frequency_efficiency`), `efficiency.py`
+(`wave_set_efficiency`, drift-gated, `default_velocity_range`). The
+unified sweep engine itself (`rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`,
+used by `run_sweep.py`/`run_sweep_sets.py`/`_triad_panel_row.py`) reads
+these functions' outputs per grid point rather than duplicating their
+formulas. `p_measure_sweep`/`efficiency_sweep`-style functions take a
+`cache_path` (`.npz`, cache-if-absent/load-if-present) as their own,
+separate sweep cache.
 
 ## Outputs
 
@@ -383,9 +387,11 @@ copied out of its folder, a self-contained filename doesn't.
 `derivatives_<alpha>-<m>-<n>.png` + `Hough_spatial_<alpha>-<m>-<n>.png`
 (e.g. `linear/RH-1-2/Hough_harmonic_RH-1-2.png`) -- folder and filenames
 both encode the mode so files stay identifiable if moved out of their
-folder. `run_sweep.py`/`run_sweep_sets.py` write under
-`outputs/figures/wave_sets/<wave_set_key>/...` instead (sweep/diagnostic
-figures, plus `sweep_2d`'s own per-point `.npz` cache files).
+folder. `run_sweep.py` writes under
+`outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv`
+instead -- one file pair per requested diagnostic, no single "the"
+output for a sweep to override (see `docs/wave_sets.md` §6.1).
+`run_sweep_sets.py` writes only its own `table:` CSV (no figures).
 
 **`outputs/tables/`** -- one `.tex`/`.csv` per `examples/tables/paper_table<NN>_*.py`/
 `paper_headline_*.py` script (see `examples/README.md` for the full list

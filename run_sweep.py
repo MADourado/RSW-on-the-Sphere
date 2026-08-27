@@ -48,7 +48,7 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import yaml
 
-from rsw_sphere.dynamics.run_config import RunConfig
+from rsw_sphere.dynamics.run_config import RunConfig, default_max_workers
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
 from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, write_diagnostics_files
 from rsw_sphere.plotting.labels import _mode_label, mode_fs_label
@@ -204,7 +204,7 @@ def _run_sweep_1d_diagnostics(config: RunConfig, requested: list, plot_per_point
     u_values = np.linspace(axis.min, axis.max, n_grid)
 
     points = [(_sweep_point_config(config, (axis,), (u,), plot_per_point), plot_per_point) for u in u_values]
-    with ProcessPoolExecutor(max_workers=config.max_workers or max(1, (os.cpu_count() or 2) // 2)) as ex:
+    with ProcessPoolExecutor(max_workers=config.max_workers or default_max_workers()) as ex:
         point_results = list(ex.map(_run_sweep_point, points))
 
     swept_mode_label = _mode_label(*spec.modes[spec.index(axis.mode)])
@@ -274,7 +274,7 @@ def compute_2d_grid(config: RunConfig, plot_per_point: bool = True):
 
     points = [(_sweep_point_config(config, axes, (U1[i, j], U2[i, j]), plot_per_point), plot_per_point)
               for i in range(n_grid) for j in range(n_grid)]
-    with ProcessPoolExecutor(max_workers=config.max_workers or max(1, (os.cpu_count() or 2) // 2)) as ex:
+    with ProcessPoolExecutor(max_workers=config.max_workers or default_max_workers()) as ex:
         flat_results = list(ex.map(_run_sweep_point, points))
     grid_results = np.empty((n_grid, n_grid), dtype=object)
     for idx, r in enumerate(flat_results):
@@ -369,6 +369,11 @@ def run_sweep(config: RunConfig, plot_cfg: dict = None, plot_per_point: bool = T
 
     default = ("efficiency",) if len(axes) == 1 else ("p_measure",)
     requested = _normalize_diagnostics(config.sweep.diagnostics or default, spec)
+    if not requested:
+        print("no requested diagnostic is valid for this wave set -- skipping sweep")
+        return {}
+    if len(axes) == 2 and config.sweep.n_grid < 2:
+        raise ValueError(f"2D sweep needs n_grid >= 2 to build a heatmap, got {config.sweep.n_grid}")
 
     if len(axes) == 1:
         return _run_sweep_1d_diagnostics(config, requested, plot_per_point, plot_cfg)

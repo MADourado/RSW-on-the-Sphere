@@ -18,6 +18,13 @@ if _ROOT not in sys.path:
 from rsw_sphere.dynamics.wave_set_specs import WaveSetSpec, DEFAULT_WAVESETS_PATH, load_wave_set_specs
 
 
+def default_max_workers() -> int:
+    """Half the available CPUs (min 1) -- leaves headroom since each
+    worker's own trajectory integration is itself single-threaded but
+    memory/BLAS-heavy."""
+    return max(1, (os.cpu_count() or 2) // 2)
+
+
 @dataclass(frozen=True)
 class SweepAxis:
     """One swept mode: role key + velocity range (m/s)."""
@@ -32,7 +39,6 @@ class SweepConfig:
     axes: tuple
     n_grid: int = 10
     diagnostics: tuple = ()
-    save_point_figures: bool = True
 
 
 @dataclass(frozen=True)
@@ -112,7 +118,6 @@ def _sweep_from_dict(raw, spec: WaveSetSpec):
         axes=axes,
         n_grid=int(raw.get("n_grid", 10)),
         diagnostics=tuple(raw.get("diagnostics", ())),
-        save_point_figures=raw.get("save_point_figures", True),
     )
 
 

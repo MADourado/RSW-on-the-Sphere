@@ -25,7 +25,7 @@ from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache, _mode_slug, ic_label, topology_folder
-from rsw_sphere.dynamics.run_config import RunConfig
+from rsw_sphere.dynamics.run_config import RunConfig, default_max_workers
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics
 from rsw_sphere.plotting.labels import _mode_label, mode_fs_label
@@ -162,7 +162,7 @@ def run_dynamics(config: RunConfig) -> dict:
             for name, modes, triads, velocities, title, triad_labels in units]
 
     if config.parallel and len(units) > 1:
-        max_workers = config.max_workers or max(1, (os.cpu_count() or 2) // 2)
+        max_workers = config.max_workers or default_max_workers()
         with ProcessPoolExecutor(max_workers=max_workers) as ex:
             results = list(ex.map(_integrate_and_plot_unit, args))
     else:

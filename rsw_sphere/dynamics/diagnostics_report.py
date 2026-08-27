@@ -143,21 +143,22 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
 
 
 def pairwise_value_for_target(report: dict, spec, target_idx: int, reference_triad: int, field: str):
-    """One row of report['pairwise'] -- the same (target, sub-triad) pair
-    ``pmeasure.wave_set_diagnostics_sweep``'s own single-fixed-reference-triad
-    diagnostics compare against (``pmeasure._default_triad_index_for_mode``'s
-    own selection: ``reference_triad`` if the target is one of its members,
-    else the first triad containing it). Returns NaN if the target belongs
-    to no sub-triad at all (e.g. a plain triad).
+    """One row of report['pairwise'] -- the same (target, sub-triad) pair the
+    now-deleted ``pmeasure.wave_set_diagnostics_sweep`` engine's own
+    single-fixed-reference-triad diagnostics used to compare against
+    (``pmeasure._default_triad_index_for_mode``'s own selection:
+    ``reference_triad`` if the target is one of its members, else the first
+    triad containing it). Returns NaN if the target belongs to no sub-triad
+    at all (e.g. a plain triad).
 
-    Lets a caller (``run_sweep_sets.py``) reproduce that engine's exact
+    Lets a caller (``run_sweep_sets.py``) reproduce that old engine's exact
     pairwise ``p_measure``/``novelty_period`` values from this module's own
     report, instead of a separate integration pass -- same formula either
     way (``pairwise_target_diagnostics``), just read from a different,
     already-computed place.
 
-    target_idx : positional index into spec.modes (as `wave_set_diagnostics_sweep`'s
-        own `target_indices` takes), not a registry mode key or label.
+    target_idx : positional index into spec.modes (as the old engine's own
+        `target_indices` took), not a registry mode key or label.
     field : 'p_measure_pct', 'efficiency_var_pct', 'spectral_dev_pct',
         'novelty_period_days', or 'novelty_relevance_pct' (report['pairwise']'s
         own row keys).

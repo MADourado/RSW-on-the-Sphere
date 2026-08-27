@@ -1,4 +1,4 @@
-"""P-measure and filtering-error (F2) map rendering.
+"""P-measure map rendering.
 
 Compute lives in rsw_sphere.utilities.pmeasure; this module only draws.
 
@@ -48,7 +48,6 @@ def plot_p_measure_map(U1, U2, P, xlabel: str = None, ylabel: str = None,
     if own_fig:
         save_or_show(fig, path)
     return fig, ax, cs, n_clipped
-
 
 
 def main():
