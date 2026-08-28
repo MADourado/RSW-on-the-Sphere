@@ -75,6 +75,7 @@ _COL_TITLES = {
     "spectral_dev_var (%)": "Spectral deviation, final (%)",
     "novelty_period (days)": "Novelty period (days)", "efficiency (%)": "Efficiency (%)",
     "low_frequency_energy": "Low-frequency energy",
+    "total_energy_joules": "Total energy, full wave set (J)",
 }
 #: Columns present on every row that aren't a diagnostic/property to plot.
 _BASE_COLUMNS = frozenset({"mode", "m", "n", "alpha", "error", "run_dir", "figure_path",
@@ -152,6 +153,14 @@ def _one_candidate_inner(args):
         member_p, member_q, _ = cand_spec.sub_triad_modes(t_idx)
         unit_name = f"triad_{_mode_slug(*member_p)}_{_mode_slug(*member_q)}"
         row["isolated_triad_efficiency (%)"] = 100 * report["per_mode_unit"][unit_name][target_label]["efficiency"]
+    # Full wave set's own dimensional energy budget (Joules) -- always
+    # computed (like delta/coeff/period_days above), not gated behind
+    # `diagnostics:`, so it's there to check against ANY requested
+    # diagnostic's own trend across candidates (e.g. does efficiency_var's
+    # drop track a growing total-energy budget rather than the target's
+    # own raw swing shrinking -- see compute_diagnostics_report's own
+    # unit_energy docstring).
+    row["total_energy_joules"] = report["unit_energy"]["full"]["mean_total_energy_joules"]
 
     for d in diagnostics:
         if d in _PAIRWISE_FIELDS:
@@ -219,8 +228,11 @@ def run_sweep_sets(spec_key: str, slot: str, specs_path: str = DEFAULT_WAVESETS_
         One row per candidate: ``mode``/``m``/``n``/``alpha`` (candidate
         identity), ``delta``/``coeff``/``isolated_triad_efficiency (%)``
         (static properties of the target's own resolved reference triad),
-        plus every requested diagnostic, plus ``run_dir``/``figure_path``
-        if ``plot_dynamics`` -- or ``{'error': str}`` for a candidate that
+        ``total_energy_joules`` (the full wave set's own dimensional
+        energy budget with this candidate substituted in -- always
+        computed, not gated behind ``diagnostics:``), plus every
+        requested diagnostic, plus ``run_dir``/``figure_path`` if
+        ``plot_dynamics`` -- or ``{'error': str}`` for a candidate that
         failed to build/integrate.
     """
     spec = load_wave_set_specs(specs_path)[spec_key]

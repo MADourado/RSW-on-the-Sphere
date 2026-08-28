@@ -17,6 +17,7 @@ from rsw_sphere.utilities.pmeasure import (
     pairwise_target_diagnostics, p_measure_combined_for_all_targets, _default_triad_index_for_mode)
 from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_all_targets
 from rsw_sphere.utilities.tables import write_csv
+from rsw_sphere.physics import total_energy_joules
 from rsw_sphere.dynamics.trajectory_cache import _mode_slug
 from rsw_sphere.plotting.labels import _mode_label
 from rsw_sphere.plotting.novelty_frequency_panel import novelty_frequency_figures
@@ -55,6 +56,19 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
             which was arbitrary relative to a fast mode (a ~66x
             separation) and barely separated at all for a slow one
             (found 2026-08-28).
+        unit_energy : {unit_name: {mean_total_energy_nondim,
+            mean_total_energy_joules}} -- one entry per unit (``full`` and
+            every sub-triad), ``E_total``'s own time-mean converted to
+            Joules via ``rsw_sphere.physics.total_energy_joules``. Lets a
+            caller check whether a wave set's own total-energy budget
+            actually changes across candidates/sweep points, rather than
+            assuming it's fixed -- ``efficiency``/``efficiency_var`` both
+            normalize by each unit's OWN ``E_total.mean()``, which is NOT
+            the same number for ``full`` vs. a sub-triad (fewer active
+            modes -> smaller budget), so a drop in ``efficiency_var`` can
+            reflect the full wave set's budget growing rather than the
+            target's own raw swing shrinking (see
+            ``efficiency_variation``'s own docstring).
         precession : {triad_label: {freq_full_cpd, freq_alone_cpd (or
             None), phase_variation_pct (nan if no alone comparison)}} --
             empty if spec has no sub-triads.
@@ -76,9 +90,15 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
     """
     per_mode_unit = {}
     eff_cache = {}
+    unit_energy = {}
     t_f_days_by_unit = {}
     for name, r in results.items():
         per_mode_unit[name] = {}
+        mean_e_nondim = float(np.mean(r['E_total']))
+        unit_energy[name] = {
+            'mean_total_energy_nondim': mean_e_nondim,
+            'mean_total_energy_joules': total_energy_joules(mean_e_nondim, spec.h_e),
+        }
         t_f_days_by_unit[name] = float(r['t'][-1] - r['t'][0])
         for j, (lbl, w, dEK) in enumerate(zip(r['labels'], r['omega'], r['dEK'])):
             pr = dominant_periods(r['t'], r['E'][:, j])
@@ -193,7 +213,7 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
             })
 
     return {
-        'per_mode_unit': per_mode_unit, 'eff_cache': eff_cache,
+        'per_mode_unit': per_mode_unit, 'eff_cache': eff_cache, 'unit_energy': unit_energy,
         'precession': precession, 'pairwise': pairwise, 'final': final,
     }
 

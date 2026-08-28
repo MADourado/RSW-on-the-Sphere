@@ -95,6 +95,43 @@ def air_density_from_equivalent_depth(h_e: float, g: float = G, p_s: float = P_S
     return p_s / (g * h_e)
 
 
+def total_energy_joules(e_nondim, h_e: float, a: float = A, g: float = G, p_s: float = P_S):
+    """Convert a nondimensional wave-set energy quantity to Joules, via the
+    same ``eq: enerA`` prefactor used for a single mode's own ``||A_a||^2``
+    (``EK_a = (g h_0^2 a^2 pi) * rho * ||A_a||^2``, ``rho`` from
+    ``air_density_from_equivalent_depth``).
+
+    Valid for ``WaveSet.energy()``'s own ``E_total = E2 + E3`` (or any mean
+    of it over time), not just a single mode's ``E_a``: ``E2 = sum_a
+    ||A_a||^2`` is a plain sum of exactly that same per-mode quantity, and
+    ``E3`` (the cubic correction) is built from the same per-mode-normalized
+    amplitudes throughout -- so the prefactor that turns one mode's
+    ``||A_a||^2`` into Joules turns the whole sum into Joules too, with no
+    separate rescaling needed.
+
+    Parameters
+    ----------
+    e_nondim : float or array_like
+        Nondimensional energy (``E_total``, or ``E_total.mean()`` over a
+        trajectory).
+    h_e : float
+        Equivalent depth, m (``h_0`` in ``eq: enerA``).
+    a : float, optional
+        Planetary radius, m. Default ``A`` (Earth).
+    g : float, optional
+        Gravitational acceleration, m/s^2. Default ``G``.
+    p_s : float, optional
+        Mean surface pressure, Pa. Default ``P_S``.
+
+    Returns
+    -------
+    float or array_like
+        Energy in Joules.
+    """
+    rho = air_density_from_equivalent_depth(h_e, g=g, p_s=p_s)
+    return g * h_e ** 2 * a ** 2 * np.pi * rho * e_nondim
+
+
 def days_from_nondim_time(t):
     """Convert nondimensional triad-dynamics time to days.
 

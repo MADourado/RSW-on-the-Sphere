@@ -45,7 +45,7 @@ def test_normalize_warns_and_skips_scalar_diagnostics_on_plain_triad(capsys):
     assert spec.has_subtriads() is False
     result = _normalize_diagnostics(("all",), spec)
     assert set(result) == {"efficiency", "dominant_freq", "dominant_period", "low_frequency_energy",
-                            "dynamical_phase"}
+                            "dynamical_phase", "total_energy"}
     out = capsys.readouterr().out
     for name in ("p_measure", "efficiency_var", "spectral_dev_var", "novel_freq", "novel_period"):
         assert f"diagnostic {name!r}" in out
@@ -167,7 +167,7 @@ def test_run_sweep_1d_diagnostics_plain_triad_smoke(tmp_path):
     from run_sweep import run_sweep
     result = run_sweep(config, plot_per_point=False)
     assert set(result) == {"efficiency", "dominant_freq", "dominant_period", "low_frequency_energy",
-                            "dynamical_phase"}
+                            "dynamical_phase", "total_energy"}
 
 
 @pytest.mark.slow

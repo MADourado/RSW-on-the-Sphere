@@ -18,6 +18,14 @@ One diagnostic vocabulary, both dimensionalities:
   way `run_dynamics.py --diagnostics`'s own "final diagnostics" table
   does (same meaning in 1D and 2D). Undefined for a plain triad with no
   sub-triad to compare against -- warned and skipped there.
+- `total_energy` -- one line/heatmap per UNIT (`full` plus every
+  sub-triad, not per mode): each unit's own time-averaged total energy,
+  in Joules (`rsw_sphere.physics.total_energy_joules`, same conversion
+  ``eq: enerA`` uses for a single mode). Useful alongside
+  `efficiency_var` when screening a sweep axis that changes the wave
+  set's own energy budget (e.g. a driving velocity), since
+  `efficiency_var` normalizes by that same budget and can shift even
+  when the target's own raw dynamics (`p_measure`) does not.
 
 `diagnostics: [all]` expands to every name above. Output:
 `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png` +
@@ -65,6 +73,7 @@ _MODE_UNIT_KEYS = {'efficiency': 'efficiency', 'dominant_freq': 'freq_global_cpd
                     'dominant_period': 'period_global', 'low_frequency_energy': 'low_freq_power'}
 _TRIAD_DIAGNOSTICS = ("dynamical_phase",)
 _SCALAR_DIAGNOSTICS = ("p_measure", "efficiency_var", "spectral_dev_var", "novel_freq", "novel_period")
+_UNIT_DIAGNOSTICS = ("total_energy",)
 #: A signed % change (inhibition vs. enhancement) needs a diverging,
 #: zero-centered colormap in 2D -- spectral_dev_var/novel_freq/novel_period
 #: are all non-negative by construction (L2 distance / period / frequency).
@@ -74,7 +83,7 @@ _SCALAR_ALIASES = {
     "novelty_period": "novel_period",
     "novelty_freq": "novel_freq",
 }
-_ALL_DIAGNOSTICS = _MODE_UNIT_DIAGNOSTICS + _TRIAD_DIAGNOSTICS + _SCALAR_DIAGNOSTICS
+_ALL_DIAGNOSTICS = _MODE_UNIT_DIAGNOSTICS + _TRIAD_DIAGNOSTICS + _SCALAR_DIAGNOSTICS + _UNIT_DIAGNOSTICS
 _KNOWN = frozenset(_ALL_DIAGNOSTICS)
 
 _DIAG_META = {
@@ -88,6 +97,7 @@ _DIAG_META = {
     'spectral_dev_var': ('Spectral deviation (final, %)', 'spectral deviation'),
     'novel_freq': ('Novel frequency (final, cpd)', 'novel frequency'),
     'novel_period': ('Novel period (final, d)', 'novel period'),
+    'total_energy': ('Total energy (J)', 'total energy'),
 }
 
 
@@ -171,7 +181,9 @@ def _run_sweep_point(args) -> dict:
         }
         for d in report['final']
     }
-    return {'per_mode_unit': per_mode_unit, 'precession_freq': precession_freq, 'final': final}
+    unit_energy = {unit: m['mean_total_energy_joules'] for unit, m in report['unit_energy'].items()}
+    return {'per_mode_unit': per_mode_unit, 'precession_freq': precession_freq, 'final': final,
+            'unit_energy': unit_energy}
 
 
 def _write_sweep_csv(path: str, u_values, series: dict):
@@ -250,6 +262,13 @@ def _run_sweep_1d_diagnostics(config: RunConfig, requested: list, plot_per_point
             series = {
                 lbl: np.abs(np.array([p['precession_freq'][lbl] for p in point_results]))
                 for lbl in triad_labels
+            }
+            plot_triad_sweep(u_values, series, xlabel, ylabel, f"{title}: {short_title}", png_path)
+        elif name in _UNIT_DIAGNOSTICS:
+            unit_names = list(point_results[0]['unit_energy'])
+            series = {
+                unit: np.array([p['unit_energy'][unit] for p in point_results])
+                for unit in unit_names
             }
             plot_triad_sweep(u_values, series, xlabel, ylabel, f"{title}: {short_title}", png_path)
         else:  # _SCALAR_DIAGNOSTICS
@@ -344,6 +363,11 @@ def _run_sweep_2d_diagnostics(config: RunConfig, requested: list, plot_per_point
             triad_labels = list(grid_results[0, 0]['precession_freq'])
             series = {lbl: np.abs(_grid_of(lambda p, lbl=lbl: p['precession_freq'][lbl]))
                       for lbl in triad_labels}
+            plot_triad_heatmap_sweep(U1, U2, series, xlabel, ylabel_axis, f"{title}: {short_title}", png_path,
+                                      cbar_label=cbar_label)
+        elif name in _UNIT_DIAGNOSTICS:
+            unit_names = list(grid_results[0, 0]['unit_energy'])
+            series = {unit: _grid_of(lambda p, unit=unit: p['unit_energy'][unit]) for unit in unit_names}
             plot_triad_heatmap_sweep(U1, U2, series, xlabel, ylabel_axis, f"{title}: {short_title}", png_path,
                                       cbar_label=cbar_label)
         else:  # _SCALAR_DIAGNOSTICS
