@@ -1,0 +1,17 @@
+TODO
+- figure 5, check if the topologies are matching the numerical cases used. I think quartet D is not matching. Are you sure we use WG in quartet D?
+- review consistency of the metrics shown in quartets section. P_a should show th mode name. Will we use P_a? or just efficiency var?
+- check for usage of p-measure and efficeincy variation: idealy use both, since when we change some parameters we change the total energy of the system!
+-- Review full text for this and check were we need new figures and text changes/aditions and where we don't. If the figure of p-measure is similar to efficiency variation, then use just efficiency variation and note in text the p-measure is similar.
+
+- change author order: peixoto, dourado, teruya...raphaldini last as corresponding.
+
+quintets:
+- re-test current quintet with Kelvin mode quintet_gravity_star. quintet A
+- build a new quintet (B) based on quartets D and E and a full section on quintets.
+- add in paper the diagram with these quintet
+- add analysis in paper for these 2 quintets: 
+-- panels containing for each quintet: 
+--- evolution of each individual triad (3-top row)
+--- evolution of quintet and spectra of 2 rossby modes, RH(1,2) and RH(4,5) for quintet A and for quintet B RH(3,4) RH(4,5)
+later we will include other analysis for these quintets.
