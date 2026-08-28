@@ -149,8 +149,24 @@ quartet_rh_preference:
   sweep:
     axes: [{mode: d, min: 10.0, max: 150.0}]
     n_grid: 45
-    diagnostics: [dynamical_phase, efficiency]
+    diagnostics: [dynamical_phase, efficiency_var]
   tf_days: 150.0
+  alternative_modes:
+    # RH(3,n) partner family, n=4..16 (odd n excluded -- zero coupling by
+    # the equatorial-symmetry selection rule). Replaces the retired
+    # examples/triad_families.yaml's rh_partner_family entry.
+    d:
+      target_mode: d
+      diagnostics: [efficiency_var]
+      tf_days: 240.0
+      candidates:
+        - {m: 3, n: 4, alpha: 3}    # RH(3,4) -- also the quartet's own fixed c
+        - {m: 3, n: 6, alpha: 3}    # RH(3,6) -- the registered mode itself
+        - {m: 3, n: 8, alpha: 3}
+        - {m: 3, n: 10, alpha: 3}
+        - {m: 3, n: 12, alpha: 3}
+        - {m: 3, n: 14, alpha: 3}
+        - {m: 3, n: 16, alpha: 3}
 
 quartet_rh_alt_partner:
   label: "RH(1,2)+RH(4,5) with RH(3,4) and RH(3,8)"
@@ -226,7 +242,32 @@ quartet_rossby_kelvin:
     n_grid: 10
     diagnostics: [all]
   plot:
-    title: "Quartet C -- draft analysis panel"
+    title: "Quartet C"
+  alternative_modes:
+    # Candidates completing Triad 2's own selection rule (m_d = m_a - m_b = 1)
+    # -- pasted from:
+    # python run_mode_search.py --edge 4,5,3 3,4,3 --max-n 15 --alphas 1,2
+    # keeping only the role=member (m=1) rows.
+    d:
+      target_mode: d
+      diagnostics: [efficiency_var]
+      candidates:
+        - {m: 1, n: 1, alpha: 1}    # EG(1,1) -- the registered mode itself
+        - {m: 1, n: 3, alpha: 1}
+        - {m: 1, n: 5, alpha: 1}
+        - {m: 1, n: 7, alpha: 1}
+        - {m: 1, n: 9, alpha: 1}
+        - {m: 1, n: 11, alpha: 1}
+        - {m: 1, n: 13, alpha: 1}
+        - {m: 1, n: 15, alpha: 1}
+        - {m: 1, n: 1, alpha: 2}
+        - {m: 1, n: 3, alpha: 2}
+        - {m: 1, n: 5, alpha: 2}
+        - {m: 1, n: 7, alpha: 2}
+        - {m: 1, n: 9, alpha: 2}
+        - {m: 1, n: 11, alpha: 2}
+        - {m: 1, n: 13, alpha: 2}
+        - {m: 1, n: 15, alpha: 2}
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"

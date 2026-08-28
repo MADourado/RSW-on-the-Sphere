@@ -14,9 +14,13 @@ directly in `wave_sets_default.yaml` (see [`wave_sets.md`](wave_sets.md) §1):
 | `triad_dynamics.py` (energy integration) | `run_dynamics.py --wave-set <triad_key>` |
 | `triad_efficiency.py` (2D efficiency sweep) | `run_sweep.py --wave-set <triad_key>` with an explicit `sweep.axes` block in the registry entry (a plain triad has no "private" modes for `run_sweep.py` to auto-derive sweep axes from, unlike a quartet/quintet) |
 
-`rsw_sphere.dynamics.triad_family_specs` (RH(3,n) partner-family registry,
-used by `examples/rh_partner_family.py`) is a separate, still-active
-facility and was not affected by this retirement.
+`rsw_sphere.dynamics.triad_family_specs`/`examples/triad_families.yaml`/
+`examples/rh_partner_family.py` (RH(3,n) partner-family registry) were
+retired 2026-08-28 in a separate change: the RH(3,n) family is now
+`quartet_rh_preference`'s own registered `alternative_modes.d` block
+(`wave_sets_default.yaml`), screened via `run_sweep_sets.py
+--wave-set quartet_rh_preference --slot d` -- see `docs/wave_sets.md`'s
+`alternative_modes` section.
 
 `examples_legacy/make_section22_figures.py`'s composite-panel figures
 (cited by `JFM-template.tex`'s own regenerate-comments) were rewritten

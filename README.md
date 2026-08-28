@@ -53,9 +53,9 @@ The main physical questions explored (see the thesis for full detail):
   registry: `run_linear_modes.py` (dispersion relation + per-mode Hough
   plots, `--wave-set KEY`/`--run-all`); `run_dynamics.py`, `run_sweep.py`,
   `run_sweep_sets.py` (integration, IC sweeps, and candidate-mode
-  screening, sharing one config class,
-  `rsw_sphere.dynamics.run_config.RunConfig`), each taking their own YAML
-  per invocation. A triad is just the registry's 1-triad case, so the
+  screening -- all sharing one config class,
+  `rsw_sphere.dynamics.run_config.RunConfig`, and all `--wave-set KEY`-driven,
+  no separate config file). A triad is just the registry's 1-triad case, so the
   same registry covers triads, quartets and quintets. Plus a fifth,
   registry-independent driver, `run_mode_search.py`, for finding what
   *could* go in the registry: given 2 fixed modes (an edge) or 1 (a
@@ -148,8 +148,10 @@ python run_dynamics.py --wave-set quartet_rossby_kelvin
 # own registry entry
 python run_sweep.py --wave-set quartet_rossby_kelvin
 
-# screen a list of candidate modes filling one slot of a registered wave set
-python run_sweep_sets.py --config examples/candidates_quartet_rossby_kelvin.yaml
+# screen candidate modes filling one slot of a registered wave set --
+# candidates + diagnostics come from that wave set's own registered
+# `alternative_modes.<slot>` block (wave_sets_default.yaml)
+python run_sweep_sets.py --wave-set quartet_rossby_kelvin --slot d
 ```
 
 All four drivers select from the same `wave_sets_default.yaml` registry
@@ -166,8 +168,7 @@ To add a triad/quartet/quintet, add an entry to `wave_sets_default.yaml`
 1-triad case. A wave set not yet worth adding to the default registry
 can be pointed at with `--specs path/to/other.yaml` instead (same schema,
 e.g. `examples/wave_sets_custom.yaml`). See [`examples/`](examples/) for
-`run_sweep.py`/`run_sweep_sets.py` config variants reproducing specific
-thesis figures/tables.
+`run_sweep.py` config variants reproducing specific thesis figures/tables.
 
 `run_sweep.py --wave-set KEY` is a general driver for parameter sweeps
 over a registered wave set (dynamical phase, efficiency, dominant

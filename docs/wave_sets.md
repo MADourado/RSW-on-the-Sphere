@@ -200,6 +200,57 @@ wavenumber constraint for you.
 (EG/WG) mode velocities up to 50 m/s
 (`rsw_sphere.utilities.efficiency.default_velocity_range`).
 
+### `alternative_modes:` — candidate-mode substitution
+
+An optional top-level block per entry, one sub-block per swapped mode
+key, read directly by `run_sweep_sets.py` (a raw YAML passthrough like
+`sweep:`/`plot:` above — not a `WaveSetSpec` field, since only that one
+driver consumes it):
+
+```yaml
+quartet_rossby_kelvin:
+  ...
+  alternative_modes:
+    d:                              # mode key being substituted
+      target_mode: d                # optional, default: the slot itself
+      diagnostics: [efficiency_var] # subset of {p_measure, p_measure_final,
+                                     # efficiency_var, novelty_period,
+                                     # efficiency, low_frequency_energy}
+      candidate_velocity: 30.0      # optional: drive every candidate at
+                                     # this velocity instead of the slot's
+                                     # own registered one
+      tf_days: 20                   # optional override (default: the
+      h: 0.01                       # wave set's own settings block)
+      candidates:                   # m/n/alpha triples -- paste straight
+        - {m: 1, n: 1, alpha: 1}    # from run_mode_search.py's own output
+        - {m: 1, n: 3, alpha: 1}    # (drop role/required_m/coup_*/pump)
+```
+
+`python run_sweep_sets.py --wave-set quartet_rossby_kelvin --slot d` runs
+one static (never swept) `run_dynamics()` + `compute_diagnostics_report()`
+point per candidate, at the base wave set's own registered velocities
+(unless `candidate_velocity` overrides the slot's own). Every requested
+diagnostic, plus each candidate's own static `delta` (frequency
+mismatch), `coeff` (coupling coefficient), and isolated-triad
+`efficiency` (all three cheap — no extra integration, read off the
+target's own resolved reference triad the same way
+`pairwise_value_for_target` resolves one), becomes both a CSV column
+(`outputs/sweep_sets/<wave_set_key>/<slot>/candidates.csv`) and its own
+point-wise figure (`candidates_<column>.png` — one point per candidate,
+no connecting line, since candidates have no natural ordering unlike a
+swept continuous velocity).
+
+Retired 2026-08-28: the separate `triad_families.yaml`/
+`rsw_sphere.dynamics.triad_family_specs`/`examples/rh_partner_family.py`
+mechanism (two modes fixed, a third varied over an explicit list) and the
+standalone `run_sweep_sets.py --config path.yaml` interface (`base_wave_set`/
+`candidate_slot`/`candidates_from` in an ad-hoc file) — candidate-mode
+screening is now entirely registry-driven, matching every other driver.
+`quartet_rh_preference`'s own `alternative_modes.d` (RH(3,n), n=4..16)
+reproduces the old `rh_partner_family` family exactly (verified
+numerically identical at the same tf_days before the retirement) and
+backs `examples/tables/paper_table03_rh_partner_family.py`.
+
 ### Adding a new quartet or quintet
 
 1. Add an entry to `wave_sets_default.yaml` (or your own YAML —

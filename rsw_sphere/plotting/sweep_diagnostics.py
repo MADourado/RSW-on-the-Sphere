@@ -65,6 +65,30 @@ def plot_mode_scalar_sweep(u_values, series: dict, xlabel: str, ylabel: str, tit
     return _plot_lines(u_values, series, xlabel, ylabel, title, path)
 
 
+def plot_candidate_scalar(labels, values, ylabel: str, title: str, path: str = None):
+    """One point per candidate mode -- no connecting line, since candidates
+    (which mode fills a slot) have no natural ordering, unlike a swept
+    continuous velocity. Used by run_sweep_sets.py's own candidate-mode
+    screening (rsw_sphere.dynamics.diagnostics_report's "final" scalar
+    diagnostics, one point per candidate instead of one line per grid point).
+
+    labels : sequence of str -- candidate mode labels (x-axis tick labels)
+    values : sequence of float, same length as labels
+    """
+    apply_house_style()
+    fig, ax = plt.subplots(figsize=(max(6, 0.5 * len(labels)), 4.5))
+    x = np.arange(len(labels))
+    ax.scatter(x, values, s=40, zorder=3)
+    ax.axhline(0, color='grey', lw=0.8, ls='--', zorder=1)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    fig.tight_layout()
+    save_or_show(fig, path)
+    return fig, ax
+
+
 def _heatmap_grid(U1, U2, series: dict, xlabel: str, ylabel: str, title: str, path: str,
                    diverging: bool = False, cbar_label: str = ''):
     """Shared heatmap-panel-grid body: one contourf panel per series key

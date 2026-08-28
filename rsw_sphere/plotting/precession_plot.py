@@ -10,7 +10,8 @@ from rsw_sphere.plotting.labels import _mode_label
 
 
 def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
-                                         xlabel='', title='', plot_u_max=None, path=None):
+                                         xlabel='', title='', plot_u_max=None, path=None,
+                                         efficiency_label=r'Efficiency $\mathcal{E}_{\mathrm{avg}}$'):
     """Twin-axis "precession frequency (dotted) + efficiency (solid)" figure.
 
     result : output of precession_frequency_efficiency.
@@ -18,6 +19,9 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
     plot_triad : int or None -- draw only that triad's frequency curve
         (every triad is still computed regardless).
     plot_u_max : float or None -- crop the plotted/auto-scaled range.
+    efficiency_label : right-axis label/legend text -- override when
+        `result['efficiency']` is a different quantity than the plain
+        efficiency share (e.g. the efficiency variation Delta-E_a).
     """
     u_values = result['u_values']
     freq_by_triad = dict(result['freq_by_triad'])
@@ -59,10 +63,10 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
 
     if efficiency is not None:
         ax2 = ax.twinx()
-        ax2.plot(u_values, 100 * efficiency, 'd-', ms=3, color='C3',
-                 label=r'Efficiency $\mathcal{E}_{\mathrm{avg}}$')
-        ax2.set_ylabel(r'Efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)', color='C3')
+        ax2.plot(u_values, 100 * efficiency, 'd-', ms=3, color='C3', label=efficiency_label)
+        ax2.set_ylabel(f'{efficiency_label} (\\%)', color='C3')
         ax2.tick_params(axis='y', labelcolor='C3')
+        ax2.axhline(0, color='C3', ls=':', lw=0.8, alpha=0.5)
         lines2, labels2 = ax2.get_legend_handles_labels()
         all_lines += lines2
         all_labels += labels2

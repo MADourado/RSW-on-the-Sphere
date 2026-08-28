@@ -69,8 +69,10 @@ time integration). `run_dynamics.py`/`run_sweep.py` build a
 `rsw_sphere.dynamics.run_config.RunConfig` (`tf_days`/`h`/`output_root`/
 `plot`/`parallel`; a `sweep:` block for `run_sweep.py`) straight from the
 registry entry (`RunConfig.from_registry_entry`/`from_wave_set`).
-`run_sweep_sets.py` reads its own, differently-shaped YAML directly
-(`--config`, required). See `examples/` for configs.
+`run_sweep_sets.py` similarly reads its own `alternative_modes:` block
+straight from the registry entry (`--wave-set KEY --slot LETTER`), a raw
+YAML passthrough like `sweep:`/`plot:` rather than a `WaveSetSpec` field
+(only this one driver consumes it). See `examples/` for configs.
 
 ### `run_linear_modes.py` (renamed from `run_diagnostics.py`)
 Creates the output directory (`<output-root>/figures/`), then optionally:
@@ -142,25 +144,32 @@ through this same unified engine (`run_dynamics()` +
 
 ### `run_sweep_sets.py`
 Loops a diagnostic over a LIST of wave-set variants -- substituting which
-mode fills one slot (`candidate_slot`), not sweeping a velocity.
-`candidates_from: {max_n}` infers the required zonal wavenumber from
-`candidate_slot`'s own triad selection rule (`m_sum = m_p + m_q`); `target_mode`
-is the (usually different, already-driven) mode whose diagnostic value is
-reported. One point per candidate (own registered velocities, unless
+mode fills one slot, not sweeping a velocity. Candidates + diagnostics
+come from that wave set's own registered `alternative_modes.<slot>` block
+(`wave_sets_default.yaml`, see `docs/wave_sets.md`'s own section on the
+schema) -- `target_mode` is the (usually different, already-driven) mode
+whose diagnostic value is reported, defaulting to the slot itself. One
+point per candidate (own registered velocities, unless
 `candidate_velocity` overrides the candidate slot's own velocity),
-parallel across candidates, writes a CSV (`table:`).
+parallel across candidates. Every requested diagnostic, plus each
+candidate's own static `delta`/`coeff`/isolated-triad `efficiency`
+(read off the target's own resolved reference triad, no extra
+integration), becomes a CSV column (`outputs/sweep_sets/<key>/<slot>/candidates.csv`)
+and its own point-wise, no-connecting-line figure (`candidates_<column>.png`)
+-- candidates have no natural ordering, unlike a swept continuous velocity.
 Generalizes the kind of hand-rolled candidate-mode catalogue enumeration
 that used to live in one-off scripts (e.g. the now-deleted
 `examples_legacy/special_runs/gate_i2_map_extension.py`'s own
-`find_catalogue()`).
+`find_catalogue()`); `run_mode_search.py`'s own `m,n,alpha` output rows
+paste directly into a registry's `candidates:` list.
 
-    python run_sweep_sets.py --config examples/candidates_quartet_rossby_kelvin.yaml
+    python run_sweep_sets.py --wave-set quartet_rossby_kelvin --slot d
 
 ### `run_mode_search.py`
 Registry-independent: given a fixed edge (`--edge MODE_P MODE_Q`) or pivot
 (`--pivot MODE`, `m,n,alpha` each), lists candidate modes completing a
-valid triad -- for scouting a new `wave_sets_default.yaml` entry or a
-`run_sweep_sets.py` `candidates:` block without hand-deriving the
+valid triad -- for scouting a new `wave_sets_default.yaml` entry or an
+`alternative_modes.<slot>.candidates:` block without hand-deriving the
 selection rule. Wraps `rsw_sphere.utilities.mode_search`: cheap by
 default (wavenumber `m_sum = m_p + m_q` + meridional-symmetry parity,
 both O(1)); `--coupling` also computes actual TRIAD coefficients
@@ -391,7 +400,11 @@ folder. `run_sweep.py` writes under
 `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv`
 instead -- one file pair per requested diagnostic, no single "the"
 output for a sweep to override (see `docs/wave_sets.md` §6.1).
-`run_sweep_sets.py` writes only its own `table:` CSV (no figures).
+`run_sweep_sets.py` writes under
+`outputs/sweep_sets/<wave_set_key>/<slot>/` -- one `candidates.csv` table
+plus one point-wise `candidates_<column>.png` figure per column (every
+requested diagnostic and each candidate's own static delta/coeff/
+isolated-triad-efficiency properties).
 
 **`outputs/tables/`** -- one `.tex`/`.csv` per `examples/tables/paper_table<NN>_*.py`/
 `paper_headline_*.py` script (see `examples/README.md` for the full list

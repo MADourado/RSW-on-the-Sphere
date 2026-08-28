@@ -13,21 +13,27 @@ examples_legacy/" notes throughout this file for where each one landed).
 |---|---|
 | `../wave_sets_default.yaml` (repo root) | The registry (`rsw_sphere.dynamics.wave_set_specs`) -- triads, quartets and quintets alike (a triad is just the 1-triad case), used by all four root drivers, including `run_linear_modes.py`. |
 | `wave_sets_custom.yaml` | Example of a non-default registry, passed via `--specs`/`specs_path`. |
-| `triad_families.yaml` | RH(3,n) partner-family registry (`rsw_sphere.dynamics.triad_family_specs`), used by `rh_partner_family.py`. |
 
 ## Driver configs
 
-`candidates_*.yaml` are `run_sweep_sets.py` configs (a candidate-screening
-block). `run_sweep.py` sweeps read the wave set's own `wave_sets_default.yaml`
-entry, which carries its own `sweep:` block (`--wave-set KEY`); a wave set
-not yet worth adding to the default registry can be swept via `--specs
-path.yaml` instead (same registry schema, e.g. `wave_sets_custom.yaml`).
+`run_sweep.py`/`run_sweep_sets.py` both read straight from the wave set's own
+`wave_sets_default.yaml` entry (`--wave-set KEY`), which carries its own
+`sweep:`/`alternative_modes:` block respectively -- no separate config file
+for either. A wave set not yet worth adding to the default registry can be
+pointed at with `--specs path.yaml` instead (same registry schema, e.g.
+`wave_sets_custom.yaml`).
 
 ```bash
 python run_sweep.py --wave-set quartet_rossby_kelvin
 python run_sweep.py --wave-set quartet_rh_preference
+python run_sweep_sets.py --wave-set quartet_rossby_kelvin --slot d
 python run_linear_modes.py --wave-set triad_kelvin_rossby_flow
 ```
+
+`triad_families.yaml`/`rh_partner_family.py`/the `candidates_*.yaml` configs
+this section used to document were retired 2026-08-28: candidate-mode
+screening is now entirely `alternative_modes:`-driven from the registry
+itself (see `docs/wave_sets.md`).
 
 ## Infrastructure
 
@@ -155,8 +161,10 @@ same day along with the paper sections they backed -- see
   script's own module docstring.
 
 `rh_partner_quartet_family.py` is fully migrated: `quartet_rh_preference`
-was already its exact base quartet, so `examples/candidates_rh_partner_family.yaml`
-(`run_sweep_sets.py --config`) reproduces it with no registry change.
+was already its exact base quartet, so its own registered
+`alternative_modes.d` block (`wave_sets_default.yaml`) reproduces it --
+`python run_sweep_sets.py --wave-set quartet_rh_preference --slot d` --
+with no separate config file.
 `short_gravity_long_rossby_example.py` is also migrated, onto the
 corrected candidate `quartet_gravity_wg11` (WG(1,1), not the retracted
 WG(7,9) claim the script itself made -- see that registry entry's own

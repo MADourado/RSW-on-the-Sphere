@@ -149,14 +149,24 @@ quartet_rh_preference:
   sweep:
     axes: [{mode: d, min: 10.0, max: 150.0}]
     n_grid: 45
-    diagnostics: [precession]
-  target_mode: c
-  plot_triad: 0
+    diagnostics: [dynamical_phase, efficiency_var]
   tf_days: 150.0
-  plot:
-    xlabel: "RH(3,6) driving velocity $u$ (m/s)"
-    title: "Quartet A (this paper)"
-    plot_u_max: 120.0
+  alternative_modes:
+    # RH(3,n) partner family, n=4..16 (odd n excluded -- zero coupling by
+    # the equatorial-symmetry selection rule). Replaces the retired
+    # examples/triad_families.yaml's rh_partner_family entry.
+    d:
+      target_mode: d
+      diagnostics: [efficiency_var]
+      tf_days: 240.0
+      candidates:
+        - {m: 3, n: 4, alpha: 3}    # RH(3,4) -- also the quartet's own fixed c
+        - {m: 3, n: 6, alpha: 3}    # RH(3,6) -- the registered mode itself
+        - {m: 3, n: 8, alpha: 3}
+        - {m: 3, n: 10, alpha: 3}
+        - {m: 3, n: 12, alpha: 3}
+        - {m: 3, n: 14, alpha: 3}
+        - {m: 3, n: 16, alpha: 3}
 
 quartet_rh_alt_partner:
   label: "RH(1,2)+RH(4,5) with RH(3,4) and RH(3,8)"
@@ -181,13 +191,8 @@ quartet_rh_alt_partner:
   sweep:
     axes: [{mode: d, min: 10.0, max: 150.0}]
     n_grid: 30
-    diagnostics: [precession]
-  target_mode: c
-  plot_triad: 0
+    diagnostics: [dynamical_phase, efficiency]
   tf_days: 150.0
-  plot:
-    xlabel: "RH(3,8) driving velocity $u$ (m/s)"
-    title: "RH(3,8) variant (this paper)"
 
 quartet_rh_borrowed_topology:
   label: "RH(1,3)+RH(3,7) edge (Raphaldini et al. 2022's own topology) with target RH(2,9)"
@@ -220,23 +225,49 @@ quartet_rossby_kelvin:
     changes the RH-only triad's dynamics.
   h_e: 10000
   modes:
-    a: {m: 4, n: 5, alpha: 3, u: 30.0}
-    b: {m: 3, n: 4, alpha: 3, u: 30.0}
-    c: {m: 1, n: 2, alpha: 3, u: 30.0}
-    d: {m: 1, n: 1, alpha: 1, u: 30.0}
+    a: {m: 4, n: 5, alpha: 3, u: 40.0}
+    b: {m: 3, n: 4, alpha: 3, u: 40.0}
+    c: {m: 1, n: 2, alpha: 3, u: 40.0}
+    d: {m: 1, n: 1, alpha: 1, u: 40.0}
   triads:
     - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
     - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
   reference_triad: 0
   settings:
-    tf_days: 20
+    tf_days: 200
     h: 0.01
   sweep:
-    axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
+    #axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
+    axes: [{mode: d, min: 0.0, max: 50.0}]
     n_grid: 10
-    diagnostics: [p_measure]
+    diagnostics: [all]
   plot:
-    title: "Quartet C -- draft analysis panel"
+    title: "Quartet C"
+  alternative_modes:
+    # Candidates completing Triad 2's own selection rule (m_d = m_a - m_b = 1)
+    # -- pasted from:
+    # python run_mode_search.py --edge 4,5,3 3,4,3 --max-n 15 --alphas 1,2
+    # keeping only the role=member (m=1) rows.
+    d:
+      target_mode: d
+      diagnostics: [efficiency_var]
+      candidates:
+        - {m: 1, n: 1, alpha: 1}    # EG(1,1) -- the registered mode itself
+        - {m: 1, n: 3, alpha: 1}
+        - {m: 1, n: 5, alpha: 1}
+        - {m: 1, n: 7, alpha: 1}
+        - {m: 1, n: 9, alpha: 1}
+        - {m: 1, n: 11, alpha: 1}
+        - {m: 1, n: 13, alpha: 1}
+        - {m: 1, n: 15, alpha: 1}
+        - {m: 1, n: 1, alpha: 2}
+        - {m: 1, n: 3, alpha: 2}
+        - {m: 1, n: 5, alpha: 2}
+        - {m: 1, n: 7, alpha: 2}
+        - {m: 1, n: 9, alpha: 2}
+        - {m: 1, n: 11, alpha: 2}
+        - {m: 1, n: 13, alpha: 2}
+        - {m: 1, n: 15, alpha: 2}
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"
@@ -259,23 +290,99 @@ quartet_gravity_79:
     h: 0.01
 
 
+quartet_rossby_gravity_influence:
+  label: "RH(3,4)+RH(4,5) and WG(3,9)+RH(4,5), both closed by WG(7,9) as the shared sum mode"
+  display_label: "Quartet D"
+  role: >-
+    Novelty-period metric example. Two triads share both a member
+    (RH(4,5)) and their own sum mode (WG(7,9)), not a member-member edge.
+  h_e: 10000
+  modes:
+    a: {m: 7, n: 9, alpha: 2, u: 50.0}
+    b: {m: 4, n: 5, alpha: 3, u: 80.0}
+    c: {m: 3, n: 4, alpha: 3, u: 50.0}
+    d: {m: 3, n: 9, alpha: 2, u: 50.0}
+  triads:
+    - {sum: a, members: [c, b], display_label: "Triad 1 (RH(3,4)+RH(4,5))", triad_key: null}
+    - {sum: a, members: [d, b], display_label: "Triad 2 (WG(3,9)+RH(4,5))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+  sweep:
+    axes: [{mode: d, min: 0.0, max: 50.0}, {mode: c, min: 0.0, max: 100.0}]
+    #axes: [{mode: d, min: 0.0, max: 50.0}]
+    n_grid: 20
+    #diagnostics: [efficiency_var, p_measure,spectral_dev_var, novel_period, dynamical_phase, dominant_period, efficiency]
+    diagnostics: [all]
+  plot:
+    title: "Quartet D "
+
+
+quartet_gravity_wg11:
+  label: "RH(4,5)+RH(3,4)+RH(1,2) + westward gravity mode WG(1,1)"
+  display_label: "Quartet C (westward variant)"
+  role: >-
+    Same RH-only triad and topology as quartet_rossby_kelvin (EG(1,1)),
+    with the eastward Kelvin mode replaced by its westward counterpart
+    WG(1,1)
+  h_e: 10000
+  modes:
+    a: {m: 4, n: 5, alpha: 3, u: 30.0}
+    b: {m: 3, n: 4, alpha: 3, u: 30.0}
+    c: {m: 1, n: 2, alpha: 3, u: 30.0}
+    d: {m: 1, n: 1, alpha: 2, u: 0.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with WG(1,1))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+  sweep:
+    diagnostics: [p_measure]
+    n_grid: 10
+
+quartet_rossby_gravity_influence_high:
+  label: "RH(4,5)+RH(3,4)+EG(7,9), with EG(7,9)+RH(4,5) itself completed by the higher gravity mode EG(11,11)"
+  display_label: "Quartet E"
+  role: >-
+    EG(7,9) plays a double role: sum mode closing the RH-only triad (with
+    RH(4,5)+RH(3,4)), and a member of a second, higher triad closed by
+    EG(11,11) (with RH(4,5)) -- tests whether stacking an even-higher
+    frequency gravity mode on top of an existing gravity-closed edge
+    changes the RH dynamics further.
+  h_e: 10000
+  modes:
+    a: {m: 7, n: 9, alpha: 1, u: 50.0}
+    b: {m: 4, n: 5, alpha: 3, u: 80.0}
+    c: {m: 3, n: 4, alpha: 3, u: 50.0}
+    d: {m: 11, n: 11, alpha: 1, u: 50.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only, closed by EG(7,9))", triad_key: null}
+    - {sum: d, members: [a, b], display_label: "Triad 2 (EG(7,9)+RH(4,5), closed by EG(11,11))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
+
 quartet_dual_gravity_edge:
-  label: "EG(1,1)+EG(5,7) edge coupling RH(4,5) and EG(6,8)"
+  label: "WG(1,1)+EG(5,7) edge coupling RH(4,5) and RH(3,4)"
   display_label: "Quartet E"
   role: >-
     Gravity-dominated quartet.
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 50.0}
-    b: {m: 7, n: 9, alpha: 2, u: 50.0}
-    c: {m: 3, n: 9, alpha: 2, u: 50.0}
-    d: {m: 3, n: 4, alpha: 3, u: 80.0}
+    b: {m: 1, n: 1, alpha: 2, u: 50.0}
+    c: {m: 5, n: 7, alpha: 1, u: 50.0}
+    d: {m: 3, n: 4, alpha: 3, u: 50.0}
   triads:
-    - {sum: b, members: [a, c], display_label: "Triad 1 (with EG(5,7))", triad_key: null}
-    - {sum: b, members: [a, d], display_label: "Triad 2 (with RH(3,4))", triad_key: null}
+    - {sum: c, members: [a, b], display_label: "Triad 1 (with EG(5,7))", triad_key: null}
+    - {sum: a, members: [b, d], display_label: "Triad 2 (with RH(3,4))", triad_key: null}
   reference_triad: 0
   settings:
-    tf_days: 10
+    tf_days: 20
     h: 0.01
   sweep:
     diagnostics: [p_measure]
