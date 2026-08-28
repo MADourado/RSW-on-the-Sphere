@@ -65,7 +65,7 @@ its script, `paper_figure009_quartet_rossby_kelvin_periods.py`, moved to
 `figures/legacy/`, along with `tables/legacy/paper_headline_quartet_c_phaselag.py`
 (its own 30 m/s-IC phase-lag number is no longer cited once the
 paragraph citing it was rewritten around the new IC).
-`paper_figure011_quintet_gravity_star_panel.py` (`fig: quintetpanel`) --
+`paper_figure012_quintet_gravity_star_panel.py` (`fig: quintetpanel`) --
 these retire `make_section3_figures.py` (deleted 2026-08-27, once every
 wave set it covered that is actually cited in the paper had its own
 dedicated script). `paper_figure009_quartet_rossby_gravity_influence_panel.py`
@@ -77,9 +77,16 @@ against Triad 1, its only containing triad), replacing the retired
 different topology where WG(7,9) is the shared sum mode rather than a
 private 4th mode; the EG(7,9) result survives only as a contrasting
 remark in the prose, no table/figure of its own).
-`paper_figure010_quartet_rossby_gravity_influence_efficiency.py` computes
-but is not yet wired into the paper (a 1D + 2D efficiency_var sweep over
-WG(3,9)'s driving velocity) -- see its own module docstring.
+`paper_figure010_quartet_rossby_gravity_influence_efficiency.py` (1D + 2D
+`efficiency_var` sweep over WG(3,9)'s driving velocity) is wired into
+`sec: quartet_rossby_gravity_fast` right after Quartet D's own panel,
+with full interpretive prose (the notch near u=20-28 m/s explained by
+WG(7,9)'s own efficiency in Triad 2 passing through a near-cancellation).
+`paper_figure011_quartet_rossby_gravity_influence_high_panel.py` is
+Quartet E's own panel (`quartet_rossby_gravity_influence_high`,
+registered 2026-08-28) -- same 2x2 layout as Quartet D's panel; EG(7,9)
+plays a double role (sum mode of the RH-only Triad 1, member of a second
+triad closed by EG(11,11)).
 
 Script numbers are kept in sync with each script's OWN actual compiled
 figure/table number (checked via `JFM-template.aux`'s `\newlabel{fig:
@@ -115,7 +122,8 @@ same day along with the paper sections they backed -- see
 `examples_legacy/README.md`):
 
 - `tables/paper_table02_quartet_master.py` -- ONE combined table across
-  Quartets A/B/C/D (`tab: quartet_master`), replacing the three separate
+  Quartets A/B/C/D/E (`tab: quartet_master`; Quartet E added 2026-08-28),
+  replacing the three separate
   per-quartet coefficient tables `tab: cap41`/`cap42`/`cap43` (Quartet
   A/C/D) that used to sit inline in each quartet's own subsection, via
   the new `rsw_sphere.plotting.wave_set_table.wave_set_master_table`

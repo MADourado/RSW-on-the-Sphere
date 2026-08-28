@@ -1,22 +1,29 @@
 """Figure for ``sec: quartet_rossby_gravity_fast`` (JFM-template.tex),
-Quartet D (``quartet_rossby_gravity_influence``): WG(7,9) is the shared
-SUM mode of both constituent triads (RH(3,4)+RH(4,5)+WG(7,9) and
-WG(3,9)+RH(4,5)+WG(7,9)), with RH(4,5) the other shared member.
+Quartet E (``quartet_rossby_gravity_influence_high``): EG(7,9) plays a double role -- sum mode closing the
+RH-only triad (Triad 1, with RH(4,5)+RH(3,4)), and a member of a second,
+higher triad closed by the even-higher-frequency gravity mode EG(11,11)
+(Triad 2, with RH(4,5)). Structurally the same "shared edge" pattern as
+Quartet D's own panel (P1=EG(7,9), P2=RH(4,5), apexes RH(3,4)/EG(11,11)),
+just with EG(7,9) itself also playing the SUM role for Triad 1 rather
+than being one of the two apexes.
 
-2x2 grid -- top row: Triad 1 and Triad 2 energy evolution (one shared
-``run_dynamics()`` call, not two separate integrations); bottom row: the
-full quartet's own evolution, and RH(3,4)'s novelty-frequency spectrum
-(``rsw_sphere.plotting.novelty_frequency_panel``) against Triad 1 (its
-only containing triad -- RH(3,4) is private, not a member of Triad 2).
-RH(4,5) is highlighted in the evolution panels instead (it's the mode
-shared by both triads, so the only one that appears in all three); the
-spectrum target is chosen separately since RH(3,4) picks up Triad 2's own
-characteristic frequency despite not being one of its members, the more
-telling illustration of coupling through the shared sum mode.
+2x2 grid -- top row: Triad 1 and Triad 2 energy evolution; bottom row:
+the full quartet's own evolution, and RH(3,4)'s novelty-frequency
+spectrum against Triad 1, its only containing triad (RH(3,4) is private,
+not a member of Triad 2). RH(4,5) is highlighted in the evolution panels
+(the mode shared by both triads). RH(3,4) develops a spectral peak near
+0.54d in the full quartet, matching Triad 2's own dominant period almost
+exactly -- Triad 2's periodicity transmitting into a mode that isn't one
+of its members, the same mechanism as Quartet D's own RH(3,4) story (see
+that figure's module docstring). This peak sits inside Triad 2's own
+excluded window, so it is NOT flagged by the novelty-detection algorithm
+(correctly: it's already explained by Triad 2, not a genuinely new
+period) -- visible in the spectrum panel itself, not in
+report['final']['RH(3,4)']['novelty_period_final_days'].
 
 Run:
 
-    python examples/figures/paper_figure009_quartet_rossby_gravity_influence_panel.py
+    python examples/figures/paper_figure011_quartet_rossby_gravity_influence_high_panel.py
 """
 import os
 import sys
@@ -35,19 +42,23 @@ from rsw_sphere.plotting.energy_evolution import plot_energy_evolution
 from rsw_sphere.plotting.novelty_frequency_panel import novelty_frequency_figure
 from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_target
 
-WAVE_SET_KEY = "quartet_rossby_gravity_influence"
+WAVE_SET_KEY = "quartet_rossby_gravity_influence_high"
 HIGHLIGHT_LABEL = "RH(4,5)"     # shared member -- highlighted in every evolution panel
 SPECTRUM_TARGET_LABEL = "RH(3,4)"  # private to Triad 1 -- the novelty-spectrum panel's target
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure009_quartet_rossby_gravity_influence_panel.png")
+                               "paper_figure011_quartet_rossby_gravity_influence_high_panel.png")
 
 #: Display-only time-axis limit (days) for the three evolution panels --
-#: tuned by eye for this figure, doesn't affect the registry's own
-#: tf_days. Unlike paper_figure008's own row-shared y-labels, every panel
-#: here keeps its own y-axis label: the 2x2 grid mixes an evolution panel
-#: with a spectrum panel in the bottom row, so the two axes in that row
-#: don't share a y-axis meaning.
-EVOLUTION_XMAX_DAYS = 8.0
+#: wide enough to show several cycles of the slower (~0.54d) modulation
+#: RH(4,5)/EG(7,9)/EG(11,11) carry in Triad 2/the full quartet, not just
+#: the much faster (~0.15d) dominant oscillation.
+EVOLUTION_XMAX_DAYS = 5.0
+
+#: Display-only period-axis limit (days) for the spectrum panel -- the
+#: auto-derived default (sqrt(tf_days/2), 3d at tf_days=20) leaves mostly
+#: empty space past the 0.148d dominant peak and 0.54d secondary bump,
+#: both well inside 1.5d.
+SPECTRUM_XMAX_DAYS = 1.5
 
 
 def compute():
@@ -77,7 +88,8 @@ def _unit_modes(spec, name: str):
     raise ValueError(f"no constituent triad of {spec.key!r} matches unit name {name!r}")
 
 
-def plot(spec, results, path: str = None, evolution_xmax: float = EVOLUTION_XMAX_DAYS):
+def plot(spec, results, path: str = None, evolution_xmax: float = EVOLUTION_XMAX_DAYS,
+         spectrum_xmax: float = SPECTRUM_XMAX_DAYS):
     apply_house_style()
     fig, axes = plt.subplots(2, 2, figsize=(11.5, 9))
 
@@ -103,7 +115,7 @@ def plot(spec, results, path: str = None, evolution_xmax: float = EVOLUTION_XMAX
     axes[1, 0].set_xlim(0, evolution_xmax)
 
     novelty_result = novelty_combined_for_target(results, SPECTRUM_TARGET_LABEL)
-    novelty_frequency_figure(results, SPECTRUM_TARGET_LABEL, novelty_result, ax=axes[1, 1])
+    novelty_frequency_figure(results, SPECTRUM_TARGET_LABEL, novelty_result, ax=axes[1, 1], xmax=spectrum_xmax)
     axes[1, 1].set_title(f"Frequency spectrum: {SPECTRUM_TARGET_LABEL}", fontsize=10)
 
     fig.tight_layout()
@@ -122,10 +134,12 @@ def main():
     parser.add_argument("--evolution-xmax", type=float, default=EVOLUTION_XMAX_DAYS,
                          help="days shown on each evolution panel's time axis (display only, "
                               "tuned by eye -- doesn't affect the registry's own tf_days)")
+    parser.add_argument("--spectrum-xmax", type=float, default=SPECTRUM_XMAX_DAYS,
+                         help="days shown on the spectrum panel's period axis (display only)")
     args = parser.parse_args()
 
     spec, results = compute()
-    plot(spec, results, path=args.path, evolution_xmax=args.evolution_xmax)
+    plot(spec, results, path=args.path, evolution_xmax=args.evolution_xmax, spectrum_xmax=args.spectrum_xmax)
     print(f"wrote {os.path.abspath(args.path)}")
 
     triad_names = [n for n in results if n != "full"]
@@ -139,33 +153,13 @@ def main():
         print(f"[{name}] dEK={m['dEK']:.4e}  dominant_period={m['period_global']:.4f}d  "
               f"peak_share_of_mean_total={E_share_peak:.2f}%")
 
-    print(f"\n=== pairwise diagnostics: {HIGHLIGHT_LABEL} full vs. each containing triad ===")
-    for d in report["pairwise"]:
-        if d["mode"] != HIGHLIGHT_LABEL:
-            continue
-        novelty = (f"{d['novelty_period_days']:.4f}d ({d['novelty_relevance_pct']:.2f}%)"
-                   if d["novelty_period_days"] == d["novelty_period_days"] else "none detected")
-        print(f"  vs {d['vs']}: p_measure={d['p_measure_pct']:+.2f}%  "
-              f"spectral_dev={d['spectral_dev_pct']:.2f}%  novelty_period={novelty}")
-
-    print(f"\n=== final (combined) diagnostics: {HIGHLIGHT_LABEL} ===")
-    for d in report["final"]:
-        if d["mode"] != HIGHLIGHT_LABEL:
-            continue
-        novelty = (f"{d['novelty_period_final_days']:.4f}d ({d['novelty_relevance_final_pct']:.2f}%)"
-                   if d["novelty_period_final_days"] == d["novelty_period_final_days"] else "none detected")
-        print(f"  p_measure_final={d['p_measure_final_pct']:+.2f}%  "
-              f"spectral_dev_final={d['spectral_dev_final_pct']:.2f}%  vs={d['vs']}  "
-              f"novelty_period_final={novelty}")
-
     print(f"\n=== spectrum-panel target: {SPECTRUM_TARGET_LABEL} (private to Triad 1) ===")
-    for d in report["pairwise"]:
-        if d["mode"] != SPECTRUM_TARGET_LABEL:
+    for name in triad_names + ["full"]:
+        if SPECTRUM_TARGET_LABEL not in results[name]["labels"]:
             continue
-        novelty = (f"{d['novelty_period_days']:.4f}d ({d['novelty_relevance_pct']:.2f}%)"
-                   if d["novelty_period_days"] == d["novelty_period_days"] else "none detected")
-        print(f"  vs {d['vs']}: p_measure={d['p_measure_pct']:+.2f}%  "
-              f"spectral_dev={d['spectral_dev_pct']:.2f}%  novelty_period={novelty}")
+        m = report["per_mode_unit"][name][SPECTRUM_TARGET_LABEL]
+        print(f"[{name}] {SPECTRUM_TARGET_LABEL}: dominant_period={m['period_global']:.4f}d  "
+              f"top_peaks={[(round(p['period_days'], 4), round(p['power_frac'], 2)) for p in m['top_peaks']]}")
     for d in report["final"]:
         if d["mode"] != SPECTRUM_TARGET_LABEL:
             continue

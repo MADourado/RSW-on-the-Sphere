@@ -12,7 +12,7 @@ modes.
 
 Run:
 
-    python examples/figures/paper_figure011_quintet_gravity_star_panel.py
+    python examples/figures/paper_figure012_quintet_gravity_star_panel.py
 """
 import os
 import sys
@@ -26,7 +26,7 @@ from rsw_sphere.plotting.energy_evolution import wave_set_comparison_panel_from_
 
 WAVE_SET_KEY = "quintet_gravity_star"
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure011_quintet_gravity_star_panel.png")
+                               "paper_figure012_quintet_gravity_star_panel.png")
 
 #: Per-triad highlight, by mode key -- Triad 1 (RH-only) has no private
 #: gravity mode to highlight, Triad 2/3 highlight their own EG(1,1)/EG(7,9).

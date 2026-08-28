@@ -1,9 +1,11 @@
 """Combined quartet master table (JFM-template.tex, ``sec:coupled``):
-one merged table across Quartets A/B/C/D, replacing the three separate
+one merged table across Quartets A/B/C/D/E, replacing the three separate
 per-quartet tables ``tab: cap41``/``cap42``/``cap43`` (Quartet A/C/D)
 that used to sit inline in each quartet's own subsection -- mirroring
 Table ``tab: master``'s existing hand-merged, multi-group style for the
 single triads (\\S sec: resonant), generated here instead of hand-merged.
+Quartet E (``quartet_rossby_gravity_influence_high``, registered
+2026-08-28) is included here alongside A-D.
 
 Quartet B's own ``tab: precession_comparison`` (a differently-shaped
 barotropic-vs-RSW efficiency/precession comparison) is untouched and
@@ -27,9 +29,10 @@ from rsw_sphere.plotting.wave_set_table import wave_set_master_table, wave_set_p
 
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "tables", "paper_table02_quartet_master.tex")
 
-#: Registry key -> paper order (Quartet A, B, C, D).
+#: Registry key -> paper order (Quartet A, B, C, D, E).
 KEYS = ["quartet_rh_preference", "quartet_rh_borrowed_topology",
-        "quartet_rossby_kelvin", "quartet_rossby_gravity_influence"]
+        "quartet_rossby_kelvin", "quartet_rossby_gravity_influence",
+        "quartet_rossby_gravity_influence_high"]
 
 CAPTION = (
     r"Properties of every quartet examined in \S\ref{sec:coupled} "

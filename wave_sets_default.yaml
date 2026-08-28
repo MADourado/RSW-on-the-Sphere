@@ -306,11 +306,11 @@ quartet_rossby_gravity_influence_high:
   label: "RH(4,5)+RH(3,4)+EG(7,9), with EG(7,9)+RH(4,5) itself completed by the higher gravity mode EG(11,11)"
   display_label: "Quartet E"
   role: >-
-    Testing only, no paper text yet. EG(7,9) plays a double role: sum mode
-    closing the RH-only triad (with RH(4,5)+RH(3,4)), and a member of a
-    second, higher triad closed by EG(11,11) (with RH(4,5)) -- tests
-    whether stacking an even-higher-frequency gravity mode on top of an
-    existing gravity-closed edge changes the RH dynamics further.
+    EG(7,9) plays a double role: sum mode closing the RH-only triad (with
+    RH(4,5)+RH(3,4)), and a member of a second, higher triad closed by
+    EG(11,11) (with RH(4,5)) -- tests whether stacking an even-higher
+    frequency gravity mode on top of an existing gravity-closed edge
+    changes the RH dynamics further.
   h_e: 10000
   modes:
     a: {m: 7, n: 9, alpha: 1, u: 50.0}
