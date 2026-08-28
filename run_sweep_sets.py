@@ -203,12 +203,19 @@ def load_alternative_modes(spec_key: str, slot: str, specs_path: str = DEFAULT_W
 def run_sweep_sets(spec_key: str, slot: str, specs_path: str = DEFAULT_WAVESETS_PATH,
                     output_root: str = "outputs", max_workers: int = None,
                     diagnostics_override=None, tf_days_override: float = None,
-                    h_override: float = None, plot_dynamics: bool = False) -> list:
+                    h_override: float = None, plot_dynamics: bool = False,
+                    target_mode_override: str = None) -> list:
     """Run one static diagnostic point per candidate registered under
     ``<spec_key>``'s own ``alternative_modes[slot]`` block.
 
     Parameters
     ----------
+    target_mode_override : str, optional
+        Overrides the registry's own ``alternative_modes.<slot>.target_mode``
+        (which itself defaults to ``slot``) -- e.g. a paper figure wanting
+        both the swept slot's own diagnostics (``target_mode_override=slot``)
+        and the registry-default target's (``target_mode_override=None``)
+        from the same candidate list, without editing the registry twice.
     plot_dynamics : bool, optional
         Also save each candidate's own run_dynamics energy-evolution
         figures (full wave set + every constituent triad), for visually
@@ -238,7 +245,7 @@ def run_sweep_sets(spec_key: str, slot: str, specs_path: str = DEFAULT_WAVESETS_
     spec = load_wave_set_specs(specs_path)[spec_key]
     cfg = load_alternative_modes(spec_key, slot, specs_path)
 
-    target_idx = spec.index(cfg.get("target_mode", slot))
+    target_idx = spec.index(target_mode_override or cfg.get("target_mode", slot))
     candidates = [(c["m"], c["n"], c["alpha"]) for c in cfg["candidates"]]
 
     diagnostics = tuple(diagnostics_override) if diagnostics_override is not None \
@@ -330,6 +337,9 @@ def main():
                               "alternative_modes.<slot>.diagnostics")
     parser.add_argument("--tf-days", type=float, default=None)
     parser.add_argument("--h", type=float, default=None)
+    parser.add_argument("--target-mode", default=None,
+                         help="overrides the registry's own alternative_modes.<slot>.target_mode "
+                              "(which itself defaults to --slot)")
     parser.add_argument("--table", default=None)
     parser.add_argument("--plot-dir", default=None)
     parser.add_argument("--no-plot", action="store_true")
@@ -351,16 +361,17 @@ def main():
                               output_root=args.output_root, max_workers=args.max_workers,
                               diagnostics_override=diagnostics_override,
                               tf_days_override=args.tf_days, h_override=args.h,
-                              plot_dynamics=args.dynamics_plots)
+                              plot_dynamics=args.dynamics_plots,
+                              target_mode_override=args.target_mode)
 
     spec = load_wave_set_specs(args.specs)[args.wave_set]
 
-    # Which mode a diagnostic is actually computed FOR -- defaults to the
-    # slot itself, but the registry can point it elsewhere (see
-    # run_sweep_sets()'s own target_idx resolution above); must be
-    # resolved the same way here so the title/filenames stay accurate.
+    # Which mode a diagnostic is actually computed FOR -- --target-mode if
+    # given, else the registry's own alternative_modes.<slot>.target_mode,
+    # else the slot itself; must be resolved the same way run_sweep_sets()'s
+    # own target_idx resolution does so the title/filenames stay accurate.
     cfg = load_alternative_modes(args.wave_set, args.slot, args.specs)
-    target_mode_key = cfg.get("target_mode", args.slot)
+    target_mode_key = args.target_mode or cfg.get("target_mode", args.slot)
     target_mnalpha = spec.modes[spec.index(target_mode_key)]
     target_label = _mode_label(*target_mnalpha)
     target_fs = mode_fs_label(*target_mnalpha)
