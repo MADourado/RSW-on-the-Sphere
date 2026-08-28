@@ -31,7 +31,7 @@ already-computed arrays) goes in `plotting/`. `run_sweep.py`'s own
 diagnostic vocabulary (`_MODE_UNIT_DIAGNOSTICS`/`_TRIAD_DIAGNOSTICS`/
 `_SCALAR_DIAGNOSTICS`) maps diagnostic name -> report field + render
 function -- adding a diagnostic is one table entry, not a new sweep loop
-(see `docs/wave_sets.md`'s driver-interface note).
+(see `docs/wave_sets.md` §6.1).
 
 No `postproc/` folder: an earlier reorg plan called for one (bespoke,
 paper-specific figure *assembly*, distinct from the general-analysis
@@ -157,11 +157,8 @@ candidate's own static `delta`/`coeff`/isolated-triad `efficiency`
 integration), becomes a CSV column (`outputs/sweep_sets/<key>/<slot>/candidates.csv`)
 and its own point-wise, no-connecting-line figure (`candidates_<column>.png`)
 -- candidates have no natural ordering, unlike a swept continuous velocity.
-Generalizes the kind of hand-rolled candidate-mode catalogue enumeration
-that used to live in one-off scripts (e.g. the now-deleted
-`examples_legacy/special_runs/gate_i2_map_extension.py`'s own
-`find_catalogue()`); `run_mode_search.py`'s own `m,n,alpha` output rows
-paste directly into a registry's `candidates:` list.
+`run_mode_search.py`'s own `m,n,alpha` output rows paste directly into a
+registry's `candidates:` list.
 
     python run_sweep_sets.py --wave-set quartet_rossby_kelvin --slot d
 
