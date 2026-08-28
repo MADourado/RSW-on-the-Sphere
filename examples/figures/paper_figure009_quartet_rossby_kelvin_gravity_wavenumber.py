@@ -24,7 +24,7 @@ candidate's mode label.
 
 Run:
 
-    python examples/figures/paper_figure013_quartet_rossby_kelvin_gravity_wavenumber.py
+    python examples/figures/paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.py
 """
 import os
 import sys
@@ -41,7 +41,7 @@ from run_sweep_sets import run_sweep_sets
 WAVE_SET_KEY = "quartet_rossby_kelvin"
 SLOT = "d"
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure013_quartet_rossby_kelvin_gravity_wavenumber.png")
+                               "paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.png")
 
 #: Family line colors -- EG in style.py's own gravity BLUE, WG in the same
 #: teal used for WG(7,9) in style.MODE_COLORS (WG's own cool sub-range).

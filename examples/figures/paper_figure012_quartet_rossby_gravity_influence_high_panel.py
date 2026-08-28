@@ -24,7 +24,7 @@ report['final']['RH(3,4)']['novelty_period_final_days'].
 
 Run:
 
-    python examples/figures/paper_figure011_quartet_rossby_gravity_influence_high_panel.py
+    python examples/figures/paper_figure012_quartet_rossby_gravity_influence_high_panel.py
 """
 import os
 import sys
@@ -47,7 +47,7 @@ WAVE_SET_KEY = "quartet_rossby_gravity_influence_high"
 HIGHLIGHT_LABEL = "RH(4,5)"     # shared member -- highlighted in every evolution panel
 SPECTRUM_TARGET_LABEL = "RH(3,4)"  # private to Triad 1 -- the novelty-spectrum panel's target
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure011_quartet_rossby_gravity_influence_high_panel.png")
+                               "paper_figure012_quartet_rossby_gravity_influence_high_panel.png")
 
 #: Display-only time-axis limit (days) for the three evolution panels --
 #: wide enough to show several cycles of the slower (~0.54d) modulation

@@ -22,7 +22,7 @@ step=10 on RH(3,4); gcd(60,100)=20, and 11-1=10 divides both cleanly).
 
 Run:
 
-    python examples/figures/paper_figure010_quartet_rossby_gravity_influence_efficiency.py
+    python examples/figures/paper_figure011_quartet_rossby_gravity_influence_efficiency.py
 """
 import dataclasses
 import os
@@ -42,7 +42,7 @@ from run_sweep import run_sweep, compute_2d_grid
 
 WAVE_SET_KEY = "quartet_rossby_gravity_influence"
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure010_quartet_rossby_gravity_influence_efficiency.png")
+                               "paper_figure011_quartet_rossby_gravity_influence_efficiency.png")
 
 _ROSSBY_LABELS = ["RH(4,5)", "RH(3,4)"]
 _ROSSBY_MNALPHA = {"RH(4,5)": (4, 5, 3), "RH(3,4)": (3, 4, 3)}

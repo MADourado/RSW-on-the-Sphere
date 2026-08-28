@@ -16,7 +16,7 @@ telling illustration of coupling through the shared sum mode.
 
 Run:
 
-    python examples/figures/paper_figure009_quartet_rossby_gravity_influence_panel.py
+    python examples/figures/paper_figure010_quartet_rossby_gravity_influence_panel.py
 """
 import os
 import sys
@@ -39,7 +39,7 @@ WAVE_SET_KEY = "quartet_rossby_gravity_influence"
 HIGHLIGHT_LABEL = "RH(4,5)"     # shared member -- highlighted in every evolution panel
 SPECTRUM_TARGET_LABEL = "RH(3,4)"  # private to Triad 1 -- the novelty-spectrum panel's target
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure009_quartet_rossby_gravity_influence_panel.png")
+                               "paper_figure010_quartet_rossby_gravity_influence_panel.png")
 
 #: Display-only time-axis limit (days) for the three evolution panels --
 #: tuned by eye for this figure, doesn't affect the registry's own
