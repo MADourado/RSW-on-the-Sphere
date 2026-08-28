@@ -1,6 +1,7 @@
 """Figure for ``sec: quartet_rossby_gravity_fast`` (JFM-template.tex),
-Quartet E (``quartet_rossby_gravity_influence_high``): EG(7,9) plays a double role -- sum mode closing the
-RH-only triad (Triad 1, with RH(4,5)+RH(3,4)), and a member of a second,
+Quartet E (``quartet_rossby_gravity_influence_high``): EG(7,9) plays a
+double role -- sum mode closing the RH-only triad (Triad 1, with
+RH(4,5)+RH(3,4)), and a member of a second,
 higher triad closed by the even-higher-frequency gravity mode EG(11,11)
 (Triad 2, with RH(4,5)). Structurally the same "shared edge" pattern as
 Quartet D's own panel (P1=EG(7,9), P2=RH(4,5), apexes RH(3,4)/EG(11,11)),
