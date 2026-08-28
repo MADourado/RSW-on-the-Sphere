@@ -4,6 +4,19 @@ instead of initial total energy, gated on drift.
 """
 import math
 
+#: Reference-too-small-to-normalize-by floor, shared with
+#: `rsw_sphere.utilities.pmeasure` (which imports it from here, not the
+#: other way, to avoid a circular import -- pmeasure.py already imports
+#: `default_velocity_range` from this module). Defined once here since
+#: both P-measure's own dEK denominator and efficiency_variation's own
+#: efficiency denominator have the identical failure mode: a technically
+#: nonzero but too-small reference inflates a percentage-change ratio
+#: without saying anything physically meaningful. Deliberately small
+#: (1e-4) -- a genuinely small-but-real reference (e.g. an efficiency of
+#: ~0.009, order 1e-2) should NOT be suppressed by this guard, only a
+#: reference close enough to zero to be numerically degenerate.
+MIN_REFERENCE_DEK = 1e-4
+
 #: Velocity-sweep range caps by mode family: Rossby (RH, alpha=3) modes are
 #: swept up to 100 m/s (jet-stream-strength winds); gravity (EG/WG,
 #: alpha=1/2) modes are capped at 50 m/s (realistic Kelvin/inertia-gravity
@@ -47,8 +60,13 @@ def efficiency_variation(efficiency_full, efficiency_sub):
     together, not as two noisy estimates of the same number.
 
     NaN if either input is NaN (e.g. one run's own drift gate tripped) or
-    ``efficiency_sub`` is zero.
+    ``efficiency_sub`` is at or below ``MIN_REFERENCE_DEK`` (not just
+    exactly zero) -- a reference efficiency that small makes the
+    percentage ratio numerically degenerate rather than physically
+    meaningful, the same failure mode ``final_p_measure`` guards against
+    for its own ``dEK`` denominator.
     """
-    if not math.isfinite(efficiency_full) or not math.isfinite(efficiency_sub) or efficiency_sub == 0:
+    if (not math.isfinite(efficiency_full) or not math.isfinite(efficiency_sub)
+            or efficiency_sub <= MIN_REFERENCE_DEK):
         return float("nan")
     return 100 * (efficiency_full - efficiency_sub) / efficiency_sub

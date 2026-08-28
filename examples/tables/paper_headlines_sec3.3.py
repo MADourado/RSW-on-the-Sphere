@@ -5,6 +5,16 @@ registered tf_days; Hilbert phase lag). Quartet D needs its own headline
 number -- the original dissertation prose never computed one, going
 straight from Table `cap43` to the P-measure sweep.
 
+NOTE (2026-08-28): only the Quartet D (EG(7,9)) numbers are still cited
+in JFM-template.tex, as the brief contrasting remark in `sec:
+quartet_rossby_gravity_fast`. The Quartet C (EG(1,1)) numbers this script
+also computes were retired along with the old `fig: cap4ex1` paragraph
+(30 m/s IC) once that figure/section was rebuilt around a symmetric
+40 m/s IC and a novelty-frequency framing instead
+(`paper_figure008_quartet_rossby_kelvin_panel.py`) -- kept here rather
+than split out since the two quartets still share one computation
+function, not because both halves are used.
+
 Target mode is b=RH(3,4) for both quartets (index 1 in the registry's
 own a,b,c,d ordering -- shared edge RH(4,5)+RH(3,4) for both Quartet C
 and D, confirmed in `wave_sets_default.yaml`).

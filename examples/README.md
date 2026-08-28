@@ -41,20 +41,63 @@ Small scripts that call a driver (or a standalone `rsw_sphere/plotting/*.py`
 module) for its own data and format/compose one paper table or figure on
 top, named `paper_table<NN>_<name>.py`/`paper_figure<NNN>_<name>.py` (the
 LaTeX `\label{tab: ...}`/`\label{fig: ...}` number/name, cross-referenced
-against the paper's own numbering, plus a stable descriptive name since
-LaTeX numbering drifts). Populated so far for everything through §4.2
+against the paper's own numbering, plus a stable descriptive name) --
+`<NN>`/`<NNN>` is kept in sync with the script's own actual compiled
+number (2026-08-28 policy: renamed whenever a figure/table shifts, rather
+than letting the number drift from what's actually in the paper; see the
+note below on where a script goes if its own figure/table is removed
+entirely). Populated so far for everything through §4.2
 "Rossby-only quartet" (JFM-template.tex, `sec: quartet_rh`), plus §4.3
 "Gravity-Rossby quartets"/§5 "Quintets" -- see each script's own module
 docstring for exactly which `\label{...}` it reproduces:
-`paper_figure007_quartet_rossby_kelvin_panel.py`/
-`paper_figure008_quartet_rossby_kelvin_periods.py` (`fig: cap4ex1`/`fig:
-power1`, sharing one integrated trajectory -- 008 imports 007's own
-`compute()`), `paper_figure009_quartet_gravity_79_panel.py` (`fig:
-cap43panel`), `paper_figure010_quintet_gravity_star_panel.py` (`fig:
-quintetpanel`), `paper_figure011_quintet_gravity_star_pmeasure.py` (`fig:
-4eff3`) -- these five retire `make_section3_figures.py` (deleted
-2026-08-27, once every wave set it covered that is actually cited in the
-paper had its own dedicated script). Table `precession_comparison` and
+`paper_figure008_quartet_rossby_kelvin_panel.py` (`fig: cap4ex1`) is
+Quartet C's own figure -- 3x2 grid: top row is the same "Triad 1 / Triad 2
+/ full quartet" evolution row it always was, bottom row is now a
+novelty-frequency spectrum panel per Rossby mode (RH(4,5)/RH(3,4)/
+RH(1,2)), reusing `rsw_sphere.plotting.novelty_frequency_panel.novelty_frequency_figure`
+the same way Quartet D's own panel does. Rebuilt 2026-08-28 around a
+symmetric 40 m/s IC (all four modes, replacing the registry's own
+30 m/s default) specifically to surface a new, slower period the
+RH-only triad doesn't have on its own -- see the module docstring for
+the exact numbers. This retires the companion `fig: power1` power-spectrum
+figure entirely (its own spectra are now this figure's bottom row) --
+its script, `paper_figure009_quartet_rossby_kelvin_periods.py`, moved to
+`figures/legacy/`, along with `tables/legacy/paper_headline_quartet_c_phaselag.py`
+(its own 30 m/s-IC phase-lag number is no longer cited once the
+paragraph citing it was rewritten around the new IC).
+`paper_figure011_quintet_gravity_star_panel.py` (`fig: quintetpanel`) --
+these retire `make_section3_figures.py` (deleted 2026-08-27, once every
+wave set it covered that is actually cited in the paper had its own
+dedicated script). `paper_figure009_quartet_rossby_gravity_influence_panel.py`
+is the current Quartet D figure (2x2: both constituent-triad evolutions,
+the full-quartet evolution, and RH(3,4)'s novelty-frequency spectrum
+against Triad 1, its only containing triad), replacing the retired
+`paper_figure009_quartet_gravity_79_panel.py` (`quartet_gravity_79`/EG(7,9)
+-- superseded 2026-08-28 by `quartet_rossby_gravity_influence`, a
+different topology where WG(7,9) is the shared sum mode rather than a
+private 4th mode; the EG(7,9) result survives only as a contrasting
+remark in the prose, no table/figure of its own).
+`paper_figure010_quartet_rossby_gravity_influence_efficiency.py` computes
+but is not yet wired into the paper (a 1D + 2D efficiency_var sweep over
+WG(3,9)'s driving velocity) -- see its own module docstring.
+
+Script numbers are kept in sync with each script's OWN actual compiled
+figure/table number (checked via `JFM-template.aux`'s `\newlabel{fig:
+...}`/`\newlabel{tab: ...}` entries, not the LaTeX source order) --
+unlike the general convention above, this repo keeps these current rather
+than letting them drift, so a script whose own figure/table is removed
+from the paper entirely (not just renumbered) moves to
+`examples/figures/legacy/`/`examples/tables/legacy/` instead of being
+renumbered into a slot that no longer means anything:
+`figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`
+(`fig: 4eff3`, no longer cited anywhere in `JFM-template.tex`),
+`figures/legacy/paper_figure009_quartet_rossby_kelvin_periods.py`
+(`fig: power1`, folded into `fig: cap4ex1` above), and
+`tables/legacy/paper_table02_quartet_a_properties.py` (`tab: cap41`,
+superseded by the combined `tab: quartet_master` below) all moved there
+2026-08-28, staged for outright deletion once confirmed unneeded.
+
+Table `precession_comparison` and
 Figure `borrowed_topology_precession` (Quartet B, §4.2.2) are also not
 covered by this naming convention -- they're generated by
 `raphaldini2022_compare/precession_comparison.py` instead, since that
@@ -71,24 +114,37 @@ to the `paper_table<NN>_<name>.py`/`paper_headline_<name>.py` convention
 same day along with the paper sections they backed -- see
 `examples_legacy/README.md`):
 
-- `tables/paper_table04_gravity_quartet_coefficients.py` (was
-  `regen_gravity_quartet_tables.py`) -- Table cap42/cap43 (Quartet C/D
-  coefficient tables).
-- `tables/paper_headline_quartet_c_phaselag.py` (was `gate_i5_headline.py`)
-  -- the §Coupled Triads S4 headline number (physical-Joules
-  amplitude/phase error from filtering the gravity mode), via
-  `rsw_sphere.physics.air_density_from_equivalent_depth` -- Quartet C's own
-  period-shift/peak-KE/phase-lag numbers quoted in `JFM-template.tex`
-  (`-66.5%`/`+14.6%`/`0.9 days` at tf=20d) come from this script; the
-  Hilbert-transform phase lag isn't reproduced by
-  `paper_headlines_sec3.3.py` below, so this one stays live too, not just
-  the origin of a since-generalized method.
+- `tables/paper_table02_quartet_master.py` -- ONE combined table across
+  Quartets A/B/C/D (`tab: quartet_master`), replacing the three separate
+  per-quartet coefficient tables `tab: cap41`/`cap42`/`cap43` (Quartet
+  A/C/D) that used to sit inline in each quartet's own subsection, via
+  the new `rsw_sphere.plotting.wave_set_table.wave_set_master_table`
+  (mirrors `tab: master`'s own hand-merged, multi-group style, generated
+  instead of hand-touched-up). Retires the now-deleted
+  `tables/paper_table04_gravity_quartet_coefficients.py` (was
+  `regen_gravity_quartet_tables.py`), whose Quartet C numbers moved into
+  this combined table unchanged and whose Quartet D (EG(7,9)) numbers
+  were dropped along with that quartet's own table/figure (2026-08-28).
+  Quartet B's own `tab: precession_comparison` stays separate (different
+  shape); this table only adds Quartet B's coefficient properties as a
+  4th group.
+- `tables/legacy/paper_headline_quartet_c_phaselag.py` (was
+  `gate_i5_headline.py`) -- the §Coupled Triads S4 headline number
+  (physical-Joules amplitude/phase error from filtering the gravity mode
+  at Quartet C's OLD 30 m/s IC), via
+  `rsw_sphere.physics.air_density_from_equivalent_depth`. Moved to legacy
+  2026-08-28: its own numbers (`-66.5%`/`+14.6%`/`0.9 days` at tf=20d) are
+  no longer cited once `fig: cap4ex1`'s own paragraph was rewritten around
+  a symmetric 40 m/s IC and a novelty-frequency framing instead.
 - `tables/paper_headlines_sec3.3.py` (was `section33_headline_numbers.py`)
-  -- generalizes `paper_headline_quartet_c_phaselag.py`'s own method
-  (period shift + peak-KE difference, both tf-independent; $\mathcal{F}_2$
-  at the registered tf_days) to both Quartet C and Quartet D -- reproduces
-  the §3.3.1 period-shift/peak-KE/$\mathcal{F}_2$ numbers quoted in
-  `JFM-template.tex` for both quartets.
+  -- generalizes the retired `paper_headline_quartet_c_phaselag.py`'s own
+  method (period shift + peak-KE difference, both tf-independent;
+  $\mathcal{F}_2$ at the registered tf_days) to both Quartet C and
+  Quartet D. Only its Quartet D (EG(7,9)) numbers are still cited in
+  `JFM-template.tex` (the brief contrasting remark in `sec:
+  quartet_rossby_gravity_fast`) -- its Quartet C numbers were retired
+  alongside `paper_headline_quartet_c_phaselag.py` above, see this
+  script's own module docstring.
 
 `rh_partner_quartet_family.py` is fully migrated: `quartet_rh_preference`
 was already its exact base quartet, so `examples/candidates_rh_partner_family.yaml`

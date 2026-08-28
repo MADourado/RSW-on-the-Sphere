@@ -8,6 +8,32 @@ Run as a quick self-check (synthetic two-tone signal):
 import numpy as np
 from scipy.signal import find_peaks, peak_widths
 
+#: Default half-width (fraction of its own period) of the excluded window
+#: around each sub-triad's own dominant peak in `novel_frequency_content_multi`
+#: -- shared with `pmeasure.py`/`diagnostics_report.py`'s own
+#: `novelty_exclusion_frac` defaults (imported from here, single source of
+#: truth). Halved from 0.20 to 0.10 (2026-08-28): the wider window excluded
+#: more of the spectrum than needed around each reference peak, at the cost
+#: of hiding genuinely novel content close to (but distinct from) a
+#: sub-triad's own dominant period.
+DEFAULT_EXCLUSION_FRAC = 0.10
+
+
+def _default_xmax(t_days) -> float:
+    """Sensible upper period (days) for a novelty/spectral-deviation
+    search window when the caller doesn't pass one explicitly:
+    ``round(sqrt(tf_days / 2))`` -- nonlinear (sqrt) scaling, chosen to
+    hit two anchor points exactly: tf_days=20 -> 3d (the short-run default
+    that was already good) and tf_days=200 -> 10d. A linear tf_days/4
+    scaling was tried first but grows too fast for long runs; sqrt keeps
+    the window from ballooning while still widening for long runs instead
+    of staying pinned at 3 days regardless of tf_days (found 2026-08-28,
+    a tf_days=200 run whose novelty spectrum had nothing to show past
+    3 days). Always an integer number of days, floored at 1.
+    """
+    tf_days = float(t_days[-1] - t_days[0])
+    return float(max(1, round(np.sqrt(tf_days / 2))))
+
 
 def _power_spectrum(t_days, E_j, max_period_days: float = None):
     """FFT prep shared by dominant_periods/low_frequency_power: detrend,
@@ -113,8 +139,8 @@ def dominant_periods(t_days, E_j, max_period_days: float = None, min_prominence_
     }
 
 
-def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = 3.0,
-                                   min_prominence: float = 0.02, exclusion_frac: float = 0.20,
+def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = None,
+                                   min_prominence: float = 0.02, exclusion_frac: float = DEFAULT_EXCLUSION_FRAC,
                                    n_grid: int = 4000):
     """"Novelty" frequency content of a full wave-set trajectory relative
     to EVERY sub-triad that contains the same target mode at once.
@@ -141,7 +167,7 @@ def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = 3.0,
     subs : sequence of (t_sub, E_sub) pairs, one per sub-triad containing
         the same target mode (length 1 for a private mode; 2+ for a mode
         shared across triads, member or sum role alike).
-    xmax : upper period (days) considered.
+    xmax : upper period (days) considered. Default (None): `_default_xmax(t_full)`.
     min_prominence : `scipy.signal.find_peaks` prominence threshold on the
         peak-normalized difference spectrum (0-1ish scale) -- a candidate
         novel peak below this is treated as noise, not reported.
@@ -158,6 +184,9 @@ def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = 3.0,
         spectrum's own total raw power) -- sorted dominant (highest
         relevance_pct) first, empty if nothing survives min_prominence).
     """
+    if xmax is None:
+        xmax = _default_xmax(t_full)
+
     p_full_raw, pow_full_raw = _power_spectrum(t_full, E_full)
     peak_full = pow_full_raw.max() if len(pow_full_raw) else 1.0
     pow_full_n = pow_full_raw / peak_full if peak_full > 0 else pow_full_raw
@@ -184,14 +213,30 @@ def novel_frequency_content_multi(t_full, E_full, subs, xmax: float = 3.0,
 
     diff = interp_full - envelope
 
-    search = diff.copy()
-    search[excluded] = 0.0  # zeroed (not NaN) so find_peaks sees a valid, flat region there
-    peak_idx, props = find_peaks(search, prominence=min_prominence)
+    # Peak search runs on each contiguous NON-excluded run of `diff`
+    # separately, never the whole array with the excluded band clamped to
+    # a fixed value. `find_peaks` never reports the first/last sample of
+    # the array it's given as a peak, so a detection can never land
+    # exactly on an exclusion-window boundary -- clamping the excluded
+    # band to 0 in one shared array used to do exactly that: a genuinely
+    # declining `diff` approaching a sub-triad's own peak is often still
+    # above 0 right at the boundary, so the clamp itself created a
+    # spurious step there that `find_peaks` reported as a "novel peak"
+    # sitting on the grey band's own edge.
+    not_excluded = ~excluded
+    run_edges = np.flatnonzero(np.diff(np.r_[False, not_excluded, False]))
+    peak_idx, prominences = [], []
+    for s, e in zip(run_edges[0::2], run_edges[1::2]):
+        if e - s < 3:
+            continue
+        seg_idx, seg_props = find_peaks(diff[s:e], prominence=min_prominence)
+        peak_idx.extend(s + seg_idx)
+        prominences.extend(seg_props['prominences'])
 
     novel_peaks = []
-    for idx, prom in zip(peak_idx, props['prominences']):
+    for idx, prom in zip(peak_idx, prominences):
         period = common_periods[idx]
-        widths, width_heights, left_ips, right_ips = peak_widths(search, [idx], rel_height=0.5)
+        widths, width_heights, left_ips, right_ips = peak_widths(diff, [idx], rel_height=0.5)
         lo_i = np.interp(left_ips[0], np.arange(len(common_periods)), common_periods)
         hi_i = np.interp(right_ips[0], np.arange(len(common_periods)), common_periods)
         band_mask = (common_periods >= lo_i) & (common_periods <= hi_i)
@@ -224,7 +269,7 @@ def novel_frequency_content(t_full, E_full, t_sub, E_sub, **kwargs):
     return novel_frequency_content_multi(t_full, E_full, [(t_sub, E_sub)], **kwargs)
 
 
-def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = 3.0, n_grid: int = 4000):
+def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = None, n_grid: int = 4000):
     """Spectral, share-normalized replacement for the retired time-domain
     "filtering error" (RMS trajectory-tracking error) -- built on the
     same primitive (``_power_spectrum``) as ``novel_frequency_content``:
@@ -248,8 +293,9 @@ def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = 3.0, n_grid: 
         normalized series (typically amplitude share ``q``), NOT raw
         amplitude or raw energy.
     t_sub, Q_sub : one sub-triad's own trajectory, same convention.
-    xmax : upper period (days) considered (matches
-        ``novel_frequency_content``'s own default range).
+    xmax : upper period (days) considered. Default (None):
+        `_default_xmax(t_full)` (matches ``novel_frequency_content``'s
+        own default range).
     n_grid : common period-grid resolution.
 
     Returns
@@ -267,6 +313,9 @@ def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = 3.0, n_grid: 
         to normalize by. 0 if the spectra are identical, NaN if neither
         side has any resolvable spectral power.
     """
+    if xmax is None:
+        xmax = _default_xmax(t_full)
+
     p_full_raw, pow_full_raw = _power_spectrum(t_full, Q_full)
     p_sub_raw, pow_sub_raw = _power_spectrum(t_sub, Q_sub)
 

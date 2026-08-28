@@ -31,6 +31,7 @@ from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagn
 from rsw_sphere.plotting.labels import _mode_label, mode_fs_label
 from rsw_sphere.plotting.energy_evolution import plot_energy_evolution
 from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, write_diagnostics_files
+from rsw_sphere.utilities.periods import DEFAULT_EXCLUSION_FRAC
 
 
 def _build_units(spec):
@@ -191,11 +192,14 @@ def main():
                               "mode against every sub-triad that contains it, plus a 'final' version "
                               "of each across every containing sub-triad at once, and write the "
                               "novelty-frequency spectrum figures (rsw_sphere.plotting.novelty_frequency_panel)")
-    parser.add_argument("--novelty-exclusion-frac", type=float, default=0.20,
+    parser.add_argument("--novelty-exclusion-frac", type=float, default=DEFAULT_EXCLUSION_FRAC,
                          help="novelty_period: +/- period window excluded around each "
                               "sub-triad's own dominant peak")
     parser.add_argument("--novelty-min-prominence", type=float, default=0.02,
                          help="novelty_period: minimum find_peaks prominence to report a novel peak")
+    parser.add_argument("--novelty-xmax", type=float, default=None,
+                         help="novelty spectrum: upper period (days) shown/searched. Default: "
+                              "round(sqrt(tf_days / 2)), so a long run's own window scales with it")
     parser.add_argument("--efficiency-drift-max", type=float, default=0.1,
                          help="efficiency/efficiency_var: leave a unit's own efficiency undefined "
                               "if its total-energy drift exceeds this fraction of its own mean "
@@ -300,7 +304,7 @@ def main():
     paths = write_diagnostics_files(
         results, report, run_dir, run_label, spec, diagnostics=args.diagnostics,
         novelty_exclusion_frac=args.novelty_exclusion_frac,
-        novelty_min_prominence=args.novelty_min_prominence)
+        novelty_min_prominence=args.novelty_min_prominence, novelty_xmax=args.novelty_xmax)
     print(f"\n  table -> {paths['diag_evol']}")
 
     if args.diagnostics:
@@ -355,24 +359,28 @@ def main():
         # at a time -- avoids the small-denominator inflation a mode
         # shared across triads can otherwise show against whichever
         # sub-triad happens to leave it weakly excited (see
-        # final_p_measure's own docstring). efficiency_var_final reuses
-        # the SAME winning sub-triad p_measure_final already picked
-        # (rather than an independent selection), so both are always
-        # read against the same reference -- their signs can still
-        # differ, though (see efficiency_variation's own docstring).
+        # final_p_measure's own docstring). p_measure_final/spectral_dev_final
+        # share one reference (largest raw dEK, "vs." column);
+        # efficiency_var_final picks its OWN reference independently
+        # (largest |efficiency|, "eff. vs." column) since efficiency
+        # normalizes dEK by each sub-triad's own different mean total
+        # energy -- reusing the dEK-based reference here used to let a
+        # shared mode's efficiency denominator pass through zero even
+        # while efficiency_full itself varied smoothly, producing spurious
+        # spikes (found 2026-08-28, quartet_rossby_gravity_influence).
         print("\n=== final diagnostics (per target, across all containing sub-triads) ===")
         final_rows = [
             [d['mode'],
              f"{d['p_measure_final_pct']:.2f}%" if np.isfinite(d['p_measure_final_pct']) else "n/a",
              f"{d['efficiency_var_final_pct']:.2f}%" if np.isfinite(d['efficiency_var_final_pct']) else "n/a",
              f"{d['spectral_dev_final_pct']:.2f}%" if np.isfinite(d['spectral_dev_final_pct']) else "n/a",
-             d['vs'] or "none",
+             d['vs'] or "none", d['efficiency_var_vs'] or "none",
              (f"{d['novelty_period_final_days']:.4f}d ({d['novelty_relevance_final_pct']:.2f}%)"
               if np.isfinite(d['novelty_period_final_days']) else "none detected")]
             for d in report['final']
         ]
         final_headers = ["mode", "p_measure_final", "efficiency_var_final", "spectral_dev_final",
-                          "vs.", "novelty_period_final (%)"]
+                          "vs.", "eff. vs.", "novelty_period_final (%)"]
         final_widths = [max(len(h), *(len(r[i]) for r in final_rows)) if final_rows else len(h)
                         for i, h in enumerate(final_headers)]
         final_fmt = "  ".join(f"{{:<{w}}}" for w in final_widths)

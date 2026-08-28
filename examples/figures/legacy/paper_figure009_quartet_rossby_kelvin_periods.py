@@ -3,13 +3,13 @@
 kinetic-energy time series) for every mode of Quartet C, corresponding to
 the comparison panel ``fig: cap4ex1``.
 
-Reuses ``paper_figure007_quartet_rossby_kelvin_panel.compute()``'s own
+Reuses ``paper_figure008_quartet_rossby_kelvin_panel.compute()``'s own
 integrated trajectory (same registered ``quartet_rossby_kelvin`` wave
 set, full four-wave configuration) instead of re-integrating.
 
 Run:
 
-    python examples/figures/paper_figure008_quartet_rossby_kelvin_periods.py
+    python examples/figures/paper_figure009_quartet_rossby_kelvin_periods.py
 """
 import os
 import sys
@@ -26,11 +26,11 @@ import matplotlib.pyplot as plt
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH
 from rsw_sphere.plotting.style import apply_house_style
 from rsw_sphere.plotting.period_panel import wave_set_period_panel
-from paper_figure007_quartet_rossby_kelvin_panel import compute
+from paper_figure008_quartet_rossby_kelvin_panel import compute
 
 WAVE_SET_KEY = "quartet_rossby_kelvin"
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure008_quartet_rossby_kelvin_periods.png")
+                               "paper_figure009_quartet_rossby_kelvin_periods.png")
 
 
 def main():

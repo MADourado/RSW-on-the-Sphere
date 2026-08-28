@@ -191,6 +191,22 @@ def _write_sweep_csv_2d(path: str, U1, U2, series: dict):
     write_csv(rows, path)
 
 
+def _map_with_progress(ex: ProcessPoolExecutor, fn, points: list, desc: str) -> list:
+    """ex.map(fn, points), printing an in-place '<desc>: i/total' line as
+    each grid point completes. ex.map yields results in submission order
+    as they become available, so this needs no extra synchronization
+    beyond consuming the iterator -- works the same for the 1D sweep's
+    flat point list and the 2D sweep's flattened grid.
+    """
+    total = len(points)
+    results = []
+    for i, r in enumerate(ex.map(fn, points), start=1):
+        results.append(r)
+        print(f"\r  {desc}: {i}/{total}", end="", flush=True)
+    print()
+    return results
+
+
 def _run_sweep_1d_diagnostics(config: RunConfig, requested: list, plot_per_point: bool,
                                plot_cfg: dict = None) -> dict:
     """Sweep config.sweep.axes[0], computing/plotting every diagnostic in
@@ -205,7 +221,7 @@ def _run_sweep_1d_diagnostics(config: RunConfig, requested: list, plot_per_point
 
     points = [(_sweep_point_config(config, (axis,), (u,), plot_per_point), plot_per_point) for u in u_values]
     with ProcessPoolExecutor(max_workers=config.max_workers or default_max_workers()) as ex:
-        point_results = list(ex.map(_run_sweep_point, points))
+        point_results = _map_with_progress(ex, _run_sweep_point, points, "sweep")
 
     swept_mode_label = _mode_label(*spec.modes[spec.index(axis.mode)])
     swept_label = mode_fs_label(*spec.modes[spec.index(axis.mode)])
@@ -275,7 +291,7 @@ def compute_2d_grid(config: RunConfig, plot_per_point: bool = True):
     points = [(_sweep_point_config(config, axes, (U1[i, j], U2[i, j]), plot_per_point), plot_per_point)
               for i in range(n_grid) for j in range(n_grid)]
     with ProcessPoolExecutor(max_workers=config.max_workers or default_max_workers()) as ex:
-        flat_results = list(ex.map(_run_sweep_point, points))
+        flat_results = _map_with_progress(ex, _run_sweep_point, points, "sweep")
     grid_results = np.empty((n_grid, n_grid), dtype=object)
     for idx, r in enumerate(flat_results):
         grid_results[idx // n_grid, idx % n_grid] = r

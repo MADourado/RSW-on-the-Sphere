@@ -27,6 +27,12 @@ or import and call it from another script:
     specs = load_wave_set_specs()
     props = wave_set_properties(specs['quartet_rh_preference'])
     wave_set_table(specs, fmt='latex', path='outputs/figures/wave_sets/table.tex')
+
+``wave_set_master_table`` (below) instead combines several wave sets that
+share the same triad count (e.g. every quartet) into ONE
+``\\begin{table}``, mirroring ``tab: master``'s own hand-merged,
+multi-group style rather than one block per wave set -- see
+``examples/tables/paper_table02_quartet_master.py``.
 """
 import os
 import sys
@@ -231,6 +237,109 @@ def wave_set_table(specs, N: int = 10, deg: int = 300,
 
     else:
         raise ValueError(f"unknown fmt: {fmt!r} (expected 'latex', 'csv', or 'markdown')")
+
+    if path:
+        with open(path, 'w') as f:
+            f.write(text)
+    else:
+        print(text)
+
+    return text
+
+
+def wave_set_master_table(specs, N: int = 10, deg: int = 300,
+                           fmt: str = 'latex', path: str = None,
+                           caption: str = '', label: str = 'quartet_master') -> str:
+    """ONE combined table across several wave sets that all share the same
+    triad count (e.g. every quartet here: 2 triads each) -- mirroring
+    Table ``tab: master``'s own hand-merged, multi-group style (one
+    \\midrule-separated block per wave set, group name + per-triad
+    mismatch as a header row) rather than ``wave_set_table``'s one-
+    ``\\begin{table}``-per-wave-set layout, which doesn't scale to
+    several quartets shown side by side. Reuses ``wave_set_properties``
+    unchanged -- this only changes how the same per-wave-set data is
+    concatenated/rendered.
+
+    Parameters
+    ----------
+    specs : dict of str -> WaveSetSpec, in the order groups should appear.
+    N, deg : int, optional
+        See ``wave_set_properties``.
+    fmt : {'latex', 'csv'}, optional
+    path : str or None, optional
+        If given, written there; else printed to stdout.
+    caption, label : str, optional
+        LaTeX-only: table caption and ``\\label{tab: <label>}`` name.
+
+    Returns
+    -------
+    str
+    """
+    rows = {key: wave_set_properties(spec, N=N, deg=deg) for key, spec in specs.items()}
+    n_triads_set = {len(p['triads']) for p in rows.values()}
+    if len(n_triads_set) != 1:
+        raise ValueError(
+            "wave_set_master_table requires every wave set to have the same "
+            f"triad count, got {[(k, len(p['triads'])) for k, p in rows.items()]}")
+    n_triads = n_triads_set.pop()
+
+    if fmt == 'csv':
+        lines = ['wave_set,display_label,mode,m,n,alpha,omega,period_days,coef_triad,pump']
+        for key, spec in specs.items():
+            p = rows[key]
+            for i in range(spec.n_modes()):
+                coefs = ';'.join(
+                    '' if np.isnan(p['coef'][i, t]) else _fmt_num(p['coef'][i, t])
+                    for t in range(n_triads))
+                pump_flags = [t for t, tri in enumerate(p['triads']) if tri['pump_index'] == i]
+                pump_cell = ';'.join(str(t + 1) for t in pump_flags)
+                lines.append(','.join(str(v) for v in [
+                    key, spec.display_label if i == 0 else '', p['mode_labels'][i],
+                    *p['mnalpha'][i], _fmt_num(p['omega'][i]), _fmt_num(p['period_days'][i]),
+                    coefs, pump_cell,
+                ]))
+        text = '\n'.join(lines) + '\n'
+
+    elif fmt == 'latex':
+        col_spec = 'l|c|c' + '|c' * n_triads + '|c'
+        coef_headers = ' & '.join(
+            rf'\multicolumn{{1}}{{c}}{{Coeff.\ {t + 1}}}' for t in range(n_triads))
+        lines = [
+            r'\begin{table}',
+            r'\centering',
+            rf'\begin{{tabular}}{{{col_spec}}}',
+            r'\toprule',
+            r'\multicolumn{1}{c}{Mode} & \multicolumn{1}{c}{Frequency ($\omega$)} & '
+            r'\multicolumn{1}{c}{Period (days)} & ' + coef_headers +
+            r' & \multicolumn{1}{c}{Pump} \\',
+            r'\midrule',
+        ]
+        for key, spec in specs.items():
+            p = rows[key]
+            delta_cells = ', '.join(rf'$\delta_{{{t + 1}}}={_fmt_num(tri["delta"])}$'
+                                     for t, tri in enumerate(p['triads']))
+            lines.append(
+                rf'\multicolumn{{{3 + n_triads + 1}}}{{l}}{{\textbf{{{spec.display_label}}}: '
+                rf'{delta_cells}}} \\')
+            for i in range(spec.n_modes()):
+                coef_cells = ' & '.join(
+                    '' if np.isnan(p['coef'][i, t]) else f"${_fmt_num(p['coef'][i, t])}$"
+                    for t in range(n_triads))
+                pump_flags = [t for t, tri in enumerate(p['triads']) if tri['pump_index'] == i]
+                pump_cell = ','.join(str(t + 1) for t in pump_flags) if pump_flags else ''
+                lines.append(
+                    f"{p['mode_labels'][i]} & ${_fmt_num(p['omega'][i])}$ & "
+                    f"${_fmt_num(p['period_days'][i])}$ & {coef_cells} & {pump_cell} \\\\")
+            lines.append(r'\midrule')
+        lines[-1] = r'\bottomrule'
+        lines += [r'\end{tabular}',
+                  rf'\caption{{{caption}}}',
+                  rf'\label{{tab: {label}}}',
+                  r'\end{table}']
+        text = '\n'.join(lines) + '\n'
+
+    else:
+        raise ValueError(f"unknown fmt: {fmt!r} (expected 'latex' or 'csv')")
 
     if path:
         with open(path, 'w') as f:

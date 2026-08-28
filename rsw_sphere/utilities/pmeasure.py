@@ -17,15 +17,17 @@ from rsw_sphere.physics import gamma_from_he, days_from_nondim_time
 from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.plotting.labels import _mode_label
-from rsw_sphere.utilities.efficiency import default_velocity_range
-from rsw_sphere.utilities.periods import novel_frequency_content, spectral_deviation
+from rsw_sphere.utilities.efficiency import default_velocity_range, MIN_REFERENCE_DEK
+from rsw_sphere.utilities.periods import novel_frequency_content, spectral_deviation, DEFAULT_EXCLUSION_FRAC
 
 G = 9.8
 
 #: Below this, a target's own reference-triad dEK is numerically
 #: indistinguishable from zero -- P and F2 are left NaN rather than a
-#: blown-up ratio (paper eq. Pa).
-MIN_REFERENCE_DEK = 1e-4
+#: blown-up ratio (paper eq. Pa). Shared with
+#: `rsw_sphere.utilities.efficiency.efficiency_variation`'s own identical
+#: guard on its efficiency denominator -- defined once in efficiency.py
+#: (imported here, not the reverse, to avoid a circular import).
 
 
 def _default_triad_index_for_mode(triads, reference_triad, mode_idx):
@@ -127,7 +129,7 @@ def _dEK_for_triad(gamma, modes, triad, velocities, h_e, t0, t_f, h, N, deg, mod
     return E.max() - E.min()
 
 
-def _spectral_deviation(T_days, E_full, E_total_full, E_sub, E_total_sub, dEK_sub, xmax: float = 3.0):
+def _spectral_deviation(T_days, E_full, E_total_full, E_sub, E_total_sub, dEK_sub, xmax: float = None):
     """Gated wrapper around ``periods.spectral_deviation`` -- builds each
     run's own AMPLITUDE share (``q = |A| / sqrt(E_total.mean())``, i.e.
     ``sqrt(E / E_total.mean())`` -- linear in amplitude, unlike the energy
@@ -299,8 +301,8 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
     return {'U1': U1, 'U2': U2, 'P': P, 'drift': DRIFT, 'labels': labels}
 
 
-def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = 0.20,
-                     min_prominence: float = 0.02):
+def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = DEFAULT_EXCLUSION_FRAC,
+                     min_prominence: float = 0.02, xmax: float = None):
     """(dominant novel period in days, its relevance %) -- see
     ``rsw_sphere.utilities.periods.novel_frequency_content`` for the
     algorithm (2026-08-26 design: excludes only the sub-triad's own
@@ -312,7 +314,7 @@ def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = 
         return np.nan, 0.0
     E_full, E_sub = amp_full ** 2, amp_sub ** 2
     result = novel_frequency_content(T_days, E_full, T_days, E_sub,
-                                      exclusion_frac=exclusion_frac, min_prominence=min_prominence)
+                                      exclusion_frac=exclusion_frac, min_prominence=min_prominence, xmax=xmax)
     if not result['novel_peaks']:
         return np.nan, 0.0
     dominant = result['novel_peaks'][0]
@@ -320,9 +322,9 @@ def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = 
 
 
 def pairwise_target_diagnostics(T_days, amp_full, amp_sub, E_total_full, E_total_sub,
-                                 novelty_exclusion_frac: float = 0.20,
+                                 novelty_exclusion_frac: float = DEFAULT_EXCLUSION_FRAC,
                                  novelty_min_prominence: float = 0.02,
-                                 spectral_xmax: float = 3.0) -> dict:
+                                 spectral_xmax: float = None, novelty_xmax: float = None) -> dict:
     """Every pairwise (full wave set vs. one sub-triad) diagnostic for a
     SINGLE already-integrated target-mode comparison -- the same formulas
     the now-deleted ``wave_set_diagnostics_sweep`` engine used to compute
@@ -345,7 +347,7 @@ def pairwise_target_diagnostics(T_days, amp_full, amp_sub, E_total_full, E_total
                               xmax=spectral_xmax)
     novelty_period, novelty_relevance = _novelty_period(
         T_days, amp_full, amp_sub, dEK_sub,
-        exclusion_frac=novelty_exclusion_frac, min_prominence=novelty_min_prominence)
+        exclusion_frac=novelty_exclusion_frac, min_prominence=novelty_min_prominence, xmax=novelty_xmax)
     return {
         'p_measure': p, 'spectral_deviation': sd,
         'novelty_period': novelty_period, 'novelty_relevance': novelty_relevance,
@@ -374,10 +376,14 @@ def p_measure_combined_for_target(results: dict, target_label: str) -> dict:
         p_measure, reference (winning sub-unit name, or None if every
         candidate's own dEK_sub is below MIN_REFERENCE_DEK),
         dEK_reference, dEK_full, spectral_deviation (against that SAME
-        winning reference -- not an independently-chosen one, so
-        p_measure/spectral_deviation/efficiency_variation all agree on
-        which sub-triad a shared mode is being compared against). Note
-        this "final" spectral_deviation is NOT the "filtering error" of a
+        winning reference, so p_measure/spectral_deviation always agree on
+        which sub-triad a shared mode is being compared against --
+        efficiency_var_final is the one exception, computed elsewhere
+        with its OWN independently-chosen reference, largest |efficiency|
+        rather than largest raw dEK, since efficiency normalizes dEK by
+        each sub-triad's own different mean total energy; see
+        ``rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report``'s
+        own docstring). Note this "final" spectral_deviation is NOT the "filtering error" of a
         specific known mode removal for a shared target -- see
         ``spectral_deviation``'s own docstring and
         ``final_p_measure``'s -- it reports the deviation from

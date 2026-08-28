@@ -209,21 +209,22 @@ quartet_rossby_kelvin:
     changes the RH-only triad's dynamics.
   h_e: 10000
   modes:
-    a: {m: 4, n: 5, alpha: 3, u: 30.0}
-    b: {m: 3, n: 4, alpha: 3, u: 30.0}
-    c: {m: 1, n: 2, alpha: 3, u: 30.0}
-    d: {m: 1, n: 1, alpha: 1, u: 30.0}
+    a: {m: 4, n: 5, alpha: 3, u: 40.0}
+    b: {m: 3, n: 4, alpha: 3, u: 40.0}
+    c: {m: 1, n: 2, alpha: 3, u: 40.0}
+    d: {m: 1, n: 1, alpha: 1, u: 40.0}
   triads:
     - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only)", triad_key: null}
     - {sum: a, members: [b, d], display_label: "Triad 2 (with EG(1,1))", triad_key: null}
   reference_triad: 0
   settings:
-    tf_days: 20
+    tf_days: 200
     h: 0.01
   sweep:
-    axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
+    #axes: [{mode: c, min: 0.0, max: 100.0}, {mode: d, min: 0.0, max: 50.0}]
+    axes: [{mode: d, min: 0.0, max: 50.0}]
     n_grid: 10
-    diagnostics: [p_measure]
+    diagnostics: [all]
   plot:
     title: "Quartet C -- draft analysis panel"
 
@@ -250,7 +251,7 @@ quartet_gravity_79:
 
 quartet_rossby_gravity_influence:
   label: "RH(3,4)+RH(4,5) and WG(3,9)+RH(4,5), both closed by WG(7,9) as the shared sum mode"
-  display_label: "Quartet D (WG(7,9)-sum)"
+  display_label: "Quartet D"
   role: >-
     Novelty-period metric example. Two triads share both a member
     (RH(4,5)) and their own sum mode (WG(7,9)), not a member-member edge.
@@ -268,12 +269,13 @@ quartet_rossby_gravity_influence:
     tf_days: 20
     h: 0.01
   sweep:
-    #axes: [{mode: d, min: 0.0, max: 50.0}, {mode: c, min: 0.0, max: 50.0}]
-    axes: [{mode: d, min: 0.0, max: 50.0}]
-    n_grid: 6
-    diagnostics: [novelty_period, p_measure]
+    axes: [{mode: d, min: 0.0, max: 50.0}, {mode: c, min: 0.0, max: 100.0}]
+    #axes: [{mode: d, min: 0.0, max: 50.0}]
+    n_grid: 20
+    #diagnostics: [efficiency_var, p_measure,spectral_dev_var, novel_period, dynamical_phase, dominant_period, efficiency]
+    diagnostics: [all]
   plot:
-    title: "Quartet D (WG(7,9)) "
+    title: "Quartet D "
 
 
 quartet_gravity_wg11:
@@ -282,20 +284,7 @@ quartet_gravity_wg11:
   role: >-
     Same RH-only triad and topology as quartet_rossby_kelvin (EG(1,1)),
     with the eastward Kelvin mode replaced by its westward counterpart
-    WG(1,1) -- one of only two candidates on the RH(4,5)+RH(3,4) edge
-    that PASSED a Stage-1 screen (cross-checked FFT/prominence period
-    estimators agree within 1pp, the now-deleted
-    frequency_shift_catalogue_search.py) as a plausible genuine
-    period-shift effect, not a smoothing artifact. Never Stage-2
-    quantified (x-sweep + tf-convergence, no saved output), and the
-    `frequency_shift` diagnostic that would have quantified it has since
-    been removed from the codebase (unused, backed no live paper
-    content) -- re-add a period-shift diagnostic first if this candidate
-    is revisited. (A third candidate, WG(7,9), was initially reported to
-    shift the target's period by 41-45% but that finding was retracted
-    2026-08-13: Savitzky-Golay smoothing produced an artifact both
-    window-independent estimators put at <=0.1% -- do not re-register
-    WG(7,9) for this story without re-deriving the effect from scratch.)
+    WG(1,1)
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}
@@ -312,6 +301,29 @@ quartet_gravity_wg11:
   sweep:
     diagnostics: [p_measure]
     n_grid: 10
+
+quartet_rossby_gravity_influence_high:
+  label: "RH(4,5)+RH(3,4)+EG(7,9), with EG(7,9)+RH(4,5) itself completed by the higher gravity mode EG(11,11)"
+  display_label: "Quartet E"
+  role: >-
+    Testing only, no paper text yet. EG(7,9) plays a double role: sum mode
+    closing the RH-only triad (with RH(4,5)+RH(3,4)), and a member of a
+    second, higher triad closed by EG(11,11) (with RH(4,5)) -- tests
+    whether stacking an even-higher-frequency gravity mode on top of an
+    existing gravity-closed edge changes the RH dynamics further.
+  h_e: 10000
+  modes:
+    a: {m: 7, n: 9, alpha: 1, u: 50.0}
+    b: {m: 4, n: 5, alpha: 3, u: 80.0}
+    c: {m: 3, n: 4, alpha: 3, u: 50.0}
+    d: {m: 11, n: 11, alpha: 1, u: 50.0}
+  triads:
+    - {sum: a, members: [b, c], display_label: "Triad 1 (RH-only, closed by EG(7,9))", triad_key: null}
+    - {sum: d, members: [a, b], display_label: "Triad 2 (EG(7,9)+RH(4,5), closed by EG(11,11))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 20
+    h: 0.01
 
 quartet_dual_gravity_edge:
   label: "WG(1,1)+EG(5,7) edge coupling RH(4,5) and RH(3,4)"

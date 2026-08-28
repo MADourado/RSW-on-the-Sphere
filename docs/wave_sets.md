@@ -115,7 +115,7 @@ tell it to — by convention `outputs/figures/wave_sets/` (gitignored).
 **None of these scripts ever write into the paper repository**; copying a
 finished figure into `paper-nonlinear-interactions-SWE-sphere/Figures/` is
 a separate, manual step -- see §7 for the dedicated per-figure scripts
-(`examples/figures/paper_figure007_*.py` onward) that cover §4.3/§5's
+(`examples/figures/paper_figure008_*.py` onward) that cover §4.3/§5's
 composite wave-set figures.
 
 ---
@@ -270,6 +270,16 @@ per-triad energy-conservation residual is computed and warned on
 internally but never rendered.
 
 Console script: `rsw-waveset-table`. Full flags: `rsw-waveset-table --help`.
+
+`wave_set_master_table(specs, fmt='latex', path=None)` (same module) is
+the alternative for wave sets that all share the same triad count (every
+quartet here: 2 each) -- ONE combined `\begin{table}` across several
+wave sets, `\midrule`-separated with a bold group-name + `$\delta$` header
+row per wave set, mirroring `tab: master`'s own hand-merged, multi-group
+style for the single triads rather than one block per wave set. Backs
+`examples/tables/paper_table02_quartet_master.py` (Quartets A/B/C/D,
+`tab: quartet_master`, replacing the three separate `tab:
+cap41`/`cap42`/`cap43`).
 
 ---
 
@@ -675,13 +685,19 @@ script (retiring the earlier composite assembler
 `make_section3_figures.py`, deleted 2026-08-27 once every wave set it
 covered that is actually cited in the paper had its own script):
 
+Script numbers are kept in sync with each script's own actual compiled
+figure number (`JFM-template.aux`'s `\newlabel{fig: ...}`, not creation
+order) -- a script whose own figure is removed from the paper entirely
+moves to `examples/figures/legacy/` instead of being renumbered into a
+slot that no longer means anything (see `examples/README.md`).
+
 | Script | Figure | Wave set |
 |---|---|---|
-| `paper_figure007_quartet_rossby_kelvin_panel.py` | `fig: cap4ex1` | `quartet_rossby_kelvin` |
-| `paper_figure008_quartet_rossby_kelvin_periods.py` | `fig: power1` | `quartet_rossby_kelvin` (imports 007's `compute()`, same trajectory) |
-| `paper_figure009_quartet_gravity_79_panel.py` | `fig: cap43panel` | `quartet_gravity_79` |
-| `paper_figure010_quintet_gravity_star_panel.py` | `fig: quintetpanel` | `quintet_gravity_star` |
-| `paper_figure011_quintet_gravity_star_pmeasure.py` | `fig: 4eff3` | `quintet_gravity_star` (P-measure sweep, `n_grid=10` per the figure's own caption) |
+| `paper_figure008_quartet_rossby_kelvin_panel.py` | `fig: cap4ex1` | `quartet_rossby_kelvin` (3x2: Triad 1/Triad 2/full-quartet evolution on top, one novelty spectrum per Rossby mode on bottom; symmetric 40 m/s IC, replacing the registry's own 30 m/s default) |
+| `paper_figure009_quartet_rossby_gravity_influence_panel.py` | (Quartet D panel, `sec: quartet_rossby_gravity_fast`) | `quartet_rossby_gravity_influence` (2x2: both constituent-triad evolutions + full-quartet evolution + RH(3,4) novelty spectrum against Triad 1, its only containing triad) |
+| `paper_figure011_quintet_gravity_star_panel.py` | `fig: quintetpanel` | `quintet_gravity_star` |
+
+`paper_figure009_quartet_gravity_79_panel.py` (old Quartet D, `quartet_gravity_79`/EG(7,9)) is deleted -- superseded 2026-08-28 by the Quartet D panel above once Quartet D was rebuilt on `quartet_rossby_gravity_influence` (WG(7,9) as the shared sum mode of both triads, not a private 4th mode); the EG(7,9) result survives only as a brief contrasting remark in the prose. `paper_figure011_quintet_gravity_star_pmeasure.py` (`fig: 4eff3`) and `paper_figure009_quartet_rossby_kelvin_periods.py` (`fig: power1`, folded into `fig: cap4ex1`'s own new bottom row) both moved to `examples/figures/legacy/` the same day -- neither figure is cited anywhere in `JFM-template.tex` any more. `paper_figure010_quartet_rossby_gravity_influence_efficiency.py` (1D + 2D `efficiency_var` sweep over WG(3,9)) computes but isn't wired into the paper yet.
 
 Each is runnable standalone and writes under
 `outputs/figures/wave_sets/<key>/`; copying the finished PNG into
@@ -690,11 +706,9 @@ paper's own `\includegraphics` expects is a separate, manual step (each
 script's own module docstring names the target file).
 
 ```bash
-python examples/figures/paper_figure007_quartet_rossby_kelvin_panel.py
-python examples/figures/paper_figure008_quartet_rossby_kelvin_periods.py
-python examples/figures/paper_figure009_quartet_gravity_79_panel.py
-python examples/figures/paper_figure010_quintet_gravity_star_panel.py
-python examples/figures/paper_figure011_quintet_gravity_star_pmeasure.py
+python examples/figures/paper_figure008_quartet_rossby_kelvin_panel.py
+python examples/figures/paper_figure009_quartet_rossby_gravity_influence_panel.py
+python examples/figures/paper_figure011_quintet_gravity_star_panel.py
 ```
 
 The Quartet A/B precession-frequency figure (JFM-template.tex
