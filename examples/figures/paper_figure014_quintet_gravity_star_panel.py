@@ -17,7 +17,6 @@ Run:
 
     python examples/figures/paper_figure014_quintet_gravity_star_panel.py
 """
-import dataclasses
 import os
 import sys
 

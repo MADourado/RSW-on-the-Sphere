@@ -7,12 +7,7 @@ here "Quartet B" -- registered as ``quartet_rh_borrowed_topology`` in
 ``wave_sets_default.yaml``: a=RH(4,5), b=RH(1,3), c=RH(3,7), d=RH(2,9),
 triad 1 sum=a members=(b,c), triad 2 sum=c members=(b,d)).
 
-Consolidates what were four separate exploration scripts
-(``reproduce_raphaldini2022_fig2.py`` -> ``precession_resonance_rsw_vs_
-barotropic.py`` -> ``precession_resonance_phase_diagnostic.py`` ->
-``borrowed_topology_precession_figure.py``, each importing the previous
-by bare module name) into one driver, now that the comparison itself is
-validated: the barotropic model
+One driver combining the barotropic model
 (``rsw_sphere.utilities.barotropic_vort_model``) + the RSW ``WaveSet``
 (built from the registry entry above) + the dynamical-phase diagnostic
 (``rsw_sphere.dynamics.dynamical_phase``) + the sweep/plot for the
@@ -49,7 +44,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
-from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.wave_sets import WaveSet
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
 from rsw_sphere.dynamics.dynamical_phase import dynamical_phase, libration_diagnostics

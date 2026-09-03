@@ -7,10 +7,10 @@ step exactly 2 m/s, every grid point an integer (n_grid=30 over this same
 range does NOT give integer steps, checked directly: step=60/29=2.069...).
 Only the two Rossby modes (RH(4,5)/RH(3,4)) are drawn, for focus -- the
 two gravity modes' own efficiency_var covers a noticeably wider range
-over the same sweep (WG(3,9) itself: -11% to +124%, checked directly
-2026-09-03) and would be a distraction on the same axes as the much
-smoother, near-identical RH(4,5)/RH(3,4) curves, not because it is
-numerically unstable (both are well above MIN_REFERENCE_DEK throughout).
+over the same sweep (WG(3,9) itself: -11% to +124%) and would be a
+distraction on the same axes as the much smoother, near-identical
+RH(4,5)/RH(3,4) curves, not because it is numerically unstable (both are
+well above MIN_REFERENCE_DEK throughout).
 
 Panel (b): efficiency_var 2D heatmap for target RH(4,5) alone, sweeping
 WG(3,9) (0-60) and RH(3,4) (0-100) together. Both axes share n_grid=11 --
