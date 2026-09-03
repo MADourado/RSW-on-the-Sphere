@@ -9,11 +9,7 @@ Built on run_sweep.py's own unified 2D engine (``compute_2d_grid`` --
 the same one ``run_sweep.py --wave-set KEY`` uses for its own 2D sweeps,
 one ``run_dynamics()`` call per grid point) for the efficiency map, and
 ``rsw_sphere.plotting.energy_evolution.wave_set_energy_evolution`` for
-the energy panel -- not on the retired ``triad_efficiency.py``/
-``triad_dynamics.py`` toolchain, nor on the older, separate
-``rsw_sphere.utilities.registry.sweep_2d`` engine this used before
-(migrated 2026-08-27; ``plot_efficiency_map``'s own rendering is
-unchanged, only where its input array comes from).
+the energy panel.
 """
 import dataclasses
 

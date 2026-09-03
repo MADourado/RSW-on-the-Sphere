@@ -6,10 +6,7 @@ Each row is (efficiency map, energy time integration).
 Built directly on the current registry/driver machinery
 (``_triad_panel_row.triad_row``, itself ``run_sweep.py``'s own unified 2D
 engine + ``rsw_sphere.plotting.energy_evolution``) applied to the two
-registered ``triad_rossby_only_*`` wave sets -- the dedicated per-figure
-script the LaTeX's own stale comment (pointing at the composite-panel
-assembler ``examples_legacy/make_section22_figures.py``) should reference
-instead.
+registered ``triad_rossby_only_*`` wave sets.
 
 Run:
 

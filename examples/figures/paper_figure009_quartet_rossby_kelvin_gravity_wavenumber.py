@@ -9,22 +9,15 @@ scales (the coefficient spans 4 orders of magnitude, log; the efficiency
 variation is a modest +/-11%, linear) and forcing them onto one shared
 axis pair made it impossible to tell which curve belonged to which axis.
 
-Redesigned 2026-09-03 (was a 2x2 grid of efficiency_var/p_measure rows x
-gravity-mode/RH(1,2) columns, then briefly a single twin-axis panel):
-"P-measure" and "efficiency variation" are now recognized as the same
-quantity (both sides of the ratio share one reference energy budget --
-see rsw_sphere.utilities.pmeasure's own module docstring), so the old
-4-panel redundancy (2 diagnostics x 2 targets) had collapsed to 2
-genuinely distinct curves anyway. Left panel (log scale): |coupling
-coefficient alpha| of the candidate's own triad (member of Triad 2,
-closed with the shared edge) -- a purely linear-algebra quantity, no time
-integration, immune to any energy-budget normalization choice. Right
-panel (linear, %, zero centered): RH(1,2)'s own efficiency variation
-against Triad 1 (RH-only, its only containing triad) -- the dynamical
-effect the coefficient decay is meant to explain. Plotting both side by
-side, sharing the same x-axis, lets a reader see directly that RH(1,2)'s
-own effect tracks the coupling coefficient's decay, not the reverse trend
-the old (differently normalized) efficiency-variation definition showed.
+Left panel (log scale): |coupling coefficient alpha| of the candidate's
+own triad (member of Triad 2, closed with the shared edge) -- a purely
+linear-algebra quantity, no time integration, immune to any energy-budget
+normalization choice. Right panel (linear, %, zero centered): RH(1,2)'s
+own efficiency variation against Triad 1 (RH-only, its only containing
+triad) -- the dynamical effect the coefficient decay is meant to explain.
+Plotting both side by side, sharing the same x-axis, lets a reader see
+directly that RH(1,2)'s own effect tracks the coupling coefficient's
+decay.
 
 Run:
 
