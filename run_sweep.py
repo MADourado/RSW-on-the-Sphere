@@ -51,7 +51,7 @@ in the same registry schema, e.g. examples/wave_sets_custom.yaml).
 A composite figure combining two or more of these diagnostics (e.g. the
 paper's own precession-frequency-and-efficiency figure) is a separate,
 paper-specific script's job -- see
-examples/figures/paper_figure006_quartet_a_precession.py, which calls
+examples/figures/paper_figure007_quartet_a_precession.py, which calls
 run_sweep() for `[dynamical_phase, efficiency]` (one shared computation)
 and composes its own figure from the two results.
 """
@@ -397,7 +397,7 @@ def run_sweep(config: RunConfig, plot_cfg: dict = None, plot_per_point: bool = T
     path (outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.*)
     -- there is no single "the" output figure for a sweep to override; a
     composite figure combining several diagnostics is a separate script's
-    job (see examples/figures/paper_figure006_quartet_a_precession.py).
+    job (see examples/figures/paper_figure007_quartet_a_precession.py).
 
     plot_per_point : whether each grid point also writes its own full
         run_dynamics.py --diagnostics-equivalent file bundle (evolution

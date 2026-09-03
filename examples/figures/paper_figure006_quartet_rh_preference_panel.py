@@ -10,7 +10,7 @@ wave_set_comparison_panel_from_spec`` (also installed as the
 
 Run:
 
-    python examples/figures/paper_figure005_quartet_rh_preference_panel.py
+    python examples/figures/paper_figure006_quartet_rh_preference_panel.py
 """
 import os
 import sys
@@ -24,7 +24,7 @@ from rsw_sphere.plotting.energy_evolution import wave_set_comparison_panel_from_
 
 WAVE_SET_KEY = "quartet_rh_preference"
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure005_quartet_rh_preference_panel.png")
+                               "paper_figure006_quartet_rh_preference_panel.png")
 
 
 def main():

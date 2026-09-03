@@ -131,7 +131,7 @@ own `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv`
 -- there's no single "the" output for a sweep to override. A composite
 figure combining several diagnostics (e.g. the paper's own
 precession-frequency-and-efficiency figure) is a separate script's job
-(`examples/figures/paper_figure006_quartet_a_precession.py`), not
+(`examples/figures/paper_figure007_quartet_a_precession.py`), not
 something this driver special-cases. See `docs/wave_sets.md` §6.1 for
 the full vocabulary; the older, separate 2D-only engine
 (`rsw_sphere.utilities.registry.sweep_2d`) has been retired -- both

@@ -538,7 +538,7 @@ repository (see the output convention above).
 **A composite figure combining two or more diagnostics** (e.g. the
 paper's own precession-frequency-and-efficiency figure) is a separate,
 paper-specific script's job, not something `run_sweep.py` special-cases
--- see `examples/figures/paper_figure006_quartet_a_precession.py`, which
+-- see `examples/figures/paper_figure007_quartet_a_precession.py`, which
 calls `run_sweep()` once for `[dynamical_phase, efficiency]` (one shared
 computation) and composes its own dual-axis figure from the two results,
 reusing `rsw_sphere.plotting.precession_plot.plot_dual_axis_frequency_efficiency`

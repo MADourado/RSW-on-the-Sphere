@@ -17,13 +17,9 @@ paper-specific framing (which mode's efficiency to show, which triad's own
 frequency curve, axis labels) lives here, not in the registry --
 run_sweep.py itself has no paper-specific concept of either.
 
-Was ``efficiency`` (plain share, not variation) until 2026-08-28 -- see
-the paper's own \\todo at eq: Pa's definition ("efficiency variation seem
-to cover this").
-
 Run:
 
-    python examples/figures/paper_figure006_quartet_a_precession.py
+    python examples/figures/paper_figure007_quartet_a_precession.py
 """
 import os
 import sys
@@ -42,7 +38,7 @@ from run_sweep import run_sweep
 
 WAVE_SET_KEY = "quartet_rh_preference"
 DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
-                               "paper_figure006_quartet_a_precession.png")
+                               "paper_figure007_quartet_a_precession.png")
 TARGET_MODE_KEY = "c"    # RH(3,4) -- efficiency variation shown on the right axis
 PLOT_TRIAD = 0           # Triad 1 -- only its own precession-frequency curve is drawn
 XLABEL = "RH(3,6) driving velocity $u$ (m/s)"
