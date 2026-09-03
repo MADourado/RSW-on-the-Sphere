@@ -1,26 +1,30 @@
 """Figure for `sec: quartet_rossby_gravity_fast` (JFM-template.tex),
 opening Quartet C's gravity-mode wavenumber screen: as slot ``d`` is swept
-over EG(1,n)/WG(1,n), n=1..15 odd, in place of the registered EG(1,1), both
-the candidate's OWN "final" diagnostics (target_mode_override=SLOT) and
-RH(1,2)'s own (the registry's own alternative_modes.d.target_mode: c) are
-tracked side by side -- 2x2 grid, efficiency variation (top row) and
-p_measure (bottom row), gravity mode (left column) vs. RH(1,2) (right
-column). p_measure was reinstated here (2026-08-28) after an earlier pass
-dropped it from several figures in favor of efficiency_var alone --
-inadequate on its own, since efficiency_var normalizes by each
-configuration's own (here candidate-dependent) total energy budget and can
-drift for that reason alone even when a mode's own raw energy swing
-(p_measure) does not; see the total_energy diagnostic in
-run_sweep_sets.py/run_sweep.py for the general version of this check.
+over EG(1,n)/WG(1,n), n=1..15 odd, in place of the registered EG(1,1),
+this shows the mechanism (left panel: the candidate's own coupling
+coefficient to the shared edge RH(4,5)+RH(3,4)) alongside its effect
+(right panel: RH(1,2)'s own efficiency variation) -- two panels, not a
+shared twin-axis plot, since the two quantities need genuinely different
+scales (the coefficient spans 4 orders of magnitude, log; the efficiency
+variation is a modest +/-11%, linear) and forcing them onto one shared
+axis pair made it impossible to tell which curve belonged to which axis.
 
-Thin wrapper around run_sweep_sets.py's own candidate-substitution engine
-(``quartet_rossby_kelvin``'s registered ``alternative_modes.d`` block) --
-only the plotting differs from ``run_sweep_sets.py``'s own generic
-``plot_candidate_scalar`` (which deliberately draws unconnected points,
-since candidates usually have no natural ordering): here EG(1,n) and
-WG(1,n) each *do* have a natural ordering (wavenumber n), so they're drawn
-as two connected lines instead, against n on the x-axis rather than the
-candidate's mode label.
+Redesigned 2026-09-03 (was a 2x2 grid of efficiency_var/p_measure rows x
+gravity-mode/RH(1,2) columns, then briefly a single twin-axis panel):
+"P-measure" and "efficiency variation" are now recognized as the same
+quantity (both sides of the ratio share one reference energy budget --
+see rsw_sphere.utilities.pmeasure's own module docstring), so the old
+4-panel redundancy (2 diagnostics x 2 targets) had collapsed to 2
+genuinely distinct curves anyway. Left panel (log scale): |coupling
+coefficient alpha| of the candidate's own triad (member of Triad 2,
+closed with the shared edge) -- a purely linear-algebra quantity, no time
+integration, immune to any energy-budget normalization choice. Right
+panel (linear, %, zero centered): RH(1,2)'s own efficiency variation
+against Triad 1 (RH-only, its only containing triad) -- the dynamical
+effect the coefficient decay is meant to explain. Plotting both side by
+side, sharing the same x-axis, lets a reader see directly that RH(1,2)'s
+own effect tracks the coupling coefficient's decay, not the reverse trend
+the old (differently normalized) efficiency-variation definition showed.
 
 Run:
 
@@ -48,52 +52,50 @@ DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET
 EG_COLOR = BLUE
 WG_COLOR = '#17a589'
 
-_DIAGNOSTICS = ("efficiency_var", "p_measure_final")
-_COLS = {"efficiency_var (%)": r"$\Delta\mathcal{E}$ (final, %)",
-         "p_measure_final (%)": r"$\mathcal{P}$ (final, %)"}
-
 
 def compute():
     """Two calls over the SAME registered candidate list (EG(1,n)/WG(1,n),
-    n=1..15 odd): one targeting the swept slot itself (the gravity mode's
-    own diagnostics), one targeting the registry's own default
-    (alternative_modes.d.target_mode: c, i.e. RH(1,2)).
+    n=1..15 odd): one for the candidate's own coupling coefficient (static
+    property, always computed regardless of `diagnostics:` -- no time
+    integration needed for this column), one for RH(1,2)'s own efficiency
+    variation (the registry's own default alternative_modes.d.target_mode: c).
     """
-    gravity = run_sweep_sets(WAVE_SET_KEY, SLOT, diagnostics_override=_DIAGNOSTICS,
-                              target_mode_override=SLOT)
-    rh12 = run_sweep_sets(WAVE_SET_KEY, SLOT, diagnostics_override=_DIAGNOSTICS)
-    return gravity, rh12
+    coeff = run_sweep_sets(WAVE_SET_KEY, SLOT, diagnostics_override=(),
+                            target_mode_override=SLOT)
+    rh12 = run_sweep_sets(WAVE_SET_KEY, SLOT, diagnostics_override=("efficiency_var",))
+    return coeff, rh12
 
 
-def _plot_panel(ax, results, col, ylabel, title):
-    eg = sorted((r for r in results if r["alpha"] == 1 and "error" not in r), key=lambda r: r["n"])
-    wg = sorted((r for r in results if r["alpha"] == 2 and "error" not in r), key=lambda r: r["n"])
-    ax.plot([r["n"] for r in eg], [r[col] for r in eg],
-            marker='o', ms=5, lw=1.5, color=EG_COLOR, label="EG(1,n)")
-    ax.plot([r["n"] for r in wg], [r[col] for r in wg],
-            marker='s', ms=5, lw=1.5, color=WG_COLOR, label="WG(1,n)")
-    ax.axhline(0, color='grey', lw=0.8, ls='--', zorder=1)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
+def _family_rows(results, alpha):
+    return sorted((r for r in results if r["alpha"] == alpha and "error" not in r), key=lambda r: r["n"])
 
 
-def plot(gravity, rh12, path: str = None):
-    apply_house_style()
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8), sharex=True)
+def plot(coeff, rh12, path: str = None):
+    apply_house_style(base_size=14)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 5))
 
-    _plot_panel(axes[0, 0], gravity, "efficiency_var (%)", _COLS["efficiency_var (%)"],
-                "Gravity mode's own efficiency variation")
-    _plot_panel(axes[0, 1], rh12, "efficiency_var (%)", "", "RH(1,2)'s own efficiency variation")
-    _plot_panel(axes[1, 0], gravity, "p_measure_final (%)", _COLS["p_measure_final (%)"],
-                "Gravity mode's own p_measure")
-    _plot_panel(axes[1, 1], rh12, "p_measure_final (%)", "", "RH(1,2)'s own p_measure")
+    for alpha, fam, color in ((1, "EG(1,n)", EG_COLOR), (2, "WG(1,n)", WG_COLOR)):
+        eg_coeff = _family_rows(coeff, alpha)
+        eg_rh12 = _family_rows(rh12, alpha)
+        ax1.plot([r["n"] for r in eg_coeff], [r["coeff"] for r in eg_coeff],
+                 marker='o', ms=5, lw=1.5, color=color, label=fam)
+        ax2.plot([r["n"] for r in eg_rh12], [r["efficiency_var (%)"] for r in eg_rh12],
+                 marker='s', ms=5, lw=1.5, color=color, label=fam)
 
-    for ax in axes[:, 1]:
-        ax.set_ylabel("")
-    for ax in axes[1, :]:
-        ax.set_xlabel("Gravity mode wavenumber $n$")
-    axes[0, 0].legend(fontsize=9)
-    fig.suptitle("Quartet C: private gravity mode swept over wavenumber $n$")
+    ax1.set_yscale('log')
+    ax1.set_xlabel("Gravity mode wavenumber $n$")
+    ax1.set_ylabel(r"$|\alpha|$")
+    ax1.set_title("(a) Coupling coefficient")
+    ax1.legend()
+
+    ymax = max(abs(v) for v in ax2.get_ylim())
+    ax2.set_ylim(-ymax, ymax)
+    ax2.axhline(0, color='grey', lw=0.8, ls=':', zorder=1)
+    ax2.set_xlabel("Gravity mode wavenumber $n$")
+    ax2.set_ylabel(r"RH(1,2) efficiency variation $\Delta\mathcal{E}$ (%)")
+    ax2.set_title("(b) Effect on RH(1,2)")
+    ax2.legend()
+
     fig.tight_layout()
     if path:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -110,17 +112,15 @@ def main():
     args = parser.parse_args()
 
     print(f"Running candidate substitution for {WAVE_SET_KEY!r}, slot {SLOT!r}...")
-    gravity, rh12 = compute()
-    plot(gravity, rh12, path=args.path)
+    coeff, rh12 = compute()
+    plot(coeff, rh12, path=args.path)
     print(f"wrote {os.path.abspath(args.path)}")
 
-    for label, results in (("gravity mode (own)", gravity), ("RH(1,2)", rh12)):
-        print(f"\n{label}:")
-        print(f"{'mode':>10} {'efficiency_var (%)':>20} {'p_measure_final (%)':>20}")
-        for r in sorted(results, key=lambda r: (r["alpha"], r["n"])):
-            ev = r.get("efficiency_var (%)", float("nan"))
-            pm = r.get("p_measure_final (%)", float("nan"))
-            print(f"{r['mode']:>10} {ev:>20.3f} {pm:>20.3f}")
+    print(f"\n{'mode':>10} {'coeff':>14} {'RH(1,2) eff_var (%)':>22}")
+    rh12_by_mode = {r["mode"]: r for r in rh12}
+    for r in sorted(coeff, key=lambda r: (r["alpha"], r["n"])):
+        ev = rh12_by_mode.get(r["mode"], {}).get("efficiency_var (%)", float("nan"))
+        print(f"{r['mode']:>10} {r['coeff']:>14.6e} {ev:>22.3f}")
 
 
 if __name__ == "__main__":

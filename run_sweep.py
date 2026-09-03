@@ -12,20 +12,27 @@ One diagnostic vocabulary, both dimensionalities:
   unit's own value only -- a heatmap grid doesn't have a line plot's
   spare room for a per-unit breakdown).
 - `dynamical_phase` -- 1D: one line per triad. 2D: one heatmap per triad.
-- `p_measure` (alias `energy_var`), `efficiency_var`, `spectral_dev_var`,
+- `efficiency_var` (alias `energy_var`), `spectral_dev_var`,
   `novel_freq`/`novelty_freq`, `novel_period`/`novelty_period` -- one
   line/heatmap per mode, combining every containing sub-triad the same
   way `run_dynamics.py --diagnostics`'s own "final diagnostics" table
   does (same meaning in 1D and 2D). Undefined for a plain triad with no
-  sub-triad to compare against -- warned and skipped there.
+  sub-triad to compare against -- warned and skipped there. `efficiency_var`
+  is the target's own raw energy-variation percent change, full wave set
+  vs. whichever containing sub-triad gives it the largest raw swing --
+  what used to be reported separately as "P-measure" before both were
+  recognized as the same quantity (2026-09-03): both sides of the ratio
+  share one reference energy budget, so it is immune to the full wave
+  set's own total-energy budget changing independently of the target's
+  actual dynamical response.
 - `total_energy` -- one line/heatmap per UNIT (`full` plus every
   sub-triad, not per mode): each unit's own time-averaged total energy,
   in Joules (`rsw_sphere.physics.total_energy_joules`, same conversion
-  ``eq: enerA`` uses for a single mode). Useful alongside
-  `efficiency_var` when screening a sweep axis that changes the wave
-  set's own energy budget (e.g. a driving velocity), since
-  `efficiency_var` normalizes by that same budget and can shift even
-  when the target's own raw dynamics (`p_measure`) does not.
+  ``eq: enerA`` uses for a single mode). Useful context alongside
+  `efficiency_var` when screening a sweep axis that also changes the wave
+  set's own energy budget (e.g. a driving velocity) -- `efficiency_var`
+  itself no longer needs it as a correction, but it's still informative
+  to see whether the budget moved at all.
 
 `diagnostics: [all]` expands to every name above. Output:
 `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png` +
@@ -72,14 +79,14 @@ _MODE_UNIT_DIAGNOSTICS = ("efficiency", "dominant_freq", "dominant_period", "low
 _MODE_UNIT_KEYS = {'efficiency': 'efficiency', 'dominant_freq': 'freq_global_cpd',
                     'dominant_period': 'period_global', 'low_frequency_energy': 'low_freq_power'}
 _TRIAD_DIAGNOSTICS = ("dynamical_phase",)
-_SCALAR_DIAGNOSTICS = ("p_measure", "efficiency_var", "spectral_dev_var", "novel_freq", "novel_period")
+_SCALAR_DIAGNOSTICS = ("efficiency_var", "spectral_dev_var", "novel_freq", "novel_period")
 _UNIT_DIAGNOSTICS = ("total_energy",)
 #: A signed % change (inhibition vs. enhancement) needs a diverging,
 #: zero-centered colormap in 2D -- spectral_dev_var/novel_freq/novel_period
 #: are all non-negative by construction (L2 distance / period / frequency).
-_DIVERGING_2D = frozenset({"p_measure", "efficiency_var"})
+_DIVERGING_2D = frozenset({"efficiency_var"})
 _SCALAR_ALIASES = {
-    "energy_var": "p_measure",
+    "energy_var": "efficiency_var",
     "novelty_period": "novel_period",
     "novelty_freq": "novel_freq",
 }
@@ -92,7 +99,6 @@ _DIAG_META = {
     'dominant_period': ('Dominant period (d)', 'dominant period'),
     'low_frequency_energy': ('Low-frequency power', 'low-frequency energy'),
     'dynamical_phase': (r'$|$precession frequency$|$ (rad/day)', 'dynamical phase'),
-    'p_measure': ('P-measure (final, %)', 'P-measure'),
     'efficiency_var': ('Efficiency variation (final, %)', 'efficiency variation'),
     'spectral_dev_var': ('Spectral deviation (final, %)', 'spectral deviation'),
     'novel_freq': ('Novel frequency (final, cpd)', 'novel frequency'),
@@ -175,7 +181,7 @@ def _run_sweep_point(args) -> dict:
     precession_freq = dict(results['full']['precession_freq'])
     final = {
         d['mode']: {
-            'p_measure': d['p_measure_final_pct'], 'efficiency_var': d['efficiency_var_final_pct'],
+            'efficiency_var': d['efficiency_var_final_pct'],
             'spectral_dev_var': d['spectral_dev_final_pct'],
             'novel_period': d['novelty_period_final_days'], 'novel_freq': d['novelty_freq_final_cpd'],
         }
@@ -387,7 +393,7 @@ def _run_sweep_2d_diagnostics(config: RunConfig, requested: list, plot_per_point
 def run_sweep(config: RunConfig, plot_cfg: dict = None, plot_per_point: bool = True) -> dict:
     """Sweep config.sweep.axes (1 or 2 modes' velocities), computing every
     diagnostic in config.sweep.diagnostics (default: `("efficiency",)` for
-    1D, `("p_measure",)` for 2D). Every diagnostic manages its own output
+    1D, `("efficiency_var",)` for 2D). Every diagnostic manages its own output
     path (outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.*)
     -- there is no single "the" output figure for a sweep to override; a
     composite figure combining several diagnostics is a separate script's
@@ -407,7 +413,7 @@ def run_sweep(config: RunConfig, plot_cfg: dict = None, plot_per_point: bool = T
     if len(axes) not in (1, 2):
         raise ValueError(f"sweep needs 1 or 2 axes, got {len(axes)}")
 
-    default = ("efficiency",) if len(axes) == 1 else ("p_measure",)
+    default = ("efficiency",) if len(axes) == 1 else ("efficiency_var",)
     requested = _normalize_diagnostics(config.sweep.diagnostics or default, spec)
     if not requested:
         print("no requested diagnostic is valid for this wave set -- skipping sweep")

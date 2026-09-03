@@ -8,8 +8,7 @@ wave_sets_default.yaml entry):
     alternative_modes:
       d:                              # mode key being substituted
         target_mode: d                # optional, default: the slot itself
-        diagnostics: [p_measure]      # subset of {p_measure, p_measure_final,
-                                       # efficiency_var, spectral_dev_var,
+        diagnostics: [efficiency_var] # subset of {efficiency_var, spectral_dev_var,
                                        # novelty_period, efficiency,
                                        # low_frequency_energy}
         candidate_velocity: 30.0      # optional: drive every candidate at
@@ -50,19 +49,23 @@ from rsw_sphere.plotting.sweep_diagnostics import plot_candidate_scalar
 
 from run_dynamics import run_dynamics
 
-#: run_sweep_sets.py's own diagnostic vocabulary. p_measure/novelty_period
-#: are the PAIRWISE flavor (against target_idx's own resolved reference
-#: triad, rsw_sphere.utilities.pmeasure._default_triad_index_for_mode) --
-#: p_measure_final/efficiency_var are the "final" combined-across-every-
+#: run_sweep_sets.py's own diagnostic vocabulary. novelty_period is the
+#: PAIRWISE flavor (against target_idx's own resolved reference triad,
+#: rsw_sphere.utilities.pmeasure._default_triad_index_for_mode) --
+#: efficiency_var/spectral_dev_var are the "final" combined-across-every-
 #: containing-sub-triad flavor (report['final']), same meaning run_sweep.py's
-#: own unified engine uses.
-_KNOWN_DIAGNOSTICS = frozenset({"p_measure", "p_measure_final", "efficiency_var", "spectral_dev_var",
+#: own unified engine uses. What used to be reported separately as
+#: "p_measure"/"p_measure_final" (2026-09-03: recognized as the same
+#: quantity as efficiency_var once both sides of the ratio share one
+#: reference energy budget -- see rsw_sphere.utilities.pmeasure's own
+#: module docstring) is retired; every registry `diagnostics:` block has
+#: been migrated to "efficiency_var".
+_KNOWN_DIAGNOSTICS = frozenset({"efficiency_var", "spectral_dev_var",
                                  "novelty_period", "efficiency", "low_frequency_energy"})
-_ROW_LABELS = {"p_measure": "p_measure (%)", "p_measure_final": "p_measure_final (%)",
-               "efficiency_var": "efficiency_var (%)", "spectral_dev_var": "spectral_dev_var (%)",
+_ROW_LABELS = {"efficiency_var": "efficiency_var (%)", "spectral_dev_var": "spectral_dev_var (%)",
                "novelty_period": "novelty_period (days)"}
 #: report['pairwise']'s own field name for each pairwise diagnostic.
-_PAIRWISE_FIELDS = {"p_measure": "p_measure_pct", "novelty_period": "novelty_period_days"}
+_PAIRWISE_FIELDS = {"novelty_period": "novelty_period_days"}
 #: Short, paper-facing display name per plotted column -- keeps figure titles
 #: readable; falls back to the raw column name (_write_plots) for anything
 #: not listed here.
@@ -71,7 +74,6 @@ _COL_TITLES = {
     "omega": "Frequency ω", "period_days": "Period (days)",
     "isolated_triad_efficiency (%)": "Isolated-triad efficiency (%)",
     "efficiency_var (%)": "Efficiency variation (%)",
-    "p_measure (%)": "P-measure (%)", "p_measure_final (%)": "P-measure, final (%)",
     "spectral_dev_var (%)": "Spectral deviation, final (%)",
     "novelty_period (days)": "Novelty period (days)", "efficiency (%)": "Efficiency (%)",
     "low_frequency_energy": "Low-frequency energy",
@@ -166,9 +168,6 @@ def _one_candidate_inner(args):
         if d in _PAIRWISE_FIELDS:
             row[_ROW_LABELS[d]] = pairwise_value_for_target(
                 report, cand_spec, target_idx, cand_spec.reference_triad, _PAIRWISE_FIELDS[d])
-        elif d == "p_measure_final":
-            final_row = next((r for r in report["final"] if r["mode"] == target_label), None)
-            row[_ROW_LABELS[d]] = final_row["p_measure_final_pct"] if final_row else float("nan")
         elif d == "efficiency_var":
             final_row = next((r for r in report["final"] if r["mode"] == target_label), None)
             row[_ROW_LABELS[d]] = final_row["efficiency_var_final_pct"] if final_row else float("nan")
@@ -249,7 +248,7 @@ def run_sweep_sets(spec_key: str, slot: str, specs_path: str = DEFAULT_WAVESETS_
     candidates = [(c["m"], c["n"], c["alpha"]) for c in cfg["candidates"]]
 
     diagnostics = tuple(diagnostics_override) if diagnostics_override is not None \
-        else tuple(cfg.get("diagnostics", ("p_measure",)))
+        else tuple(cfg.get("diagnostics", ("efficiency_var",)))
     unknown = set(diagnostics) - _KNOWN_DIAGNOSTICS
     if unknown:
         raise ValueError(f"unknown diagnostic(s) {unknown} -- must be a subset of {_KNOWN_DIAGNOSTICS}")

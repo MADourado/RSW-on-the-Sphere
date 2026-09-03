@@ -181,8 +181,8 @@ def check_c3(case, gamma, N, deg, t_f=20.0, h=0.01, rtol=1e-10):
     """For a 1-triad ``WaveSet``, the full trajectory (all time points)
     equals ``RK44(TRIAD, ...)`` from the same initial amplitudes. This is
     the end-to-end proof that a wave set's numerator and a TRIAD's
-    denominator (as used by the P-measure, Phase C) share a convention --
-    C1 alone only proves the coefficients agree at t=0.
+    denominator (as used by efficiency variation, Phase C) share a
+    convention -- C1 alone only proves the coefficients agree at t=0.
     """
     if len(case["triads"]) != 1:
         return True, "skipped (only meaningful for a 1-triad case)"
@@ -295,8 +295,9 @@ def check_c6(case, gamma, N, deg, t_f=40.0, h=0.01):
     """Advisory energy-drift validity gate (never hard-fails): report
     ``drift = max_t|E_T(t) - E_T(0)| / |E_T(0)|`` and, per mode,
     ``drift / dEK`` where ``dEK = max_t|A_j|^2 - min_t|A_j|^2``. If
-    ``drift/dEK`` is not small for a mode, any P-measure or ``ΔEK``-derived
-    quantity for that mode is measuring truncation error, not physics --
+    ``drift/dEK`` is not small for a mode, any efficiency-variation or
+    ``ΔEK``-derived quantity for that mode is measuring truncation error,
+    not physics --
     flag loudly rather than silently proceed to figure generation.
     """
     ws = _build(case, gamma, N, deg)

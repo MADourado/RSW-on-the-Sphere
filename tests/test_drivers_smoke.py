@@ -109,17 +109,17 @@ def test_run_sweep_2d_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=0.0, max=20.0),
                                SweepAxis(mode="d", min=0.0, max=10.0)),
-                         n_grid=2, diagnostics=("p_measure",))
+                         n_grid=2, diagnostics=("efficiency_var",))
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
     result = run_sweep(config, plot_per_point=False)
-    assert set(result) == {"p_measure"}
-    assert os.path.exists(result["p_measure"]["path"])
-    assert os.path.exists(result["p_measure"]["csv_path"])
-    assert result["p_measure"]["U1"].shape == (2, 2)
+    assert set(result) == {"efficiency_var"}
+    assert os.path.exists(result["efficiency_var"]["path"])
+    assert os.path.exists(result["efficiency_var"]["csv_path"])
+    assert result["efficiency_var"]["U1"].shape == (2, 2)
     # one heatmap panel per mode -- quartet_rossby_kelvin has 4
-    assert len(result["p_measure"]["series"]) == 4
+    assert len(result["efficiency_var"]["series"]) == 4
 
 
 @pytest.mark.slow
@@ -141,7 +141,7 @@ def test_run_sweep_wave_set_cli_smoke(tmp_path):
           sweep:
             axes: [{mode: c, min: 0.0, max: 20.0}, {mode: d, min: 0.0, max: 10.0}]
             n_grid: 2
-            diagnostics: [p_measure]
+            diagnostics: [efficiency_var]
           plot: {title: "tiny test"}
         """))
     result = subprocess.run(
@@ -151,8 +151,8 @@ def test_run_sweep_wave_set_cli_smoke(tmp_path):
         capture_output=True, text=True, cwd=_ROOT)
     assert result.returncode == 0, result.stderr
     out_dir = tmp_path / "sweep" / "tiny_quartet"
-    pngs = list(out_dir.glob("sweep_diag_p_measure_*.png"))
-    csvs = list(out_dir.glob("sweep_diag_p_measure_*.csv"))
+    pngs = list(out_dir.glob("sweep_diag_efficiency_var_*.png"))
+    csvs = list(out_dir.glob("sweep_diag_efficiency_var_*.csv"))
     assert len(pngs) == 1, list(out_dir.iterdir())
     assert len(csvs) == 1
 

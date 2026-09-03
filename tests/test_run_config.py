@@ -48,17 +48,17 @@ def test_has_subtriads_true_for_quartet_false_for_triad():
 def test_sweep_axes_auto_derived_from_private_modes():
     from rsw_sphere.dynamics.run_config import _sweep_from_dict
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
-    sweep = _sweep_from_dict({"n_grid": 5, "diagnostics": ["p_measure"]}, spec)
+    sweep = _sweep_from_dict({"n_grid": 5, "diagnostics": ["efficiency_var"]}, spec)
     assert {a.mode for a in sweep.axes} == {"c", "d"}
     assert sweep.n_grid == 5
-    assert sweep.diagnostics == ("p_measure",)
+    assert sweep.diagnostics == ("efficiency_var",)
 
 
 def test_sweep_axes_explicit_override():
     from rsw_sphere.dynamics.run_config import _sweep_from_dict
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     sweep = _sweep_from_dict(
-        {"axes": [{"mode": "c", "min": 10.0, "max": 20.0}], "diagnostics": ["p_measure"]}, spec)
+        {"axes": [{"mode": "c", "min": 10.0, "max": 20.0}], "diagnostics": ["efficiency_var"]}, spec)
     assert len(sweep.axes) == 1
     axis = sweep.axes[0]
     assert (axis.mode, axis.min, axis.max) == ("c", 10.0, 20.0)

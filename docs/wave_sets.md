@@ -16,7 +16,7 @@ untouched and serves as the independent reference implementation
 | `rsw_sphere/plotting/wave_set_table.py` | Batch table: per-mode frequency/period, one coupling-coefficient column per constituent triad, per-triad mismatch `δ` and pump mode |
 | `rsw_sphere/plotting/energy_evolution.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
 | `rsw_sphere/plotting/period_panel.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
-| `rsw_sphere/utilities/pmeasure.py` | P-measure (%): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange |
+| `rsw_sphere/utilities/pmeasure.py` | Efficiency variation (%): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange |
 | `rsw_sphere/utilities/precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity |
 
 Two root drivers sit on top of these: `run_dynamics.py` (one wave set,
@@ -125,7 +125,7 @@ wavenumber constraint for you.
 |---|---|
 | `modes` | one entry per Hough mode, each with `m`, `n`, `alpha`, `u` (initial zonal velocity, m/s) |
 | `triads` | list of constituent triads; each names `sum` + `members` by mode letter, plus an optional `display_label` and documentary `triad_key` (pointing at a §2.2 triad registry role-key, if this constituent triad happens to also be independently registered there — not resolved automatically) |
-| `reference_triad` | index into `triads` — the default P-measure denominator for a mode that belongs to it (see `rsw_sphere/utilities/pmeasure.py`'s module docstring for the full per-mode rule) |
+| `reference_triad` | index into `triads` — the default efficiency-variation denominator for a mode that belongs to it (see `rsw_sphere/utilities/pmeasure.py`'s module docstring for the full per-mode rule) |
 | `h_e` | equivalent height, m |
 | `settings` | per-wave-set `tf_days`/`h`, read by every driver and the `examples/figures/paper_figureNNN_*.py` scripts (§7) — the single source of truth for how long/finely to integrate this particular configuration, not a shared default. (Not the Hough-eigenproblem truncation order `N` -- every driver hardcodes `N=10`, independent of any registry entry.) |
 | `sweep` | optional; read by `run_sweep.py` (§6.1) -- which mode(s) to sweep and which diagnostics to compute |
@@ -148,8 +148,7 @@ quartet_rossby_kelvin:
   alternative_modes:
     d:                              # mode key being substituted
       target_mode: d                # optional, default: the slot itself
-      diagnostics: [efficiency_var] # subset of {p_measure, p_measure_final,
-                                     # efficiency_var, spectral_dev_var,
+      diagnostics: [efficiency_var] # subset of {efficiency_var, spectral_dev_var,
                                      # novelty_period, efficiency,
                                      # low_frequency_energy}
       candidate_velocity: 30.0      # optional: drive every candidate at
@@ -329,29 +328,31 @@ registry-independent synthetic self-check instead of the registry CLI.
 
 ---
 
-## 5. `rsw_sphere/utilities/pmeasure.py` — energy-variation diagnostics
+## 5. `rsw_sphere/utilities/pmeasure.py` — efficiency-variation diagnostics
 
 Compares one target mode's own trajectory in the full wave set against
 its trajectory in one constituent triad alone (the paper's own
-`ΔE^a_{b,c,...}` notation, §4.1). Three related but distinct diagnostics
-live here and in the sibling `periods.py`/`efficiency.py` modules:
+`ΔE^a_{b,c,...}` notation, §4.1). Two related diagnostics live here and
+in the sibling `periods.py` module:
 
-- **P-measure** (paper eq. `Pa`) -- raw kinetic-energy variation:
-  `P = 100 * (ΔEK_wave_set - ΔEK_triad) / ΔEK_triad`. Positive means the
-  extra mode(s) enhance that target's energy exchange; negative means
-  they inhibit it.
-- **Efficiency variation** (`Δ𝓔`, paper eq. `effvar`) -- the same
-  comparison but normalized by each unit's own mean total energy first
-  (`wave_set_efficiency`), i.e. the target's *share* of that unit's
-  budget rather than its raw swing. The two can disagree in sign: a
-  reference triad has strictly fewer active modes and therefore a
-  smaller total-energy budget than the full wave set, so a target's raw
-  swing can grow (`P>0`) while its share of the now-larger budget shrinks
-  (`Δ𝓔<0`) -- both are legitimate readings of different questions, and
-  should always be reported together, not `Δ𝓔` alone (see
-  `rsw_sphere.physics.total_energy_joules`/`run_sweep.py`'s `total_energy`
-  diagnostic for checking whether a comparison's own total-energy budget
-  is what moved).
+- **Efficiency variation** (`Δ𝓔`, paper eq. `effvar`) -- raw
+  energy-variation percent change: `Δ𝓔 = 100 * (ΔEK_wave_set -
+  ΔEK_triad) / ΔEK_triad`. Positive means the extra mode(s) enhance that
+  target's energy exchange; negative means they inhibit it. What an
+  earlier version of this codebase computed and reported separately as
+  "P-measure" (raw swing) and "efficiency variation" (each side's own raw
+  swing divided by *its own* configuration's mean total energy first,
+  `rsw_sphere.utilities.efficiency.wave_set_efficiency`) are the same
+  quantity (2026-09-03): naively normalizing each side by its own budget
+  is wrong in general, since the two configurations' total-energy budgets
+  can differ for reasons unrelated to the target's actual response (e.g.
+  a fixed driving velocity needs more energy at a higher wavenumber), so
+  that ratio could drift purely from the denominator. Normalizing both
+  sides by the SAME (reference) energy budget instead cancels that
+  denominator out of the ratio entirely, leaving exactly the raw-swing
+  formula above -- "P-measure" was already computing the right thing; the
+  name is retired, "efficiency variation" is the one diagnostic reported
+  in the paper and by every driver.
 - **Spectral deviation** (`𝓓₂ᵃ`, `rsw_sphere.utilities.periods.spectral_deviation`)
   -- compares the two trajectories' own power spectra (of amplitude
   share `q = |A|/sqrt(E_total.mean())`, not raw amplitude or energy)
@@ -362,57 +363,10 @@ live here and in the sibling `periods.py`/`efficiency.py` modules:
   with `t_f` for a near-resonant sub-triad whose dynamical phase drifts
   on a timescale far longer than any `t_f` used in this paper.
 
-```bash
-# single point (no sweep) -- fast, useful while iterating
-python -c "
-from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
-from rsw_sphere.utilities.pmeasure import p_measure
-spec = load_wave_set_specs()['quartet_rossby_kelvin']
-triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
-print(p_measure(spec.modes, triads, spec.velocities, h_e=spec.h_e,
-                 reference_triad=spec.reference_triad, tf_days=20, h=0.01))
-"
-
-# full 2D sweep + plot (expensive -- see the runtime note below)
-python rsw_sphere/plotting/pmeasure_map.py outputs/figures/wave_sets/quartet_rossby_kelvin_pmeasure.png --wave-set quartet_rossby_kelvin --n-grid 10
-```
-
-Console script: `rsw-waveset-pmeasure`. Full flags: `rsw-waveset-pmeasure --help`.
-
-Three things live in the function signature, not a plotting special case:
-**per-mode `triad_index`** (different target modes can use different
-denominator triads — the default follows the dissertation's own rule, see
-the module docstring); **`dEK_triad < MIN_REFERENCE_DEK` (1e-4) → `NaN`**,
-guarded explicitly rather than raising (paper eq. `Pa`'s own stated rule —
-not just the exact-zero corner, the wider near-zero band where the ratio
-is ill-conditioned); and **row-level denominator caching** in the sweep
-(free speedup whenever a target's own denominator triad doesn't depend on
-one of the two swept modes).
-
-**Runtime**: a 2D sweep costs roughly `n_grid²` full-wave-set integrations
-plus (with caching) up to `n_grid` sub-triad integrations per target mode.
-At `n_grid=10` this is a few minutes; at `n_grid=50` it is tens of minutes
-to hours depending on the wave set. **Start coarse (`n_grid=8-10`)** while
-iterating; a hi-res final pass is a separate, deliberate step.
-
-**Colormap: diverging** (`RdBu_r` + `TwoSlopeNorm(vcenter=0)`), not the
-sequential `cividis` the single-triad efficiency maps use — a sequential
-map cannot show the zero-crossing between inhibition and enhancement,
-which is this figure's entire point. `plot_p_measure_map` returns
-`n_clipped` (grid points whose `|P|` exceeded the ±100% display ceiling)
-so a caption can state it rather than clip silently. **A negative-P
-(inhibition) region can be real but too small in magnitude to see by eye**
-against a color scale dominated by saturated color elsewhere in the
-domain -- always check `p_measure_sweep`'s returned array directly (e.g.
-`(result['P'] < 0).mean()`) rather than answering "does this figure show
-inhibition" by looking at the rendered PNG.
-
 **Computing several diagnostics together**: `run_sweep.py`'s own engine
 (`rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`)
 computes every diagnostic from **one** `run_dynamics()` call per grid
-point, whichever `sweep.diagnostics: [...]` (§6.1) requests -- prefer this
-over calling `p_measure_sweep` and a separate diagnostic-only sweep back
-to back, which would integrate the same trajectories twice for no reason.
+point, whichever `sweep.diagnostics: [...]` (§6.1) requests.
 
 ```bash
 python -c "
@@ -422,38 +376,53 @@ from run_sweep import run_sweep
 spec = load_wave_set_specs()['quartet_rossby_kelvin']
 sweep = SweepConfig(axes=(SweepAxis(mode='c', min=0.0, max=30.0),
                            SweepAxis(mode='d', min=0.0, max=30.0)),
-                     n_grid=5, diagnostics=('p_measure', 'novel_period'))
+                     n_grid=5, diagnostics=('efficiency_var', 'novel_period'))
 config = RunConfig.from_wave_set(spec, tf_days=20, h=0.01, sweep=sweep)
 result = run_sweep(config)
-print(result['p_measure']['series'])
+print(result['efficiency_var']['series'])
 "
 ```
 
-**`p_measure_final`** (`final_p_measure`): plain `p_measure` compares a
-target against ONE fixed reference triad (`reference_triad`/
-`triad_index`) — fine for a private mode, but for a mode shared across
-triads that one triad can happen to leave it weakly excited even while a
-*different* containing triad drives it hard, making the percentage
-dominated by how small that one triad's own `dEK` was rather than by how
-much the mode's dynamics actually changed. `p_measure_final` instead
-compares against whichever containing triad gives the target its own
-LARGEST `dEK`, integrating every containing triad per grid point.
-Companion array **`PFinalRefIdx`** (float, same shape) records which
-triad (its index into the wave set's own `triads`) was picked at each
-point, NaN where every candidate's own `dEK` stayed below
-`MIN_REFERENCE_DEK`. `final_p_measure` itself is a small, pure,
-broadcastable function (`dEK_full`/each candidate's `dEK` can be a scalar
-or a whole sweep-grid ndarray) — `p_measure_combined_for_target`/
-`_for_all_targets` wrap it around `run_dynamics.py`'s own results dict
-for single-run reporting; `compute_diagnostics_report`'s own `final` list
-wraps it for a sweep (`run_sweep.py`'s `p_measure`/`p_measure_final`
-diagnostics).
+Two things live in `_default_triad_index_for_mode`, not a plotting
+special case: **per-mode reference triad** (different target modes can
+use different denominator triads — the default follows the dissertation's
+own rule, see the module docstring), and **`dEK_triad < MIN_REFERENCE_DEK`
+(1e-4) → `NaN`**, guarded explicitly rather than raising (paper eq. `Pa`'s
+own stated rule — not just the exact-zero corner, the wider near-zero
+band where the ratio is ill-conditioned).
+
+**`efficiency_variation_final`**: comparing a target against ONE fixed
+reference triad (`pairwise_target_diagnostics`) is fine for a private
+mode, but for a mode shared across triads that one triad can happen to
+leave it weakly excited even while a *different* containing triad drives
+it hard, making the percentage dominated by how small that one triad's
+own `dEK` was rather than by how much the mode's dynamics actually
+changed. `efficiency_variation_final` instead compares against whichever
+containing triad gives the target its own LARGEST `dEK`, integrating
+every containing triad per grid point. It is a small, pure, broadcastable
+function (`dEK_full`/each candidate's `dEK` can be a scalar or a whole
+sweep-grid ndarray) — `efficiency_variation_combined_for_target`/
+`_for_all_targets` wrap it around `run_dynamics.py`'s own results dict for
+single-run reporting; `compute_diagnostics_report`'s own `final` list
+wraps it for a sweep (`run_sweep.py`'s `efficiency_var` diagnostic).
 
 `pairwise_target_diagnostics` (single named reference triad) reports
-`spectral_deviation`/`p_measure`/`efficiency_var`/`novelty_period` for any
-target, private or shared — unlike the "final"/combined versions above,
-this pairwise form is exactly the effect of one specific, named mode
-removal, valid whether the target is private or shared.
+`spectral_deviation`/`efficiency_var`/`novelty_period` for any target,
+private or shared — unlike the "final"/combined versions above, this
+pairwise form is exactly the effect of one specific, named mode removal,
+valid whether the target is private or shared.
+
+**Standalone legacy engine** (`p_measure`/`p_measure_sweep`, bottom of
+`pmeasure.py`, plus `rsw_sphere/plotting/pmeasure_map.py` and its
+`rsw-waveset-pmeasure` console script): an older, standalone
+modes/triads/velocities API predating `WaveSetSpec`/`run_dynamics()`, with
+its own single-fixed-reference-triad 2D sweep + diverging-colormap
+plotting, kept only for
+`examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`
+-- not part of the current pipeline (no current `paper_figure*.py` script
+calls it). Computes the same formula as `pairwise_target_diagnostics`
+above, just against always the one fixed reference triad, never the
+"final"/largest-of-every-containing-triad selection.
 
 ---
 
@@ -522,7 +491,7 @@ and 2D):
   unit's own value only -- a heatmap grid doesn't have a line plot's
   spare room for a per-unit breakdown).
 - `dynamical_phase` -- 1D: one line per triad. 2D: one heatmap per triad.
-- `p_measure` (alias `energy_var`), `efficiency_var`, `spectral_dev_var`,
+- `efficiency_var` (alias `energy_var`), `spectral_dev_var`,
   `novel_freq`/`novelty_freq`, `novel_period`/`novelty_period` -- one
   line/heatmap per mode, combining every containing sub-triad the same
   way `run_dynamics.py --diagnostics`'s own "final diagnostics" table
@@ -530,10 +499,11 @@ and 2D):
   -- warned and skipped there.
 - `total_energy` -- one line/heatmap per UNIT (`full` plus every
   sub-triad, not per mode): that unit's own time-averaged total energy,
-  in Joules (`rsw_sphere.physics.total_energy_joules`). Pairs with
-  `efficiency_var` when a sweep axis changes the wave set's own energy
-  budget, since `efficiency_var` normalizes by that same budget and can
-  shift even when the target's own raw dynamics (`p_measure`) does not.
+  in Joules (`rsw_sphere.physics.total_energy_joules`). Useful context
+  alongside `efficiency_var` when a sweep axis also changes the wave
+  set's own energy budget -- `efficiency_var` itself no longer needs it
+  as a correction (both sides of its ratio share one reference energy
+  budget), but it's still informative to see whether the budget moved.
 
 `diagnostics: [all]` expands to every name above. Output:
 `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png` + a
@@ -554,7 +524,7 @@ axis/target), so an ordinary quartet needs no `axes` at all:
 ```yaml
 # inside wave_sets_default.yaml's own quartet_rossby_kelvin entry:
 sweep:
-  diagnostics: [p_measure]
+  diagnostics: [efficiency_var]
   n_grid: 10
 ```
 
@@ -580,8 +550,9 @@ See `run_sweep.py`'s own module docstring for the full config schema.
 
 `run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajectories", label=None)`
 caches the raw `Y(t)` ODE solution itself, not just a derived summary --
-every other cache in this codebase (`p_measure_sweep`/`efficiency_sweep`,
-`rsw_sphere.plotting.sweeps`) stores summary/sweep arrays only, so any new
+every other cache in this codebase (the legacy `p_measure_sweep`/
+`efficiency_sweep`, `rsw_sphere.plotting.sweeps`) stores summary/sweep
+arrays only, so any new
 diagnostic on an already-run trajectory would otherwise mean
 re-integrating from scratch. Cache path:
 `outputs/trajectories/<topology>/<label>_<hash8>.npz`; the hash covers
@@ -614,11 +585,12 @@ into a slot that no longer means anything (see `examples/README.md`).
 | Script | Figure | Wave set |
 |---|---|---|
 | `paper_figure008_quartet_rossby_kelvin_panel.py` | `fig: cap4ex1` | `quartet_rossby_kelvin` (3x2: Triad 1/Triad 2/full-quartet evolution on top, one novelty spectrum per Rossby mode on bottom) |
-| `paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.py` | `fig: rossby_kelvin_wavenumber` | `quartet_rossby_kelvin` (2x2: efficiency_var/p_measure rows x gravity-mode/RH(1,2) columns, over the registered `alternative_modes.d` candidate list EG(1,n)/WG(1,n); `run_sweep_sets.run_sweep_sets`'s `target_mode_override` run twice over the same candidates) |
+| `paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.py` | `fig: rossby_kelvin_wavenumber` | `quartet_rossby_kelvin` (single panel, twin y-axes: candidate's own coupling coefficient (log, left) + RH(1,2)'s own efficiency variation (right), over the registered `alternative_modes.d` candidate list EG(1,n)/WG(1,n); `run_sweep_sets.run_sweep_sets`'s `target_mode_override` run twice over the same candidates -- redesigned 2026-09-03, dropped the old 2x2 efficiency_var/p_measure grid once both were recognized as the same quantity) |
 | `paper_figure010_quartet_rossby_gravity_influence_panel.py` | `fig: quartet_rossby_gravity_influence_panel` (Quartet D) | `quartet_rossby_gravity_influence` (2x2: both constituent-triad evolutions + full-quartet evolution + RH(3,4) novelty spectrum against Triad 1, its only containing triad) |
 | `paper_figure011_quartet_rossby_gravity_influence_efficiency.py` | `fig: quartet_rossby_gravity_influence_efficiency` (Quartet D efficiency sweep) | `quartet_rossby_gravity_influence` (1D efficiency_var sweep over WG(3,9), Rossby modes only + 2D heatmap for RH(4,5)) |
 | `paper_figure012_quartet_rossby_gravity_influence_high_panel.py` | `fig: quartet_rossby_gravity_influence_high_panel` (Quartet E) | `quartet_rossby_gravity_influence_high` (same 2x2 layout as Quartet D's panel; EG(7,9) plays sum role for Triad 1 and member role for Triad 2, closed by EG(11,11)) |
-| `paper_figure013_quintet_gravity_star_panel.py` | `fig: quintetpanel` | `quintet_gravity_star` |
+| `paper_figure014_quintet_gravity_star_panel.py` | `fig: quintetpanel` (Quintet A) | `quintet_gravity_star` (3x2: one evolution panel per constituent triad on top, full-quintet evolution + 2 novelty spectra (RH(4,5)/RH(1,2)) on bottom -- same layout family as `paper_figure008`'s, extended by one triad/column) |
+| `paper_figure015_quintet_gravity_influence_star_panel.py` | `fig: quintetpanel_b` (Quintet B) | `quintet_gravity_influence_star` (same 3x2 layout as `paper_figure014`'s, spectra for RH(3,4)/RH(4,5)) |
 
 Each is runnable standalone and writes under
 `outputs/figures/wave_sets/<key>/`; copying the finished PNG into
@@ -632,7 +604,8 @@ python examples/figures/paper_figure009_quartet_rossby_kelvin_gravity_wavenumber
 python examples/figures/paper_figure010_quartet_rossby_gravity_influence_panel.py
 python examples/figures/paper_figure011_quartet_rossby_gravity_influence_efficiency.py
 python examples/figures/paper_figure012_quartet_rossby_gravity_influence_high_panel.py
-python examples/figures/paper_figure013_quintet_gravity_star_panel.py
+python examples/figures/paper_figure014_quintet_gravity_star_panel.py
+python examples/figures/paper_figure015_quintet_gravity_influence_star_panel.py
 ```
 
 The Quartet A/B precession-frequency figure (JFM-template.tex

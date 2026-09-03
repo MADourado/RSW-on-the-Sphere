@@ -49,7 +49,8 @@ def _filesystem_safe(label: str) -> str:
 
 
 def novelty_frequency_figure(results: dict, target_label: str, result: dict, path: str = None,
-                              xmax: float = None, ax=None):
+                              xmax: float = None, ax=None, full_label: str = "Full wave set",
+                              show_excluded_in_legend: bool = True):
     """One combined figure for ``target_label``, drawing every sub-triad
     in ``result['sub_names']`` (from ``novelty_combined_for_target``)
     alongside the full wave set and the novelty-detection result.
@@ -57,6 +58,12 @@ def novelty_frequency_figure(results: dict, target_label: str, result: dict, pat
     ax : if given, draw into it (no new figure, no save) -- mirrors
     ``energy_evolution.plot_energy_evolution``'s own own-fig-vs-provided-ax
     pattern, so this panel can be composed into a multi-panel figure.
+    full_label : legend/plot label for the full-wave-set curve -- override
+        to something more specific (e.g. "Quartet") when the composing
+        figure already fixes the wave-set size.
+    show_excluded_in_legend : the shaded region is always drawn; set False
+        to drop it from the legend only, when a busy panel needs the space
+        and the shading is self-explanatory or covered by the caption.
     """
     full = results["full"]
     j_full = full["labels"].index(target_label)
@@ -75,34 +82,45 @@ def novelty_frequency_figure(results: dict, target_label: str, result: dict, pat
         xmax = periods[-1]  # matches whatever range `result` was actually computed over
     excluded = result['excluded']
     ax.fill_between(periods, _Y_FLOOR, 1, where=excluded, color="lightgray", alpha=0.5,
-                     label="excluded (sub-triads' own dominant peaks)")
+                     label="Excluded window")
 
     for i, sub_name in enumerate(result['sub_names']):
         sub = results[sub_name]
         j_sub = sub["labels"].index(target_label)
         p_sub, pow_sub = _power_spectrum(sub["t"], sub["E"][:, j_sub])
         pow_sub_n = pow_sub / pow_sub.max() if pow_sub.max() > 0 else pow_sub
+        # Short label only ("Triad 1", not "Triad 1 (RH(3,4)+RH(4,5)+WG(7,9))")
+        # -- the full mode list is already given where this panel is composed
+        # (the triad's own energy-evolution panel right above it), so
+        # repeating it here just crowds the legend over the spectrum.
+        short_title = sub['title'].split(' (')[0]
         ax.plot(p_sub, np.maximum(pow_sub_n, _Y_FLOOR), color=_SUB_COLORS[i % len(_SUB_COLORS)],
                 ls=_SUB_DASH_STYLES[i % len(_SUB_DASH_STYLES)], lw=1.3,
-                label=f"mode energy in {sub['title']}")
+                label=short_title)
 
     ax.plot(p_full, np.maximum(pow_full_n, _Y_FLOOR), color="black", lw=2.2,
-            label="mode energy in quartet")
+            label=full_label)
 
     ax.set_xlim(0, xmax)
     ax.set_yscale("log")
     ax.set_ylim(_Y_FLOOR, 1.5)
     ax.set_xlabel("Period (days)")
     ax.set_ylabel("Peak-normalized power (FFT)")
-    ax.set_title(f"Energy Spectra for mode: {target_label}")
+    ax.set_title(f"Spectrum: {target_label}")
 
-    # "excluded" is plotted first (so its shading sits behind the curves)
-    # but legended last -- it's a visual aid, not a data series, and
-    # shouldn't lead the list of what's actually being compared.
+    # "Excluded window" is plotted first (so its shading sits behind the
+    # curves) but legended last -- it's a visual aid, not a data series,
+    # and shouldn't lead the list of what's actually being compared. Drop
+    # it from the legend entirely (shading still drawn) when the panel is
+    # tight on space and the caption already explains it.
     handles, labels = ax.get_legend_handles_labels()
-    order = [i for i, lbl in enumerate(labels) if not lbl.startswith("excluded")] + \
-            [i for i, lbl in enumerate(labels) if lbl.startswith("excluded")]
-    ax.legend([handles[i] for i in order], [labels[i] for i in order], fontsize=7, loc="upper right")
+    is_excluded = [lbl == "Excluded window" for lbl in labels]
+    if show_excluded_in_legend:
+        order = [i for i, ex in enumerate(is_excluded) if not ex] + \
+                [i for i, ex in enumerate(is_excluded) if ex]
+    else:
+        order = [i for i, ex in enumerate(is_excluded) if not ex]
+    ax.legend([handles[i] for i in order], [labels[i] for i in order], loc="upper right")
 
     if own_fig:
         fig.tight_layout()

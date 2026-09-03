@@ -1,8 +1,12 @@
 """Shared cache-key hashing for expensive 2D parameter sweeps (efficiency
-maps, wave-set P-measure/period-difference maps).
+maps, wave-set efficiency-variation/period-difference maps).
 
-Used by the wave-set sweep modules (``rsw_sphere.plotting.wave_set_pmeasure``
-etc.) so they share one hashing discipline. **The payload tuple and its
+Used by the standalone legacy wave-set sweep engine
+(``rsw_sphere.utilities.pmeasure.p_measure_sweep``, still consumed by
+``examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py``
+and ``rsw_sphere.plotting.pmeasure_map`` -- not the current pipeline,
+which caches via ``rsw_sphere.dynamics.trajectory_cache`` instead) so it
+shares one hashing discipline. **The payload tuple and its
 ordering must not change** -- existing ``.npz`` caches are keyed by this
 function's exact output; changing the payload silently invalidates them
 (the same failure mode as the stale-NaN bug this function was written to
@@ -19,7 +23,7 @@ def wave_set_cache_key_hash(modes, triads, h_e, swept_indices, fixed_velocities,
                              target_indices, reference_triad, n_grid, t_f, h,
                              N=10, deg=300):
     """Short hash of every parameter that changes a wave-set 2D sweep's
-    result (``rsw_sphere.plotting.wave_set_pmeasure.p_measure_sweep``),
+    result (``rsw_sphere.utilities.pmeasure.p_measure_sweep``),
     for a ``.npz`` cache filename that auto-invalidates on parameter
     change. Sibling of ``cache_key_hash`` (the triad-sweep version) --
     kept as a **separate** function rather than overloading that one,

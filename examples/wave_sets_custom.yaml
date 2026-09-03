@@ -313,7 +313,7 @@ quartet_rossby_gravity_influence:
     axes: [{mode: d, min: 0.0, max: 50.0}, {mode: c, min: 0.0, max: 100.0}]
     #axes: [{mode: d, min: 0.0, max: 50.0}]
     n_grid: 20
-    #diagnostics: [efficiency_var, p_measure,spectral_dev_var, novel_period, dynamical_phase, dominant_period, efficiency]
+    #diagnostics: [efficiency_var, spectral_dev_var, novel_period, dynamical_phase, dominant_period, efficiency]
     diagnostics: [all]
   plot:
     title: "Quartet D "
@@ -340,7 +340,7 @@ quartet_gravity_wg11:
     tf_days: 20
     h: 0.01
   sweep:
-    diagnostics: [p_measure]
+    diagnostics: [efficiency_var]
     n_grid: 10
 
 quartet_rossby_gravity_influence_high:
@@ -385,7 +385,7 @@ quartet_dual_gravity_edge:
     tf_days: 20
     h: 0.01
   sweep:
-    diagnostics: [p_measure]
+    diagnostics: [efficiency_var]
     n_grid: 10
 
 quintet_gravity_star:

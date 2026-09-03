@@ -187,8 +187,8 @@ def main():
     parser.add_argument("--diagnostics", action="store_true",
                          help="also compute/print efficiency (per mode/unit), dynamical phase "
                               "(precession frequency per triad, full vs. alone, with its own "
-                              "percent variation), and every pairwise diagnostic (p_measure, "
-                              "efficiency_var, spectral_deviation, novelty_period) for every target "
+                              "percent variation), and every pairwise diagnostic (efficiency_var, "
+                              "spectral_deviation, novelty_period) for every target "
                               "mode against every sub-triad that contains it, plus a 'final' version "
                               "of each across every containing sub-triad at once, and write the "
                               "novelty-frequency spectrum figures (rsw_sphere.plotting.novelty_frequency_panel)")
@@ -336,14 +336,14 @@ def main():
 
         print("\n=== pairwise diagnostics (full wave set vs. each containing sub-triad) ===")
         rows = [
-            [d['mode'], d['vs'], f"{d['p_measure_pct']:.2f}%",
+            [d['mode'], d['vs'],
              f"{d['efficiency_var_pct']:.2f}%" if np.isfinite(d['efficiency_var_pct']) else "n/a",
              f"{d['spectral_dev_pct']:.2f}%" if np.isfinite(d['spectral_dev_pct']) else "n/a",
              (f"{d['novelty_period_days']:.4f}d ({d['novelty_relevance_pct']:.2f}%)"
               if np.isfinite(d['novelty_period_days']) else "none detected")]
             for d in report['pairwise']
         ]
-        headers = ["mode", "vs.", "p_measure", "efficiency_var", "spectral_dev", "novelty_period (%)"]
+        headers = ["mode", "vs.", "efficiency_var", "spectral_dev", "novelty_period (%)"]
         widths = [max(len(h), *(len(r[i]) for r in rows)) if rows else len(h)
                   for i, h in enumerate(headers)]
         row_fmt = "  ".join(f"{{:<{w}}}" for w in widths)
@@ -359,28 +359,25 @@ def main():
         # at a time -- avoids the small-denominator inflation a mode
         # shared across triads can otherwise show against whichever
         # sub-triad happens to leave it weakly excited (see
-        # final_p_measure's own docstring). p_measure_final/spectral_dev_final
-        # share one reference (largest raw dEK, "vs." column);
-        # efficiency_var_final picks its OWN reference independently
-        # (largest |efficiency|, "eff. vs." column) since efficiency
-        # normalizes dEK by each sub-triad's own different mean total
-        # energy -- reusing the dEK-based reference here used to let a
-        # shared mode's efficiency denominator pass through zero even
-        # while efficiency_full itself varied smoothly, producing spurious
-        # spikes (found 2026-08-28, quartet_rossby_gravity_influence).
+        # efficiency_variation_final's own docstring). efficiency_var_final and
+        # spectral_dev_final share one reference (largest raw dEK, "vs."
+        # column) -- efficiency_var_final IS the raw energy-variation
+        # percent change (2026-09-03: "efficiency variation" and
+        # "P-measure" recognized as the same quantity once both sides of
+        # the ratio share one reference energy budget), so there is no
+        # longer a second, independently-chosen efficiency reference.
         print("\n=== final diagnostics (per target, across all containing sub-triads) ===")
         final_rows = [
             [d['mode'],
-             f"{d['p_measure_final_pct']:.2f}%" if np.isfinite(d['p_measure_final_pct']) else "n/a",
              f"{d['efficiency_var_final_pct']:.2f}%" if np.isfinite(d['efficiency_var_final_pct']) else "n/a",
              f"{d['spectral_dev_final_pct']:.2f}%" if np.isfinite(d['spectral_dev_final_pct']) else "n/a",
-             d['vs'] or "none", d['efficiency_var_vs'] or "none",
+             d['vs'] or "none",
              (f"{d['novelty_period_final_days']:.4f}d ({d['novelty_relevance_final_pct']:.2f}%)"
               if np.isfinite(d['novelty_period_final_days']) else "none detected")]
             for d in report['final']
         ]
-        final_headers = ["mode", "p_measure_final", "efficiency_var_final", "spectral_dev_final",
-                          "vs.", "eff. vs.", "novelty_period_final (%)"]
+        final_headers = ["mode", "efficiency_var_final", "spectral_dev_final",
+                          "vs.", "novelty_period_final (%)"]
         final_widths = [max(len(h), *(len(r[i]) for r in final_rows)) if final_rows else len(h)
                         for i, h in enumerate(final_headers)]
         final_fmt = "  ".join(f"{{:<{w}}}" for w in final_widths)

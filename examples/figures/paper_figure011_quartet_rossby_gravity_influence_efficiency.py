@@ -5,13 +5,12 @@ velocity: (a) 1D sweep, Rossby modes only; (b) 2D heatmap, RH(4,5) target.
 Panel (a): efficiency_var vs. WG(3,9) velocity, 0-60 m/s, n_grid=31 --
 step exactly 2 m/s, every grid point an integer (n_grid=30 over this same
 range does NOT give integer steps, checked directly: step=60/29=2.069...).
-Only the two Rossby modes (RH(4,5)/RH(3,4)) are drawn -- the two gravity
-modes' own efficiency_var swings by tens to hundreds of percent here
-(a small, genuinely near-zero reference efficiency amplifying an
-otherwise ordinary percentage change, not a bug -- see
-rsw_sphere.utilities.efficiency.efficiency_variation's own docstring),
-which would dwarf the much smaller, real feature in the Rossby modes'
-own curves on the same axes.
+Only the two Rossby modes (RH(4,5)/RH(3,4)) are drawn, for focus -- the
+two gravity modes' own efficiency_var covers a noticeably wider range
+over the same sweep (WG(3,9) itself: -11% to +124%, checked directly
+2026-09-03) and would be a distraction on the same axes as the much
+smoother, near-identical RH(4,5)/RH(3,4) curves, not because it is
+numerically unstable (both are well above MIN_REFERENCE_DEK throughout).
 
 Panel (b): efficiency_var 2D heatmap for target RH(4,5) alone, sweeping
 WG(3,9) (0-60) and RH(3,4) (0-100) together. Both axes share n_grid=11 --
@@ -70,7 +69,7 @@ def compute_2d():
 
 
 def plot(sweep_1d, U1, U2, grid_results, path: str = None):
-    apply_house_style()
+    apply_house_style(base_size=14)
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
     ax = axes[0]
@@ -82,7 +81,7 @@ def plot(sweep_1d, U1, U2, grid_results, path: str = None):
     ax.set_xlabel("WG(3,9) initial velocity (m/s)")
     ax.set_ylabel("Efficiency variation (final, %)")
     ax.set_title("(a) Rossby modes only")
-    ax.legend(fontsize=8)
+    ax.legend()
 
     ax2 = axes[1]
     n_grid = U1.shape[0]
@@ -121,10 +120,24 @@ def main():
 
     series = sweep_1d["efficiency_var"]["series"]
     u_values = sweep_1d["efficiency_var"]["u_values"]
-    print("\n=== RH(4,5)/RH(3,4) efficiency_var near the u=20-28 notch ===")
+    print("\n=== RH(4,5)/RH(3,4) efficiency_var full 1D sweep ===")
     for u, v45, v34 in zip(u_values, series["RH(4,5)"], series["RH(3,4)"]):
-        if 18.0 <= u <= 30.0:
-            print(f"  u={u:5.1f}  RH(4,5)={v45:7.3f}%  RH(3,4)={v34:7.3f}%")
+        print(f"  u={u:5.1f}  RH(4,5)={v45:7.3f}%  RH(3,4)={v34:7.3f}%")
+
+    n_grid = U1.shape[0]
+    values = np.array([[grid_results[i, j]["final"]["RH(4,5)"]["efficiency_var"]
+                         for j in range(n_grid)] for i in range(n_grid)])
+    i_min, j_min = np.unravel_index(np.argmin(values), values.shape)
+    i_max, j_max = np.unravel_index(np.argmax(values), values.shape)
+    print("\n=== RH(4,5) 2D panel (WG(3,9), RH(3,4)) ===")
+    print(f"  min = {values[i_min, j_min]:.3f}% at (WG(3,9)={U1[i_min, j_min]:.1f}, "
+          f"RH(3,4)={U2[i_min, j_min]:.1f})")
+    print(f"  max = {values[i_max, j_max]:.3f}% at (WG(3,9)={U1[i_max, j_max]:.1f}, "
+          f"RH(3,4)={U2[i_max, j_max]:.1f})")
+    i54 = int(np.argmin(np.abs(U1[0, :] - 54)))
+    j10 = int(np.argmin(np.abs(U2[:, 0] - 10)))
+    print(f"  near (54,10): WG(3,9)={U1[j10, i54]:.1f}, RH(3,4)={U2[j10, i54]:.1f}, "
+          f"value={values[j10, i54]:.3f}%")
 
 
 if __name__ == "__main__":

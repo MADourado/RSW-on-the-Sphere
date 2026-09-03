@@ -1,11 +1,11 @@
 """Energy-evolution figures for a wave set (triad/quartet/quintet).
 
-Panels plot each mode's own SHARE of the run's own mean total energy,
-E_j(t)/<E_total>_t (1.0 == the mean total) -- not raw, unnormalized
-|A_j|^2 -- alongside E_total(t) on that same normalized scale, so its own
-fluctuation around 1.0 (a wave set with 2+ constituent triads does not
-conserve energy exactly, see rsw_sphere.dynamics.wave_sets) stays
-directly visible. Normalizing this way (rather than by the initial total
+Panels plot each mode's own SHARE of the run's own mean total energy, as
+a percentage, 100*E_j(t)/<E_total>_t (100% == the mean total) -- not raw,
+unnormalized |A_j|^2 -- alongside E_total(t) on that same normalized
+scale, so its own fluctuation around 100% (a wave set with 2+
+constituent triads does not conserve energy exactly, see
+rsw_sphere.dynamics.wave_sets) stays directly visible. Normalizing this way (rather than by the initial total
 energy) is what makes panels comparable across different runs/wave sets
 with different total-energy budgets -- the same fix
 `rsw_sphere.utilities.efficiency.wave_set_efficiency` already applies to
@@ -37,9 +37,10 @@ _OTHER_LINESTYLE = '--'
 
 def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
                            path: str = None, ax=None):
-    """Draw each mode's own share of the run's own mean total energy,
-    E_j(t)/<E_total>_t (1.0 == the mean total), plus E_total(t) on that
-    same normalized scale, from an already-integrated trajectory.
+    """Draw each mode's own share of the run's own mean total energy, as
+    a percentage, 100*E_j(t)/<E_total>_t (100% == the mean total), plus
+    E_total(t) on that same normalized scale, from an already-integrated
+    trajectory.
 
     Parameters
     ----------
@@ -64,8 +65,8 @@ def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
         fig = ax.figure
 
     mean_total = E_total.mean()
-    E_share = E / mean_total
-    E_total_share = E_total / mean_total
+    E_share = 100 * E / mean_total
+    E_total_share = 100 * E_total / mean_total
 
     lines = {}
     for j, (m, n, alpha) in enumerate(modes):
@@ -73,8 +74,8 @@ def plot_energy_evolution(t, E, E_total, labels, modes, highlight: int = None,
         lines[labels[j]], = ax.plot(t, E_share[:, j], label=labels[j], color=mode_color(m, n, alpha), ls=ls)
     lines['Total'], = ax.plot(t, E_total_share, label='Total', color=TOTAL_ENERGY_COLOR, ls=':', lw=1)
     ax.set_xlabel('Time (days)')
-    ax.set_ylabel('Share of mean total energy (1.0 = total)')
-    ax.legend(loc='upper right', fontsize=7)
+    ax.set_ylabel('% mean total energy')
+    ax.legend(loc='upper right')
 
     if own_fig:
         save_or_show(fig, path)
@@ -145,7 +146,8 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
         per_triad_highlight = [highlight] * n_triads
         full_highlight = highlight
 
-    apply_house_style()
+    base_size = 15
+    apply_house_style(base_size=base_size)
     fig, axes = plt.subplots(1, n_triads + 1, figsize=(4.3 * (n_triads + 1), 4.2), sharey=True)
 
     results = []
@@ -161,15 +163,30 @@ def wave_set_comparison_panel(modes, triads, velocities, h_e: float = 10000,
             t0=t0, tf_days=tf_days, h=h, N=N, deg=deg,
             highlight=local_highlight, ax=axes[i])
         title = triad_labels[i] if triad_labels else f"Triad {i + 1}"
-        axes[i].set_title(title, fontsize=10)
+        axes[i].set_title(title)
         results.append(r)
 
     r_full = wave_set_energy_evolution(
         modes, triads, velocities, h_e=h_e,
         t0=t0, tf_days=tf_days, h=h, N=N, deg=deg,
         highlight=full_highlight, ax=axes[-1])
-    axes[-1].set_title(wave_set_label, fontsize=10)
+    axes[-1].set_title(wave_set_label)
     results.append(r_full)
+
+    # sharey=True already aligns the scale -- only the leftmost panel
+    # needs to spell out what it means.
+    for ax_i in axes[1:]:
+        ax_i.set_ylabel('')
+
+    # A dense multi-entry boxed legend reads visually heavier than plain
+    # title/axis text at the same point size, especially in these narrow
+    # panels -- one step down from the title/label size keeps it from
+    # dominating the panel.
+    for ax_i in axes:
+        legend = ax_i.get_legend()
+        if legend is not None:
+            for text in legend.get_texts():
+                text.set_fontsize(base_size)
 
     fig.tight_layout()
     save_or_show(fig, path)

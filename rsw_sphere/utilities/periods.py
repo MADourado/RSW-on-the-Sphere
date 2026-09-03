@@ -303,13 +303,12 @@ def spectral_deviation(t_full, Q_full, t_sub, Q_sub, xmax: float = None, n_grid:
     float
         Relative L2 distance between the two (peak-unnormalized, share-
         normalized) power spectra on a common period grid, as a
-        percentage (matching P-measure/efficiency_variation's own
-        convention) --
+        percentage (matching efficiency variation's own convention) --
         ``100 * sqrt(sum((Qhat_full-Qhat_sub)^2)) / max(norm_full, norm_sub)``.
         Normalizing by whichever side has the LARGER spectral power
         (not the reference alone) avoids the same "weak fixed reference"
-        inflation ``final_p_measure`` guards against for P/efficiency --
-        a reference that barely excites the target has almost no power
+        inflation ``efficiency_variation_final`` guards against -- a
+        reference that barely excites the target has almost no power
         to normalize by. 0 if the spectra are identical, NaN if neither
         side has any resolvable spectral power.
     """

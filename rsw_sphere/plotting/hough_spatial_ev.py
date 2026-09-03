@@ -34,6 +34,7 @@ import cartopy.crs as ccrs
 from rsw_sphere.hough_harmonics.normalization import norm_Hough
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
 from rsw_sphere.physics import gamma_from_he
+from rsw_sphere.plotting.style import apply_house_style
 
 
 def label(m, n, alpha, height):
@@ -115,6 +116,10 @@ def hough_spatial_ev(m, n, alpha, h_e: float = 10000, N: int = 10,
     U_field = np.real(U[:, None] * phase)
     V_field = np.real(V[:, None] * phase)
 
+    # Bumped well above the default (2026-09-04): each of these lands as
+    # one of 4 subfigures at 0.48\linewidth in the paper, closer to a
+    # multi-panel figure's own per-panel width than a standalone figure's.
+    apply_house_style(base_size=18)
     fig = plt.figure(figsize=(9, 5))
     ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=central_longitude))
     fig.subplots_adjust(left=0.07, right=0.92, top=0.93, bottom=0.09)
@@ -122,6 +127,11 @@ def hough_spatial_ev(m, n, alpha, h_e: float = 10000, N: int = 10,
     gl = ax.gridlines(linestyle='--', linewidth=0.4, draw_labels=True)
     gl.top_labels = False
     gl.right_labels = False
+    # Cartopy's gridliner labels aren't matplotlib tick labels, so they
+    # don't pick up rcParams['xtick.labelsize'] from apply_house_style()
+    # -- set explicitly to match.
+    gl.xlabel_style = {'size': plt.rcParams['xtick.labelsize']}
+    gl.ylabel_style = {'size': plt.rcParams['ytick.labelsize']}
 
     vmax = np.max(np.abs(H_field))
     cf = ax.contourf(LON, LAT, H_field, levels=30, cmap='RdBu_r',

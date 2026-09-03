@@ -46,7 +46,7 @@ DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET
 TARGET_MODE_KEY = "c"    # RH(3,4) -- efficiency variation shown on the right axis
 PLOT_TRIAD = 0           # Triad 1 -- only its own precession-frequency curve is drawn
 XLABEL = "RH(3,6) driving velocity $u$ (m/s)"
-TITLE = "Quartet A (this paper)"
+TITLE = "Quartet A"
 PLOT_U_MAX = 120.0
 
 
@@ -90,7 +90,8 @@ def main():
     os.makedirs(os.path.dirname(args.path), exist_ok=True)
     plot_dual_axis_frequency_efficiency(
         result, spec, plot_triad=PLOT_TRIAD, xlabel=XLABEL, title=TITLE,
-        plot_u_max=PLOT_U_MAX, path=args.path, efficiency_label=r'Efficiency variation $\Delta\mathcal{E}_a$')
+        plot_u_max=PLOT_U_MAX, path=args.path,
+        efficiency_label=f'Effic. var. {target_label}')
     print(f"  figure -> {os.path.abspath(args.path)}")
 
     min_freq = {lbl: float(np.min(vals)) for lbl, vals in result['freq_by_triad'].items()}

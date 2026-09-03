@@ -6,6 +6,17 @@ once RH(3,4) is restored as a four-wave competitor. Was the P-measure
 P_a (eq: Pa) until 2026-08-28 -- see the paper's own \\todo at that
 equation's definition ("efficiency variation seem to cover this").
 
+NOTE (2026-09-03): `efficiency_var`'s own definition changed -- it used
+to normalize the quartet side of the ratio by the quartet's OWN mean
+total energy and the triad side by the triad's own (two different,
+RH(3,n)-dependent budgets), which can drift the percentage for reasons
+unrelated to RH(3,n)'s actual dynamical response. It is now normalized by
+one shared reference budget on both sides (algebraically the same
+quantity the paper used to report separately as P-measure -- see
+rsw_sphere.utilities.pmeasure's own module docstring), so this table's
+`eff_var_pct` column must be regenerated against the fixed code before
+being cited in the paper.
+
 Both column groups come from ONE source now: ``run_sweep_sets.py``'s own
 ``run_sweep_sets`` applied to ``quartet_rh_preference``'s registered
 ``alternative_modes.d`` block (``wave_sets_default.yaml``) -- RH(3,n)

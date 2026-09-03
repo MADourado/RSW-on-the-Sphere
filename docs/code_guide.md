@@ -100,9 +100,9 @@ count). `run_dynamics(config) -> dict` is directly importable --
 linear-vs-observed-FFT-frequency table (`diag_evol_<run_label>.csv`) per
 mode per unit; `--diagnostics` additionally prints every pairwise
 diagnostic (`rsw_sphere.utilities.pmeasure.pairwise_target_diagnostics`:
-p_measure, novelty_period) for every target mode against each sub-triad
+efficiency_var, novelty_period) for every target mode against each sub-triad
 that contains it, a dynamical-phase precession-frequency table, a "final
-diagnostics" section (`p_measure_combined_for_all_targets`/
+diagnostics" section (`efficiency_variation_combined_for_all_targets`/
 `rsw_sphere.utilities.novelty_frequency.novelty_combined_for_all_targets`)
 with one row per target considering every containing sub-triad at once,
 and writes the novelty-frequency spectrum figures
@@ -119,7 +119,7 @@ diagnostic in `sweep.diagnostics` -- one shared vocabulary for 1D and 2D:
 `efficiency`/`dominant_freq`/`dominant_period`/`low_frequency_energy`
 (1D: one line per (mode, unit); 2D: one heatmap per mode), `dynamical_phase`
 (1D: one line per triad; 2D: one heatmap per triad), and the "final"
-scalars `p_measure` (alias `energy_var`)/`efficiency_var`/`spectral_dev_var`/
+scalars `efficiency_var` (alias `energy_var`)/`spectral_dev_var`/
 `novel_freq`/`novel_period` (one line/heatmap per mode). `diagnostics:
 [all]` expands to every name. Swept/target modes for a 2D sweep default
 to the wave set's own "private" modes (`WaveSetSpec.shared_and_private_modes()`).
@@ -326,9 +326,12 @@ here. Fully documented in [`../docs/wave_sets.md`](../docs/wave_sets.md).
 
 ## `rsw_sphere/utilities/` — diagnostics compute
 
-`pmeasure.py` (P-measure, pairwise/final full-wave-set-vs-constituent-triad
-comparisons -- `p_measure_sweep`, `final_p_measure`,
-`pairwise_target_diagnostics`), `periods.py` (`dominant_periods`,
+`pmeasure.py` (efficiency variation, pairwise/final full-wave-set-vs-constituent-triad
+comparisons -- `efficiency_variation_final`,
+`pairwise_target_diagnostics`; the standalone `p_measure`/`p_measure_sweep`
+at the bottom of the file are an older, legacy engine, kept only for
+`examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`),
+`periods.py` (`dominant_periods`,
 `low_frequency_power`, novelty-frequency content, `spectral_deviation`),
 `precession.py` (`precession_frequency_efficiency`), `efficiency.py`
 (`wave_set_efficiency`, drift-gated, `default_velocity_range`). The
@@ -379,8 +382,8 @@ invocation produces, figures and tables together in one folder:
 - `diag_prec_freq_<run_label>.csv`, `diag_pairwise_<run_label>.csv`,
   `diag_final_<run_label>.csv` -- the `--diagnostics`-only tables
   (dynamical-phase precession frequency; pairwise full-vs-sub-triad
-  P-measure/efficiency-variation/spectral-deviation/novelty-period; the
-  same set combined across every containing sub-triad per target mode).
+  efficiency-variation/spectral-deviation/novelty-period; the same set
+  combined across every containing sub-triad per target mode).
 
 The `<run_label>` suffix on every filename (not just the folder name)
 matters because these figures get pulled individually into the paper --

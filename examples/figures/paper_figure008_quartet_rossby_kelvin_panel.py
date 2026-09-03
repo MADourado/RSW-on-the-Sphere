@@ -89,7 +89,7 @@ def _unit_modes(spec, name: str):
 
 def plot(spec, results, path: str = None,
          evolution_xmax: float = EVOLUTION_XMAX_DAYS, spectrum_xmax: float = SPECTRUM_XMAX_DAYS):
-    apply_house_style()
+    apply_house_style(base_size=16)
     fig, axes = plt.subplots(2, 3, figsize=(16.5, 9))
 
     triad_names = []
@@ -104,7 +104,7 @@ def plot(spec, results, path: str = None,
         highlight = r["labels"].index(highlight_label) if highlight_label in r["labels"] else None
         plot_energy_evolution(r["t"], r["E"], r["E_total"], r["labels"], modes,
                                highlight=highlight, ax=ax)
-        ax.set_title(r["title"], fontsize=10)
+        ax.set_title(r["title"])
         ax.set_xlim(0, evolution_xmax)
 
     r_full = results["full"]
@@ -112,13 +112,13 @@ def plot(spec, results, path: str = None,
                            _unit_modes(spec, "full"),
                            highlight=r_full["labels"].index(highlight_label),
                            ax=axes[0, 2])
-    axes[0, 2].set_title(spec.display_label, fontsize=10)
+    axes[0, 2].set_title(spec.display_label)
     axes[0, 2].set_xlim(0, evolution_xmax)
 
     for ax, label in zip(axes[1], ROSSBY_LABELS):
         novelty_result = novelty_combined_for_target(results, label)
-        novelty_frequency_figure(results, label, novelty_result, ax=ax, xmax=spectrum_xmax)
-        ax.set_title(f"Spectrum: {label}", fontsize=10)
+        novelty_frequency_figure(results, label, novelty_result, ax=ax, xmax=spectrum_xmax,
+                                  full_label="Quartet", show_excluded_in_legend=False)
 
     # Every panel in a row shares the same y-axis meaning -- only the
     # leftmost of each row needs the label.
@@ -162,7 +162,7 @@ def main():
     print("\n=== final (combined) diagnostics, Rossby modes ===")
     for label in ROSSBY_LABELS:
         d = next(d for d in report["final"] if d["mode"] == label)
-        print(f"  {label}: p_measure={d['p_measure_final_pct']:+.2f}%  "
+        print(f"  {label}: efficiency_var={d['efficiency_var_final_pct']:+.2f}%  "
               f"spectral_dev={d['spectral_dev_final_pct']:.2f}%  vs={d['vs']}  "
               f"novelty_period={d['novelty_period_final_days']:.4f}d "
               f"({d['novelty_relevance_final_pct']:.2f}%)")

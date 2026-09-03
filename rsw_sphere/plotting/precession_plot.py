@@ -6,12 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from rsw_sphere.plotting.style import apply_house_style, add_outward_twin_axis, save_or_show
-from rsw_sphere.plotting.labels import _mode_label
 
 
 def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
                                          xlabel='', title='', plot_u_max=None, path=None,
-                                         efficiency_label=r'Efficiency $\mathcal{E}_{\mathrm{avg}}$'):
+                                         efficiency_label=r'Efficiency $\mathcal{E}$'):
     """Twin-axis "precession frequency (dotted) + efficiency (solid)" figure.
 
     result : output of precession_frequency_efficiency.
@@ -28,11 +27,6 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
     efficiency = result['efficiency']
     low_freq_power = result.get('low_freq_power')
     labels = result['triad_labels']
-
-    mode_str = {}
-    for i, t in enumerate(spec.triads):
-        i_sum, i_p, i_q = spec.triad_indices(i)
-        mode_str[t.display_label] = "+".join(_mode_label(*spec.modes[j]) for j in (i_sum, i_p, i_q))
 
     if plot_u_max is not None:
         mask = u_values <= plot_u_max
@@ -51,7 +45,7 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
         if plot_triad is not None and i != plot_triad:
             continue
         ax.plot(u_values, np.abs(freq_by_triad[lbl]), markers[i % len(markers)] + ':', ms=3,
-                color='C0', label=f'{lbl} ({mode_str[lbl]})', alpha=1.0 if i == 0 else 0.6)
+                color='C0', label=f'Prec. freq. {lbl}', alpha=1.0 if i == 0 else 0.6)
     ax.axhline(0.01, color='grey', ls=':', lw=1)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)', color='C0')
@@ -64,7 +58,7 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
     if efficiency is not None:
         ax2 = ax.twinx()
         ax2.plot(u_values, 100 * efficiency, 'd-', ms=3, color='C3', label=efficiency_label)
-        ax2.set_ylabel(f'{efficiency_label} (\\%)', color='C3')
+        ax2.set_ylabel(f'{efficiency_label} (%)', color='C3')
         ax2.tick_params(axis='y', labelcolor='C3')
         ax2.axhline(0, color='C3', ls=':', lw=0.8, alpha=0.5)
         lines2, labels2 = ax2.get_legend_handles_labels()
@@ -79,7 +73,7 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
         all_lines += lines3
         all_labels += labels3
 
-    ax.legend(all_lines, all_labels, fontsize=8, loc='best')
+    ax.legend(all_lines, all_labels, loc='lower left')
     fig.tight_layout()
     save_or_show(fig, path)
     return fig, ax
@@ -96,7 +90,7 @@ def plot_phase_trace(phi_list, T_days_list, labels, title='', ylabel=r'$\Phi$ (r
     ax.set_xlabel('Time (days)')
     ax.set_ylabel(ylabel)
     ax.set_title(title)
-    ax.legend(fontsize=8)
+    ax.legend()
     fig.tight_layout()
     save_or_show(fig, path)
     return fig, ax

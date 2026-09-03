@@ -69,7 +69,7 @@ def triad_row(spec, target: int, ax_eff, ax_energy, n_grid: int = 15,
         U1, U2, efficiency,
         xlabel=f"{label1} - zonal velocity (m/s)",
         ylabel=f"{label2} - zonal velocity (m/s)",
-        title=f"{spec.display_label}: target {target_label} -- efficiency",
+        title=f"{spec.display_label}: target {target_label} efficiency",
         ax=ax_eff)
 
     if energy_velocities is None:
@@ -78,6 +78,10 @@ def triad_row(spec, target: int, ax_eff, ax_energy, n_grid: int = 15,
     energy_result = wave_set_energy_evolution(
         spec.modes, triads, energy_velocities, h_e=spec.h_e,
         tf_days=tf_days, h=h, highlight=target, ax=ax_energy)
-    ax_energy.set_title(f"{spec.display_label}: {spec.label} -- energy integration")
+    # Short title -- spec.label is a full descriptive sentence meant for
+    # the registry/docs, not a panel title (would overflow at this font
+    # size); the triad's own mode composition is already given in the
+    # LaTeX caption.
+    ax_energy.set_title(f"{spec.display_label}: energy integration")
 
     return {'U1': U1, 'U2': U2, 'Efficiency': efficiency}, energy_result

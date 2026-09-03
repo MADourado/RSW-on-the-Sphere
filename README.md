@@ -142,8 +142,8 @@ python run_linear_modes.py --run-all
 python run_dynamics.py --wave-set quartet_rossby_kelvin
 
 # sweep 1-2 modes' initial velocities + diagnostics (efficiency, dominant
-# frequency/period, low-frequency energy, dynamical phase, P-measure,
-# efficiency/spectral-deviation/novelty variation) -- one shared
+# frequency/period, low-frequency energy, dynamical phase, efficiency
+# variation/spectral-deviation/novelty variation) -- one shared
 # vocabulary for 1D (line plots) and 2D (heatmaps); reads the wave set's
 # own registry entry
 python run_sweep.py --wave-set quartet_rossby_kelvin
@@ -172,7 +172,7 @@ e.g. `examples/wave_sets_custom.yaml`). See [`examples/`](examples/) for
 
 `run_sweep.py --wave-set KEY` is a general driver for parameter sweeps
 over a registered wave set (dynamical phase, efficiency, dominant
-frequency/period, low-frequency energy, or P-measure/efficiency/spectral-
+frequency/period, low-frequency energy, or efficiency-variation/spectral-
 deviation/novelty variation vs. one or two swept velocities) — a registry
 `sweep:` block per sweep instead of a new script per sweep; see
 `docs/wave_sets.md` §6.1. Every swept trajectory is cached under

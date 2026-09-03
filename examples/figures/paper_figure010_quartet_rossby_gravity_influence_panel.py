@@ -78,7 +78,7 @@ def _unit_modes(spec, name: str):
 
 
 def plot(spec, results, path: str = None, evolution_xmax: float = EVOLUTION_XMAX_DAYS):
-    apply_house_style()
+    apply_house_style(base_size=15)
     fig, axes = plt.subplots(2, 2, figsize=(11.5, 9))
 
     triad_names = []
@@ -92,19 +92,19 @@ def plot(spec, results, path: str = None, evolution_xmax: float = EVOLUTION_XMAX
         highlight = r["labels"].index(HIGHLIGHT_LABEL)
         plot_energy_evolution(r["t"], r["E"], r["E_total"], r["labels"], modes,
                                highlight=highlight, ax=ax)
-        ax.set_title(r["title"], fontsize=10)
+        ax.set_title(r["title"])
         ax.set_xlim(0, evolution_xmax)
 
     r_full = results["full"]
     plot_energy_evolution(r_full["t"], r_full["E"], r_full["E_total"], r_full["labels"],
                            _unit_modes(spec, "full"), highlight=r_full["labels"].index(HIGHLIGHT_LABEL),
                            ax=axes[1, 0])
-    axes[1, 0].set_title(spec.display_label, fontsize=10)
+    axes[1, 0].set_title(spec.display_label)
     axes[1, 0].set_xlim(0, evolution_xmax)
 
     novelty_result = novelty_combined_for_target(results, SPECTRUM_TARGET_LABEL)
-    novelty_frequency_figure(results, SPECTRUM_TARGET_LABEL, novelty_result, ax=axes[1, 1])
-    axes[1, 1].set_title(f"Frequency spectrum: {SPECTRUM_TARGET_LABEL}", fontsize=10)
+    novelty_frequency_figure(results, SPECTRUM_TARGET_LABEL, novelty_result, ax=axes[1, 1],
+                              full_label="Quartet", show_excluded_in_legend=False)
 
     fig.tight_layout()
     if path:
@@ -145,7 +145,7 @@ def main():
             continue
         novelty = (f"{d['novelty_period_days']:.4f}d ({d['novelty_relevance_pct']:.2f}%)"
                    if d["novelty_period_days"] == d["novelty_period_days"] else "none detected")
-        print(f"  vs {d['vs']}: p_measure={d['p_measure_pct']:+.2f}%  "
+        print(f"  vs {d['vs']}: efficiency_var={d['efficiency_var_pct']:+.2f}%  "
               f"spectral_dev={d['spectral_dev_pct']:.2f}%  novelty_period={novelty}")
 
     print(f"\n=== final (combined) diagnostics: {HIGHLIGHT_LABEL} ===")
@@ -154,7 +154,7 @@ def main():
             continue
         novelty = (f"{d['novelty_period_final_days']:.4f}d ({d['novelty_relevance_final_pct']:.2f}%)"
                    if d["novelty_period_final_days"] == d["novelty_period_final_days"] else "none detected")
-        print(f"  p_measure_final={d['p_measure_final_pct']:+.2f}%  "
+        print(f"  efficiency_var_final={d['efficiency_var_final_pct']:+.2f}%  "
               f"spectral_dev_final={d['spectral_dev_final_pct']:.2f}%  vs={d['vs']}  "
               f"novelty_period_final={novelty}")
 
@@ -164,14 +164,14 @@ def main():
             continue
         novelty = (f"{d['novelty_period_days']:.4f}d ({d['novelty_relevance_pct']:.2f}%)"
                    if d["novelty_period_days"] == d["novelty_period_days"] else "none detected")
-        print(f"  vs {d['vs']}: p_measure={d['p_measure_pct']:+.2f}%  "
+        print(f"  vs {d['vs']}: efficiency_var={d['efficiency_var_pct']:+.2f}%  "
               f"spectral_dev={d['spectral_dev_pct']:.2f}%  novelty_period={novelty}")
     for d in report["final"]:
         if d["mode"] != SPECTRUM_TARGET_LABEL:
             continue
         novelty = (f"{d['novelty_period_final_days']:.4f}d ({d['novelty_relevance_final_pct']:.2f}%)"
                    if d["novelty_period_final_days"] == d["novelty_period_final_days"] else "none detected")
-        print(f"  p_measure_final={d['p_measure_final_pct']:+.2f}%  "
+        print(f"  efficiency_var_final={d['efficiency_var_final_pct']:+.2f}%  "
               f"spectral_dev_final={d['spectral_dev_final_pct']:.2f}%  vs={d['vs']}  "
               f"novelty_period_final={novelty}")
 

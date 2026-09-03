@@ -1,19 +1,20 @@
-"""§3.3.1 headline numbers for BOTH Quartet C (EG(1,1)) and Quartet D
-(EG(7,9)), using the same methodology as the Quartet C headline (period
-shift + peak-KE difference, both tf-independent; $\\mathcal{F}_2$ at the
-registered tf_days; Hilbert phase lag). Quartet D needs its own headline
-number -- the original dissertation prose never computed one, going
-straight from Table `cap43` to the P-measure sweep.
+"""§3.3.1 headline numbers for Quartet C (EG(1,1)), using the same
+methodology outlined below (period shift + peak-KE difference, both
+tf-independent; $\\mathcal{F}_2$ at the registered tf_days; Hilbert phase
+lag).
 
-NOTE (2026-08-28): only the Quartet D (EG(7,9)) numbers are still cited
-in JFM-template.tex, as the brief contrasting remark in `sec:
-quartet_rossby_gravity_fast`. The Quartet C (EG(1,1)) numbers this script
-also computes were retired along with the old `fig: cap4ex1` paragraph
-(30 m/s IC) once that figure/section was rebuilt around a symmetric
-40 m/s IC and a novelty-frequency framing instead
+NOTE (2026-09-03): the Quartet D (EG(7,9), i.e. `quartet_gravity_79`)
+headline this script used to also compute is no longer cited anywhere in
+JFM-template.tex -- superseded by Quartet E once that topology was added
+(git: "new quartet E"). `quartet_gravity_79`'s own `display_label` was
+updated to flag it as retired; this script no longer calls `headline()`
+on it. The Quartet C (EG(1,1)) numbers this script computes were
+similarly retired along with the old `fig: cap4ex1` paragraph (30 m/s IC)
+once that figure/section was rebuilt around a symmetric 40 m/s IC and a
+novelty-frequency framing instead
 (`paper_figure008_quartet_rossby_kelvin_panel.py`) -- kept here rather
-than split out since the two quartets still share one computation
-function, not because both halves are used.
+than deleted since neither computation is currently cited, not because
+either is still used.
 
 Target mode is b=RH(3,4) for both quartets (index 1 in the registry's
 own a,b,c,d ordering -- shared edge RH(4,5)+RH(3,4) for both Quartet C
@@ -93,8 +94,5 @@ def headline(spec, label, tf_days_check=(20, 40)):
 if __name__ == "__main__":
     specs = load_wave_set_specs()
     r_c = headline(specs['quartet_rossby_kelvin'], "Quartet C (EG(1,1))")
-    r_d = headline(specs['quartet_gravity_79'], "Quartet D (EG(7,9))")
 
-    print("\n=== Comparison ===")
-    print(f"Quartet C: period {r_c['period_shift_pct']:+.2f}%, peak-KE {r_c['peak_diff_pct']:+.2f}%")
-    print(f"Quartet D: period {r_d['period_shift_pct']:+.2f}%, peak-KE {r_d['peak_diff_pct']:+.2f}%")
+    print(f"\nQuartet C: period {r_c['period_shift_pct']:+.2f}%, peak-KE {r_c['peak_diff_pct']:+.2f}%")

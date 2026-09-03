@@ -52,7 +52,7 @@ def main():
 
     specs = load_wave_set_specs(args.specs)
 
-    apply_house_style()
+    apply_house_style(base_size=14)
     fig, axes = plt.subplots(len(ROWS), 2, figsize=(12, 4.5 * len(ROWS)), squeeze=False)
     for row, (key, target) in zip(axes, ROWS):
         print(f"computing {key} (target={target}) ...")

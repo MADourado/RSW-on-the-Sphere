@@ -286,19 +286,19 @@ def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
     apply_house_style()
     fig, ax = plt.subplots(figsize=(7, 4.5))
     ax.plot(scales_baro, np.abs(f_baro), 'o:', ms=3, color='C0',
-            label='Barotropic (Raphaldini et al. 2022)')
+            label='Barotropic')
     ax.plot(scales_rsw, np.abs(f_rsw), 's:', ms=3, color='C1',
-            label='RSW (identical topology)')
+            label='RSW')
     ax.axhline(0.01, color='grey', ls=':', lw=1)
     ax.set_xscale('log')
     ax.set_xlabel('Amplitude scale')
     ax.set_ylabel(r'$|$precession frequency$|$ (rad/day)')
-    ax.set_title('Barotropic vs. RSW\nRH(4,5)+RH(1,3)+RH(3,7)', fontsize=10)
+    ax.set_title('Quartet B: Barotropic vs. RSW')
 
     ax2 = ax.twinx()
     ax2.plot(scales_rsw, 100 * efficiency_rsw, '^-', ms=3, color='C3',
-             label=r'RSW efficiency $\mathcal{E}_{\mathrm{avg}}$')
-    ax2.set_ylabel(r'RSW efficiency $\mathcal{E}_{\mathrm{avg}}$ (\%)', color='C3')
+             label='RSW Effic. RH(2,9)')
+    ax2.set_ylabel('RSW Effic. RH(2,9) (%)', color='C3')
     ax2.tick_params(axis='y', labelcolor='C3')
 
     lines1, labels1 = ax.get_legend_handles_labels()
@@ -313,7 +313,7 @@ def plot_sweep(cache_path, path=None, plot_scale_min=2e-3):
         all_lines += lines3
         all_labels += labels3
 
-    ax.legend(all_lines, all_labels, fontsize=8, loc='best')
+    ax.legend(all_lines, all_labels, loc='upper left')
 
     fig.tight_layout()
     if path:

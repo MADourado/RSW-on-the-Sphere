@@ -1,9 +1,28 @@
-"""P-measure compute for a wave set (paper eq. Pa).
+"""Efficiency-variation compute for a wave set (paper eq. `effvar`).
 
 Compares a target mode's own trajectory in the full wave set against its
 trajectory in one constituent triad alone:
 
-    P (%) = 100 * (dEK_full - dEK_triad) / dEK_triad
+    efficiency_var (%) = 100 * (dEK_full - dEK_triad) / dEK_triad
+
+"Efficiency variation" and what an earlier version of this module called
+"P-measure" are the same quantity (2026-09-03), not two diagnostics to be
+read together: naively defining efficiency variation as the percent
+change between two *standalone* efficiencies (each side's own dEK divided
+by *its own* configuration's mean total energy,
+`rsw_sphere.utilities.efficiency.wave_set_efficiency`) is wrong in
+general -- the two configurations' total-energy budgets differ for
+reasons unrelated to the target's actual response (e.g. a fixed driving
+velocity needs more energy at a higher wavenumber), so that ratio can
+drift purely from the denominator. Dividing both sides by the SAME
+reference energy budget instead (the smaller/reference configuration's
+own, exact for a lone triad) cancels that denominator out of the ratio
+entirely, leaving exactly the raw-dEK formula above -- P-measure was
+already computing the right thing. "P-measure" as a name/label is
+retired; the functions below are named/documented for what they compute
+(efficiency variation), except the standalone legacy engine at the
+bottom of this file (see its own section comment), kept only for
+`examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`.
 
 Run as a quick self-check:
 
@@ -47,19 +66,20 @@ def _all_triad_indices_for_mode(triads, mode_idx):
     return [t for t, tri in enumerate(triads) if mode_idx in tri]
 
 
-def final_p_measure(dEK_full, dEK_subs):
-    """P-measure using, as its reference, whichever candidate sub-triad
-    gives the target its own LARGEST energy variation -- instead of one
-    fixed reference triad, which for a mode shared across triads can be
-    wildly inflated: the mode may happen to be a weak or off-resonance
-    participant in THAT one triad even while a different containing
-    triad drives it hard, so the fixed reference's own small dEK (not a
-    genuinely large effect) is what drives the number.
+def efficiency_variation_final(dEK_full, dEK_subs):
+    """Efficiency variation using, as its reference, whichever candidate
+    sub-triad gives the target its own LARGEST energy variation -- instead
+    of one fixed reference triad, which for a mode shared across triads
+    can be wildly inflated: the mode may happen to be a weak or
+    off-resonance participant in THAT one triad even while a different
+    containing triad drives it hard, so the fixed reference's own small
+    dEK (not a genuinely large effect) is what drives the number.
 
     Broadcastable: ``dEK_full``/each ``dEK_subs`` value can be a scalar
     (single-run reporting) or an ndarray of matching shape (an entire 2D
     sweep grid at once) -- a sweep engine can call this exactly the same
-    way it already calls the single-reference P-measure.
+    way it already calls the single-reference version
+    (``pairwise_target_diagnostics``).
 
     Parameters
     ----------
@@ -71,10 +91,10 @@ def final_p_measure(dEK_full, dEK_subs):
     Returns
     -------
     dict
-        p_measure (same shape as ``dEK_full``; NaN wherever every
+        efficiency_var (same shape as ``dEK_full``; NaN wherever every
         candidate's own dEK_sub is <= MIN_REFERENCE_DEK), reference (the
         winning ``dEK_subs`` key -- or an object array of them for the
-        sweep case -- None/``np.nan`` where p_measure is NaN),
+        sweep case -- None/``np.nan`` where efficiency_var is NaN),
         dEK_reference (same shape as ``dEK_full``).
     """
     dEK_full_arr = np.asarray(dEK_full, dtype=float)
@@ -93,17 +113,18 @@ def final_p_measure(dEK_full, dEK_subs):
     dEK_ref = np.take_along_axis(stacked, best_idx[..., None], axis=-1)[..., 0]
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        p = 100 * (dEK_full_flat - dEK_ref) / dEK_ref
-    p = np.where(any_valid, p, np.nan)
+        eff_var = 100 * (dEK_full_flat - dEK_ref) / dEK_ref
+    eff_var = np.where(any_valid, eff_var, np.nan)
     dEK_ref = np.where(any_valid, dEK_ref, np.nan)
 
     key_arr = np.array(keys + [None], dtype=object)  # trailing None: "no valid candidate" sentinel
     reference = key_arr[np.where(any_valid, best_idx, len(keys))]
 
     if scalar:
-        return {'p_measure': float(p[0]), 'reference': reference[0], 'dEK_reference': float(dEK_ref[0])}
+        return {'efficiency_var': float(eff_var[0]), 'reference': reference[0],
+                'dEK_reference': float(dEK_ref[0])}
     return {
-        'p_measure': p.reshape(dEK_full_arr.shape),
+        'efficiency_var': eff_var.reshape(dEK_full_arr.shape),
         'reference': reference.reshape(dEK_full_arr.shape),
         'dEK_reference': dEK_ref.reshape(dEK_full_arr.shape),
     }
@@ -148,6 +169,19 @@ def _spectral_deviation(T_days, E_full, E_total_full, E_sub, E_total_sub, dEK_su
     q_sub = np.sqrt(E_sub / E_total_sub.mean())
     return spectral_deviation(T_days, q_full, T_days, q_sub, xmax=xmax)
 
+
+########################################################################
+# Standalone legacy engine, kept only for
+# examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py
+# (own modes/triads/velocities API, no WaveSetSpec/results dict) -- NOT
+# the current pipeline. run_dynamics.py/run_sweep.py/run_sweep_sets.py go
+# through pairwise_target_diagnostics/efficiency_variation_final above
+# instead, via rsw_sphere.dynamics.diagnostics_report. Retained under its
+# original "P-measure" name since it computes the same formula the
+# functions above do, just against a single, always-fixed reference triad
+# (no efficiency_variation_final-style "largest of every containing
+# triad" reference selection).
+########################################################################
 
 def p_measure(modes, triads, velocities, h_e: float = 10000,
               target_indices=None, reference_triad: int = 0, triad_index=None,
@@ -300,6 +334,11 @@ def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: 
 
     return {'U1': U1, 'U2': U2, 'P': P, 'drift': DRIFT, 'labels': labels}
 
+########################################################################
+# End of the standalone legacy engine. Everything below is the current
+# pipeline (rsw_sphere.dynamics.diagnostics_report's own compute path).
+########################################################################
+
 
 def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = DEFAULT_EXCLUSION_FRAC,
                      min_prominence: float = 0.02, xmax: float = None):
@@ -342,24 +381,25 @@ def pairwise_target_diagnostics(T_days, amp_full, amp_sub, E_total_full, E_total
     E_full, E_sub = amp_full ** 2, amp_sub ** 2
     dEK_full = E_full.max() - E_full.min()
     dEK_sub = E_sub.max() - E_sub.min()
-    p = 100 * (dEK_full - dEK_sub) / dEK_sub if dEK_sub > MIN_REFERENCE_DEK else np.nan
+    eff_var = 100 * (dEK_full - dEK_sub) / dEK_sub if dEK_sub > MIN_REFERENCE_DEK else np.nan
     sd = _spectral_deviation(T_days, E_full, E_total_full, E_sub, E_total_sub, dEK_sub,
                               xmax=spectral_xmax)
     novelty_period, novelty_relevance = _novelty_period(
         T_days, amp_full, amp_sub, dEK_sub,
         exclusion_frac=novelty_exclusion_frac, min_prominence=novelty_min_prominence, xmax=novelty_xmax)
     return {
-        'p_measure': p, 'spectral_deviation': sd,
+        'efficiency_var': eff_var, 'spectral_deviation': sd,
         'novelty_period': novelty_period, 'novelty_relevance': novelty_relevance,
     }
 
 
-def p_measure_combined_for_target(results: dict, target_label: str) -> dict:
-    """Single combined P-measure for ``target_label`` across ALL of its
-    containing sub-triad units at once (see ``final_p_measure``) -- one
-    result per target, not one per (target, sub-triad) pair like the
-    per-pair ``p_measure`` computed inline by ``run_dynamics.py
-    --diagnostics``'s own pairwise table. Mirrors
+def efficiency_variation_combined_for_target(results: dict, target_label: str) -> dict:
+    """Single combined efficiency variation for ``target_label`` across
+    ALL of its containing sub-triad units at once (see
+    ``efficiency_variation_final``) -- one result per target, not one per
+    (target, sub-triad) pair like the per-pair value computed inline by
+    ``run_dynamics.py --diagnostics``'s own pairwise table
+    (``pairwise_target_diagnostics``). Mirrors
     ``rsw_sphere.utilities.novelty_frequency.novelty_combined_for_target``'s
     own results-dict convention.
 
@@ -373,20 +413,18 @@ def p_measure_combined_for_target(results: dict, target_label: str) -> dict:
     Returns
     -------
     dict
-        p_measure, reference (winning sub-unit name, or None if every
+        efficiency_var, reference (winning sub-unit name, or None if every
         candidate's own dEK_sub is below MIN_REFERENCE_DEK),
         dEK_reference, dEK_full, spectral_deviation (against that SAME
-        winning reference, so p_measure/spectral_deviation always agree on
-        which sub-triad a shared mode is being compared against --
-        efficiency_var_final is the one exception, computed elsewhere
-        with its OWN independently-chosen reference, largest |efficiency|
-        rather than largest raw dEK, since efficiency normalizes dEK by
-        each sub-triad's own different mean total energy; see
-        ``rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report``'s
-        own docstring). Note this "final" spectral_deviation is NOT the "filtering error" of a
-        specific known mode removal for a shared target -- see
+        winning reference, so efficiency_var/spectral_deviation always
+        agree on which sub-triad a shared mode is being compared against
+        -- there is only one reference-selection rule now, largest raw
+        dEK; see ``rsw_sphere.dynamics.diagnostics_report.
+        compute_diagnostics_report``'s own docstring). Note this "final"
+        spectral_deviation is NOT the "filtering error" of a specific
+        known mode removal for a shared target -- see
         ``spectral_deviation``'s own docstring and
-        ``final_p_measure``'s -- it reports the deviation from
+        ``efficiency_variation_final``'s -- it reports the deviation from
         whichever single containing triad best explains the target, not
         a canonical single removal experiment (there isn't one for a
         shared mode). The PAIRWISE, single-named-triad computation
@@ -416,7 +454,7 @@ def p_measure_combined_for_target(results: dict, target_label: str) -> dict:
     if not dEK_subs:
         raise ValueError(f"{target_label!r} not found in any sub-triad")
 
-    result = final_p_measure(dEK_full, dEK_subs)
+    result = efficiency_variation_final(dEK_full, dEK_subs)
     result['dEK_full'] = float(dEK_full)
     result['spectral_deviation'] = (
         _spectral_deviation(full["t"], E_full, E_total_full,
@@ -426,17 +464,19 @@ def p_measure_combined_for_target(results: dict, target_label: str) -> dict:
     return result
 
 
-def p_measure_combined_for_all_targets(results: dict) -> dict:
-    """``p_measure_combined_for_target`` for every mode in the full wave set."""
-    return {label: p_measure_combined_for_target(results, label)
+def efficiency_variation_combined_for_all_targets(results: dict) -> dict:
+    """``efficiency_variation_combined_for_target`` for every mode in the full wave set."""
+    return {label: efficiency_variation_combined_for_target(results, label)
             for label in results["full"]["labels"]}
 
 
 if __name__ == "__main__":
+    # Exercises only the standalone legacy engine (p_measure) -- the live
+    # pipeline is exercised via run_dynamics.py/run_sweep.py's own tests.
     from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
     result = p_measure(spec.modes, triads, spec.velocities, h_e=spec.h_e,
                         reference_triad=spec.reference_triad, tf_days=5, h=0.02)
     assert not np.isnan(result['P']).all()
-    print(f"pmeasure self-check OK: P={dict(zip(result['labels'], result['P']))}")
+    print(f"pmeasure legacy-engine self-check OK: P={dict(zip(result['labels'], result['P']))}")

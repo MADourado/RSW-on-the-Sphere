@@ -35,7 +35,7 @@ def plot_efficiency_map(U1, U2, efficiency, xlabel: str = None, ylabel: str = No
         ax.set_ylabel(ylabel)
     if title:
         ax.set_title(title)
-    fig.colorbar(cs, ax=ax, label=r'Efficiency $\mathcal{E}_{\mathrm{avg}}$ (%)')
+    fig.colorbar(cs, ax=ax, label=r'Efficiency $\mathcal{E}$ (%)')
 
     if own_fig:
         save_or_show(fig, path)

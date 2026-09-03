@@ -56,9 +56,9 @@ def plot_triad_sweep(u_values, series: dict, xlabel: str, ylabel: str, title: st
 
 
 def plot_mode_scalar_sweep(u_values, series: dict, xlabel: str, ylabel: str, title: str, path: str = None):
-    """The 5 scalar "final" diagnostics (p_measure, efficiency_var,
-    spectral_dev_var, novel_freq, novel_period): one line per mode in the
-    full wave set (private and shared alike).
+    """The 4 scalar "final" diagnostics (efficiency_var, spectral_dev_var,
+    novel_freq, novel_period): one line per mode in the full wave set
+    (private and shared alike).
 
     series : {mode_label: array}
     """
@@ -95,7 +95,7 @@ def _heatmap_grid(U1, U2, series: dict, xlabel: str, ylabel: str, title: str, pa
     (mode or triad label), up to 3 columns, independent per-panel
     colorbar/scale. Sequential (viridis) by default; diverging (RdBu_r,
     symmetric around 0) for a diagnostic that can be negative (e.g. a
-    signed % change -- p_measure, efficiency_var).
+    signed % change -- efficiency_var).
     """
     apply_house_style()
     n = len(series)

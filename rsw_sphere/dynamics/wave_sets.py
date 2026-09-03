@@ -45,8 +45,8 @@ surjective and the choice of ``fat_policy`` cannot change any energy at any
 instant (see the docstring of ``rsw_sphere/utilities/check_wave_set_physics.py``,
 check C4, for the precise claim and how it is verified rather than
 assumed). Default ``fat_policy='symmetry'`` matches ``TRIAD``, which is
-required for the P-measure's numerator (a wave set) and denominator (a
-``TRIAD``) to be on the same convention.
+required for efficiency variation's numerator (a wave set) and
+denominator (a ``TRIAD``) to be on the same convention.
 
 Non-conservation
 -----------------
@@ -56,7 +56,7 @@ the four-wave truncation" / eq. ``con``) -- there is no wave-set-level
 analogue of the per-triad residual check. ``WaveSet`` does not compute or
 expose one; only ``energy_drift`` (a diagnostic, not an identity) is
 provided. Callers must report drift alongside any energy-variation-derived
-quantity (e.g. the P-measure) rather than assume it is negligible.
+quantity (e.g. efficiency variation) rather than assume it is negligible.
 
 Run as a quick sanity check:
 

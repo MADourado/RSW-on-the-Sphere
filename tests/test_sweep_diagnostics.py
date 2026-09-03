@@ -20,7 +20,7 @@ def test_normalize_expands_all():
 def test_normalize_alias():
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     result = _normalize_diagnostics(("energy_var",), spec)
-    assert result == ["p_measure"]
+    assert result == ["efficiency_var"]
 
 
 def test_normalize_novelty_aliases():
@@ -36,8 +36,9 @@ def test_normalize_novelty_aliases():
 
 def test_normalize_dedupes():
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
-    result = _normalize_diagnostics(("p_measure", "energy_var"), spec)
-    assert result == ["p_measure"]
+    # "energy_var" aliases to "efficiency_var" -- both requested at once dedupe to one.
+    result = _normalize_diagnostics(("efficiency_var", "energy_var"), spec)
+    assert result == ["efficiency_var"]
 
 
 def test_normalize_warns_and_skips_scalar_diagnostics_on_plain_triad(capsys):
@@ -47,7 +48,7 @@ def test_normalize_warns_and_skips_scalar_diagnostics_on_plain_triad(capsys):
     assert set(result) == {"efficiency", "dominant_freq", "dominant_period", "low_frequency_energy",
                             "dynamical_phase", "total_energy"}
     out = capsys.readouterr().out
-    for name in ("p_measure", "efficiency_var", "spectral_dev_var", "novel_freq", "novel_period"):
+    for name in ("efficiency_var", "spectral_dev_var", "novel_freq", "novel_period"):
         assert f"diagnostic {name!r}" in out
 
 
@@ -55,6 +56,17 @@ def test_normalize_raises_on_unknown_name():
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     with pytest.raises(ValueError, match="unknown sweep diagnostic"):
         _normalize_diagnostics(("not_a_real_diagnostic",), spec)
+
+
+def test_normalize_rejects_retired_p_measure_name():
+    # "p_measure" (2026-09-03: recognized as the same quantity as
+    # "efficiency_var" once both sides of the ratio share one reference
+    # energy budget -- see rsw_sphere.utilities.pmeasure's own module
+    # docstring) is retired, not aliased -- callers must migrate to
+    # "efficiency_var" explicitly.
+    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
+    with pytest.raises(ValueError, match="unknown sweep diagnostic"):
+        _normalize_diagnostics(("p_measure",), spec)
 
 
 @pytest.mark.slow
@@ -89,7 +101,7 @@ def test_pairwise_value_for_target_matches_default_triad_selection(tmp_path):
     _default_triad_index_for_mode selection (reference_triad if the
     target is one of its members, else the first containing triad) --
     run_sweep_sets.py relies on this exact selection to preserve
-    paper_table03's own p_measure numbers."""
+    paper_table03's own efficiency_var numbers."""
     from run_dynamics import run_dynamics
     from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, pairwise_value_for_target
     from rsw_sphere.utilities.pmeasure import _default_triad_index_for_mode
@@ -108,10 +120,10 @@ def test_pairwise_value_for_target_matches_default_triad_selection(tmp_path):
         member_p, member_q, _ = spec.sub_triad_modes(t_idx)
         expected_unit = f"triad_{_mode_slug(*member_p)}_{_mode_slug(*member_q)}"
         target_label = results["full"]["labels"][target_idx]
-        expected = next(r["p_measure_pct"] for r in report["pairwise"]
+        expected = next(r["efficiency_var_pct"] for r in report["pairwise"]
                          if r["mode"] == target_label and r["vs"] == expected_unit)
 
-        got = pairwise_value_for_target(report, spec, target_idx, spec.reference_triad, "p_measure_pct")
+        got = pairwise_value_for_target(report, spec, target_idx, spec.reference_triad, "efficiency_var_pct")
         if np.isnan(expected):
             assert np.isnan(got)
         else:
@@ -174,13 +186,13 @@ def test_run_sweep_1d_diagnostics_plain_triad_smoke(tmp_path):
 def test_run_sweep_2d_diagnostics_smoke(tmp_path):
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=0.0, max=20.0), SweepAxis(mode="d", min=0.0, max=20.0)),
-                         n_grid=2, diagnostics=("p_measure", "efficiency_var", "dynamical_phase"))
+                         n_grid=2, diagnostics=("efficiency_var", "dynamical_phase"))
     config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                       plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
     result = run_sweep(config, plot_per_point=False)
 
-    assert set(result) == {"p_measure", "efficiency_var", "dynamical_phase"}
+    assert set(result) == {"efficiency_var", "dynamical_phase"}
     out_dir = tmp_path / "sweep" / "quartet_rossby_kelvin"
     for name, r in result.items():
         assert os.path.exists(r["path"]), name
@@ -188,7 +200,7 @@ def test_run_sweep_2d_diagnostics_smoke(tmp_path):
         assert r["U1"].shape == (2, 2)
         assert r["U2"].shape == (2, 2)
     # one heatmap panel per mode for the scalar diagnostics (4 modes)
-    assert len(result["p_measure"]["series"]) == 4
+    assert len(result["efficiency_var"]["series"]) == 4
     # one heatmap panel per triad for dynamical_phase (2 constituent triads)
     assert len(result["dynamical_phase"]["series"]) == 2
 
@@ -206,14 +218,14 @@ def test_run_sweep_2d_diagnostics_matches_1d_for_same_point(tmp_path):
                                       plot=False, parallel=False)
     results = run_dynamics(config)
     report = compute_diagnostics_report(results, spec)
-    direct = {d["mode"]: d["p_measure_final_pct"] for d in report["final"]}
+    direct = {d["mode"]: d["efficiency_var_final_pct"] for d in report["final"]}
 
     sweep = SweepConfig(axes=(SweepAxis(mode="c", min=spec.velocities[spec.index("c")],
                                          max=spec.velocities[spec.index("c")]),), n_grid=1,
-                         diagnostics=("p_measure",))
+                         diagnostics=("efficiency_var",))
     sweep_config = RunConfig.from_wave_set(spec, tf_days=1.0, h=0.05, output_root=str(tmp_path),
                                             plot=False, parallel=False, sweep=sweep)
     from run_sweep import run_sweep
     swept = run_sweep(sweep_config, plot_per_point=False)
     for mode_label, value in direct.items():
-        assert swept["p_measure"]["series"][mode_label][0] == pytest.approx(value)
+        assert swept["efficiency_var"]["series"][mode_label][0] == pytest.approx(value)

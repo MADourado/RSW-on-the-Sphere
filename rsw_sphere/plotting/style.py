@@ -133,16 +133,39 @@ def save_or_show(fig, path):
         plt.show()
 
 
-def apply_house_style():
-    """Apply the repo's shared figure style (serif 11pt, thin inward ticks).
+def apply_house_style(base_size: int = 13):
+    """Apply the repo's shared figure style (serif, thin inward ticks).
 
     Matches ``dispersion_relation_fancy.py``'s style block. Call once
     before creating a figure; affects subsequent ``plt`` calls via
     ``rcParams`` (global, like any ``rcParams.update``).
+
+    base_size : int, optional
+        Tick-label size; axis labels, panel/sub-plot titles, AND the
+        legend are all set EQUAL to each other, one step above it --
+        legend text reading noticeably smaller than the axis labels
+        right next to it was flagged repeatedly (2026-09-04 sizing pass,
+        round 2: an even smaller *relative* legend size on top of an
+        already-small base compounded the problem in the busiest
+        panels), so there is now exactly one non-tick text size per
+        figure, not two. Any per-call ``fontsize=`` override (a
+        ``ax.legend(fontsize=...)`` or ``ax.set_title(..., fontsize=...)``)
+        should be removed rather than added -- it silently drifts out of
+        sync with this hierarchy the next time base_size changes here.
+        Default 13 (bumped from 11, 2026-09-03: a multi-panel figure gets
+        shrunk further once embedded at fixed `\\linewidth` in the paper,
+        so 11pt read too small there -- pass a still-larger value (e.g.
+        15-16) for a busy 2x2/2x3 panel grid, or for a figure combining
+        several small subfigures, specifically.
     """
     plt.rcParams.update({
         'font.family': 'serif',
-        'font.size': 11,
+        'font.size': base_size,
+        'axes.titlesize': base_size + 1,
+        'axes.labelsize': base_size + 1,
+        'xtick.labelsize': base_size,
+        'ytick.labelsize': base_size,
+        'legend.fontsize': base_size + 1,
         'axes.linewidth': 0.8,
         'xtick.direction': 'in',
         'ytick.direction': 'in',

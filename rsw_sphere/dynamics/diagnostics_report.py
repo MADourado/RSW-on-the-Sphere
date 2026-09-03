@@ -12,9 +12,9 @@ import os
 import numpy as np
 
 from rsw_sphere.utilities.periods import dominant_periods, low_frequency_power, DEFAULT_EXCLUSION_FRAC
-from rsw_sphere.utilities.efficiency import wave_set_efficiency, efficiency_variation
+from rsw_sphere.utilities.efficiency import wave_set_efficiency
 from rsw_sphere.utilities.pmeasure import (
-    pairwise_target_diagnostics, p_measure_combined_for_all_targets, _default_triad_index_for_mode)
+    pairwise_target_diagnostics, efficiency_variation_combined_for_all_targets, _default_triad_index_for_mode)
 from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_all_targets
 from rsw_sphere.utilities.tables import write_csv
 from rsw_sphere.physics import total_energy_joules
@@ -61,31 +61,31 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
             every sub-triad), ``E_total``'s own time-mean converted to
             Joules via ``rsw_sphere.physics.total_energy_joules``. Lets a
             caller check whether a wave set's own total-energy budget
-            actually changes across candidates/sweep points, rather than
-            assuming it's fixed -- ``efficiency``/``efficiency_var`` both
-            normalize by each unit's OWN ``E_total.mean()``, which is NOT
-            the same number for ``full`` vs. a sub-triad (fewer active
-            modes -> smaller budget), so a drop in ``efficiency_var`` can
-            reflect the full wave set's budget growing rather than the
-            target's own raw swing shrinking (see
-            ``efficiency_variation``'s own docstring).
+            actually changes across candidates/sweep points -- useful
+            context alongside ``efficiency_var`` (e.g. a driving velocity
+            that also changes how much energy the wave set carries), even
+            though ``efficiency_var`` itself no longer normalizes by it
+            (see ``rsw_sphere.utilities.pmeasure``'s own module
+            docstring): the per-unit ``efficiency`` field below still
+            does, since it's a standalone, single-configuration quantity
+            (paper eq. `effgen`), not a cross-configuration comparison.
         precession : {triad_label: {freq_full_cpd, freq_alone_cpd (or
             None), phase_variation_pct (nan if no alone comparison)}} --
             empty if spec has no sub-triads.
-        pairwise : list of {mode, vs, p_measure_pct, efficiency_var_pct,
-            spectral_dev_pct, novelty_period_days, novelty_relevance_pct}
-            -- one row per (target mode, containing sub-triad) pair.
-        final : list of {mode, p_measure_final_pct, efficiency_var_final_pct,
-            spectral_dev_final_pct, vs, efficiency_var_vs,
-            novelty_period_final_days, novelty_freq_final_cpd,
+        pairwise : list of {mode, vs, efficiency_var_pct, spectral_dev_pct,
+            novelty_period_days, novelty_relevance_pct} -- one row per
+            (target mode, containing sub-triad) pair. ``efficiency_var_pct``
+            is the raw energy-variation percent change, full wave set vs.
+            this one named sub-triad (``rsw_sphere.utilities.pmeasure.
+            pairwise_target_diagnostics``'s own ``efficiency_var`` value).
+        final : list of {mode, efficiency_var_final_pct, spectral_dev_final_pct,
+            vs, novelty_period_final_days, novelty_freq_final_cpd,
             novelty_relevance_final_pct} -- one row per mode in the full
-            wave set, combining every containing sub-triad at once. `vs`
-            is p_measure/spectral_dev's own reference (largest raw dEK);
-            `efficiency_var_vs` is efficiency_var's own, independently
-            chosen reference (largest |efficiency|) -- the two need not
-            agree, since efficiency normalizes dEK by each sub-triad's own
-            (different) mean total energy. Empty if spec has no
-            sub-triads (undefined without a "with vs. without"
+            wave set, combining every containing sub-triad at once (``vs``
+            is whichever containing sub-triad gives the target its own
+            largest raw energy swing, i.e. ``rsw_sphere.utilities.pmeasure.
+            efficiency_variation_final``'s own reference choice). Empty if
+            spec has no sub-triads (undefined without a "with vs. without"
             comparison).
     """
     per_mode_unit = {}
@@ -166,48 +166,25 @@ def compute_diagnostics_report(results: dict, spec, novelty_exclusion_frac: floa
                     full['t'], amp_full, amp_sub, full['E_total'], r['E_total'],
                     novelty_exclusion_frac=novelty_exclusion_frac,
                     novelty_min_prominence=novelty_min_prominence)
-                eff_var = efficiency_variation(eff_cache[('full', label)], eff_cache[(name, label)])
                 pairwise.append({
-                    'mode': label, 'vs': name, 'p_measure_pct': d['p_measure'],
-                    'efficiency_var_pct': eff_var, 'spectral_dev_pct': d['spectral_deviation'],
+                    'mode': label, 'vs': name, 'efficiency_var_pct': d['efficiency_var'],
+                    'spectral_dev_pct': d['spectral_deviation'],
                     'novelty_period_days': d['novelty_period'], 'novelty_relevance_pct': d['novelty_relevance'],
                 })
 
-        pfinal = p_measure_combined_for_all_targets(results)
+        pfinal = efficiency_variation_combined_for_all_targets(results)
         novelty_final = novelty_combined_for_all_targets(
             results, min_prominence=novelty_min_prominence, exclusion_frac=novelty_exclusion_frac)
         for label in full['labels']:
             pf = pfinal[label]
             ref = pf['reference']
 
-            # efficiency_var's own reference is chosen independently of
-            # p_measure's (largest |efficiency|, not largest raw dEK):
-            # efficiency is dEK normalized by each sub-triad's own --
-            # different -- mean total energy, so the sub-triad with the
-            # largest raw dEK need not be the one with the largest
-            # efficiency. Reusing p_measure's dEK-based reference here let
-            # a shared mode's efficiency denominator be whichever
-            # sub-triad p_measure preferred even when that sub-triad's own
-            # efficiency was small (or passing through zero), producing
-            # wild swings in efficiency_var_final_pct with no such feature
-            # in efficiency_full itself (found 2026-08-28,
-            # quartet_rossby_gravity_influence's WG(7,9) sweep).
-            eff_candidates = {name: eff_cache[(name, label)] for name, r in results.items()
-                              if name != 'full' and label in r['labels']
-                              and np.isfinite(eff_cache[(name, label)])}
-            if eff_candidates:
-                eff_ref = max(eff_candidates, key=lambda n: abs(eff_candidates[n]))
-                eff_var_final = efficiency_variation(eff_cache[('full', label)], eff_candidates[eff_ref])
-            else:
-                eff_ref = None
-                eff_var_final = float('nan')
-
             peaks = novelty_final[label]['novel_peaks']
             novelty_period = peaks[0]['period_days'] if peaks else float('nan')
             final.append({
-                'mode': label, 'p_measure_final_pct': pf['p_measure'],
-                'efficiency_var_final_pct': eff_var_final, 'spectral_dev_final_pct': pf['spectral_deviation'],
-                'vs': ref, 'efficiency_var_vs': eff_ref, 'novelty_period_final_days': novelty_period,
+                'mode': label, 'efficiency_var_final_pct': pf['efficiency_var'],
+                'spectral_dev_final_pct': pf['spectral_deviation'],
+                'vs': ref, 'novelty_period_final_days': novelty_period,
                 'novelty_freq_final_cpd': 1.0 / novelty_period if peaks else float('nan'),
                 'novelty_relevance_final_pct': peaks[0]['relevance_pct'] if peaks else float('nan'),
             })
@@ -228,16 +205,15 @@ def pairwise_value_for_target(report: dict, spec, target_idx: int, reference_tri
     at all (e.g. a plain triad).
 
     Lets a caller (``run_sweep_sets.py``) reproduce that old engine's exact
-    pairwise ``p_measure``/``novelty_period`` values from this module's own
-    report, instead of a separate integration pass -- same formula either
+    pairwise ``efficiency_var``/``novelty_period`` values from this module's
+    own report, instead of a separate integration pass -- same formula either
     way (``pairwise_target_diagnostics``), just read from a different,
     already-computed place.
 
     target_idx : positional index into spec.modes (as the old engine's own
         `target_indices` took), not a registry mode key or label.
-    field : 'p_measure_pct', 'efficiency_var_pct', 'spectral_dev_pct',
-        'novelty_period_days', or 'novelty_relevance_pct' (report['pairwise']'s
-        own row keys).
+    field : 'efficiency_var_pct', 'spectral_dev_pct', 'novelty_period_days',
+        or 'novelty_relevance_pct' (report['pairwise']'s own row keys).
     """
     triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
     t_idx = _default_triad_index_for_mode(triads, reference_triad, target_idx)
@@ -317,7 +293,7 @@ def write_diagnostics_files(results: dict, report: dict, run_dir: str, run_label
     write_csv(diag_prec_freq_rows, paths['diag_prec_freq'])
 
     diag_pairwise_rows = [
-        {'mode': d['mode'], 'vs': d['vs'], 'p_measure_pct': d['p_measure_pct'],
+        {'mode': d['mode'], 'vs': d['vs'],
          'efficiency_var_pct': d['efficiency_var_pct'], 'spectral_dev_pct': d['spectral_dev_pct'],
          'novelty_period_days': d['novelty_period_days'] if np.isfinite(d['novelty_period_days']) else '',
          'novelty_relevance_pct': d['novelty_relevance_pct'] if np.isfinite(d['novelty_period_days']) else ''}
@@ -327,10 +303,9 @@ def write_diagnostics_files(results: dict, report: dict, run_dir: str, run_label
     write_csv(diag_pairwise_rows, paths['diag_pairwise'])
 
     diag_final_rows = [
-        {'mode': d['mode'], 'p_measure_final_pct': d['p_measure_final_pct'],
+        {'mode': d['mode'],
          'efficiency_var_final_pct': d['efficiency_var_final_pct'],
          'spectral_dev_final_pct': d['spectral_dev_final_pct'], 'vs': d['vs'] or 'none',
-         'efficiency_var_vs': d['efficiency_var_vs'] or 'none',
          'novelty_period_final_days': d['novelty_period_final_days'] if np.isfinite(d['novelty_period_final_days']) else '',
          'novelty_freq_final_cpd': d['novelty_freq_final_cpd'] if np.isfinite(d['novelty_freq_final_cpd']) else '',
          'novelty_relevance_final_pct': d['novelty_relevance_final_pct'] if np.isfinite(d['novelty_relevance_final_pct']) else ''}

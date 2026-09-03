@@ -2,19 +2,19 @@
 energy exactly (quartets/quintets) -- normalizes by mean total energy
 instead of initial total energy, gated on drift.
 """
-import math
 
 #: Reference-too-small-to-normalize-by floor, shared with
 #: `rsw_sphere.utilities.pmeasure` (which imports it from here, not the
 #: other way, to avoid a circular import -- pmeasure.py already imports
 #: `default_velocity_range` from this module). Defined once here since
-#: both P-measure's own dEK denominator and efficiency_variation's own
-#: efficiency denominator have the identical failure mode: a technically
-#: nonzero but too-small reference inflates a percentage-change ratio
-#: without saying anything physically meaningful. Deliberately small
-#: (1e-4) -- a genuinely small-but-real reference (e.g. an efficiency of
-#: ~0.009, order 1e-2) should NOT be suppressed by this guard, only a
-#: reference close enough to zero to be numerically degenerate.
+#: both `wave_set_efficiency`'s own dEK denominator (this module) and
+#: efficiency variation's own dEK denominator (`pmeasure.py`) have the
+#: identical failure mode: a technically nonzero but too-small reference
+#: inflates a percentage-change ratio without saying anything physically
+#: meaningful. Deliberately small (1e-4) -- a genuinely small-but-real
+#: reference (e.g. an efficiency of ~0.009, order 1e-2) should NOT be
+#: suppressed by this guard, only a reference close enough to zero to be
+#: numerically degenerate.
 MIN_REFERENCE_DEK = 1e-4
 
 #: Velocity-sweep range caps by mode family: Rossby (RH, alpha=3) modes are
@@ -36,7 +36,23 @@ def wave_set_efficiency(E_target, E_total, drift: float, drift_max: float = 0.1)
     """(E_target.max()-E_target.min()) / E_total.mean(); NaN if drift > drift_max.
 
     Reduces to the classic triad formula (normalize by E_total(0)) for a
-    plain triad, since E_total barely varies there.
+    plain triad, since E_total barely varies there. This is a
+    *standalone* per-configuration efficiency (paper eq. `effgen`) -- a
+    meaningful, self-contained number on its own. It is deliberately NOT
+    used to build a triad-vs-quartet (or quartet-vs-quintet) comparison:
+    see ``rsw_sphere.utilities.pmeasure`` for that (retired
+    ``efficiency_variation`` here divided the full/larger configuration's
+    own raw swing by *its own* mean total energy and the reference's by
+    *its own* -- two different, configuration-dependent denominators, so
+    the ratio could drift purely because the larger configuration's own
+    energy budget grew, independent of the target's actual dynamical
+    response; found 2026-09-03 screening EG(1,n)/WG(1,n) candidates,
+    where a fixed driving velocity requires more energy at higher n).
+    ``pmeasure``'s comparison instead normalizes both sides by the same
+    (reference) energy budget, which cancels out of the ratio entirely --
+    algebraically the correct generalization of "efficiency variation" to
+    a triad-vs-quartet (or quartet-vs-quintet) comparison, not a
+    different diagnostic.
     """
     if drift > drift_max:
         return float("nan")
@@ -44,29 +60,3 @@ def wave_set_efficiency(E_target, E_total, drift: float, drift_max: float = 0.1)
     if denom <= 0:
         return float("nan")
     return (E_target.max() - E_target.min()) / denom
-
-
-def efficiency_variation(efficiency_full, efficiency_sub):
-    """% change in efficiency, full wave set vs. one reference sub-triad
-    -- same formula as the P-measure (`rsw_sphere.utilities.pmeasure`),
-    applied to `wave_set_efficiency`'s own drift-gated, mean-total-energy
-    -normalized quantity instead of the raw energy variation dEK. This
-    answers a different question than P, and its sign can genuinely
-    differ: the reference triad has strictly fewer active modes than the
-    full wave set, so it has a smaller total-energy budget to share
-    (<E_total> smaller for the triad) -- a target's raw swing can grow
-    from triad to full wave set (P>0) while its *share* of the now-larger
-    budget shrinks (this quantity <0). Both are legitimate; read them
-    together, not as two noisy estimates of the same number.
-
-    NaN if either input is NaN (e.g. one run's own drift gate tripped) or
-    ``efficiency_sub`` is at or below ``MIN_REFERENCE_DEK`` (not just
-    exactly zero) -- a reference efficiency that small makes the
-    percentage ratio numerically degenerate rather than physically
-    meaningful, the same failure mode ``final_p_measure`` guards against
-    for its own ``dEK`` denominator.
-    """
-    if (not math.isfinite(efficiency_full) or not math.isfinite(efficiency_sub)
-            or efficiency_sub <= MIN_REFERENCE_DEK):
-        return float("nan")
-    return 100 * (efficiency_full - efficiency_sub) / efficiency_sub

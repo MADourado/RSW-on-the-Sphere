@@ -73,11 +73,10 @@ class WaveSetSpec:
     triads : tuple of TriadRef
     reference_triad : int
         Index into ``triads`` -- the constituent triad used as the
-        P-measure's denominator (the "triad of RH modes" the paper
-        compares each quartet's mode variations against) when a mode
-        doesn't specify its own (see
-        ``rsw_sphere.plotting.wave_set_pmeasure.p_measure``'s per-mode
-        ``triad_index``).
+        efficiency variation's reference (the "triad of RH modes" the
+        paper compares each quartet's mode variations against) when a
+        mode doesn't specify its own (see
+        ``rsw_sphere.utilities.pmeasure._default_triad_index_for_mode``).
     h_e : float
         Equivalent height, m.
     label, display_label : str
