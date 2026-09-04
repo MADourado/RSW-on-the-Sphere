@@ -1,0 +1,23 @@
+# Python
+**/__pycache__/
+*.pyc
+*.egg-info/
+build/
+.pytest_cache/
+
+# Virtual environment
+.venv/
+
+# Generated figures, tables and cached trajectories -- fully regenerable
+# from the drivers and examples/ scripts, never a source of truth.
+outputs/
+*.png
+*.gif
+*.npy
+examples/*.tex
+
+# Claude Code project-local context (not shared repo documentation)
+.claude/
+
+# The paper lives in its own git repository, nested but independent.
+paper-nonlinear-interactions-SWE-sphere/
