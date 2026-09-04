@@ -1,5 +1,7 @@
 # RSW on the Sphere — Nonlinear wave interactions
 
+!!!!LEGACY VERSION!!!! See https://github.com/CGFD-USP/SWE-nonlinear-interactions for the up-to-date version.
+
 A Python toolkit for studying **nonlinear wave interactions in the rotating
 shallow water (RSW) equations on the sphere**.
 
