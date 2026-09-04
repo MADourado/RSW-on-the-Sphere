@@ -33,12 +33,9 @@ Run:
         outputs/figures/wave_sets/quartet_rh_borrowed_topology/borrowed_topology_precession.png
 """
 import os
-import sys
 import warnings
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import numpy as np
 import matplotlib.pyplot as plt

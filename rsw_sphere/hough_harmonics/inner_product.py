@@ -1,12 +1,4 @@
 import numpy as np
-import scipy
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-
-from rsw_sphere.hough_harmonics.normalization import norm_Hough
-from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import symetry
-
 
 def inner_product(A,m_a,B,m_b,C,m_c,deg, conj = True): 
     

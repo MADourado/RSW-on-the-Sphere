@@ -4,11 +4,9 @@ coupling coefficient, together with the mismatch and pump mode, for the
 four single-triad examples discussed in that section (Triad A/B in
 ``sec: rossbyonly``, Triad C/D in ``sec: combined``).
 
-The dedicated ``rsw_sphere/plotting/triad_table.py`` this table's LaTeX
-comment used to name was retired in the examples re-factor -- its job is
-now the general-purpose ``wave_set_table.wave_set_properties`` (a triad
-is just the 1-triad case of a wave set), applied here to the four
-registered triad_* entries in ``wave_sets_default.yaml``.
+Built on ``wave_set_table.wave_set_properties`` (a triad is just the
+1-triad case of a wave set), applied to the four registered ``triad_*``
+entries in ``wave_sets_default.yaml``.
 
 Run:
 
@@ -16,11 +14,8 @@ Run:
     python examples/tables/paper_table01_resonant_triads.py --fmt markdown
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
 from rsw_sphere.plotting.wave_set_table import wave_set_table
@@ -33,7 +28,7 @@ TRIAD_KEYS = [
     "triad_gravity_with_rossby_catalyst",  # Triad D
 ]
 
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "tables", "paper_table01_resonant_triads.tex")
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "tables", "paper_table01_resonant_triads.tex")
 
 
 def main():

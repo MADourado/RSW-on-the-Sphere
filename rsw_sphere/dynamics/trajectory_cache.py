@@ -1,30 +1,21 @@
 """Raw ODE-trajectory caching for ``WaveSet``/``RK44`` runs.
 
-Every sweep-style script in this repository used to
-re-integrate from scratch on every run -- no ``.npz`` cache anywhere in the
-repo stores the raw ``Y(t)`` solution itself, only summary/sweep arrays
-derived from it. That makes re-analysis (e.g. checking a different
-diagnostic on an already-run trajectory) always pay the integration cost
-again. This module is the one piece with no existing analogue elsewhere in
-the repo (unlike ``rsw_sphere.plotting.sweeps``' 2D-sweep hashing, which
-this reuses the *convention* of but not the function itself, since a
-trajectory cache key is shaped differently from a 2D-sweep cache key).
+Stores the raw ``Y(t)`` solution itself, so re-analysis (a different
+diagnostic on an already-integrated trajectory, a restyled figure) never
+pays the integration cost again. Every other cache in this repository
+stores derived summary arrays only.
 
-**Cache layout, 2026-08-25: grouped by topology, named by initial
-condition.** ``<output_root>/<topology>/<ic_label>_tf<days>_h<h>_<hash8>.npz``,
-where ``topology`` is auto-derived from the wave set's own mode count
-(``triads``/``quartets``/``quintets``/``n<k>modes``) and ``ic_label`` is
-built from every mode's own label + velocity (``ic_label()`` below),
-canonically sorted so the same physical configuration always produces the
-same filename. Previously grouped by a caller-supplied ``wave_set_key``
-string instead (e.g. ``quartet_rh_preference``, or a hand-invented shared
-tag like ``quartet_b_rsw`` used by three different scripts specifically
-to make them share a cache namespace) with a caller-crafted ``run_label``
-that usually only named the *swept* mode, not every mode's own IC. The
-new scheme makes that manual convention unnecessary: any two call sites
-that build the same modes at the same velocities land in the same cache
-entry automatically, which is the actual point of caching trajectories in
-the first place (reuse across scripts, not just re-runs of one script).
+Cache layout: ``<output_root>/<topology>/<ic_label>_tf<days>_h<h>_<hash8>.npz``.
+``topology`` comes from the wave set's own mode count
+(``triads``/``quartets``/``quintets``/``n<k>modes``); ``ic_label`` is built
+from every mode's own label and initial velocity, canonically sorted. Two
+call sites that build the same modes at the same velocities therefore land
+on the same cache entry automatically, which is the point: reuse across
+scripts, not just across re-runs of one script.
+
+``output_root`` defaults to a repository-anchored path
+(``rsw_sphere.paths.TRAJECTORY_ROOT``), so the cache does not fragment by
+whichever directory a script happened to be launched from.
 
 Run as a quick self-check (verifies a cache hit returns byte-identical
 ``Y``/``T`` without re-integrating):
@@ -33,15 +24,11 @@ Run as a quick self-check (verifies a cache hit returns byte-identical
 """
 import hashlib
 import os
-import sys
-
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
 from rsw_sphere.dynamics.integrators import RK44
+from rsw_sphere.paths import TRAJECTORY_ROOT, resolve
 
 #: Cache subfolder per wave-set size -- extend this, not a hardcoded
 #: "triads"/"quartets" branch, if a larger topology (e.g. a 6-mode
@@ -82,8 +69,6 @@ def _trajectory_cache_key_hash(modes, triads, gamma, N, deg, A0, t_f, h):
     ``h_e``, which ``WaveSet`` does not store directly), truncation
     (``N``, ``deg``), initial amplitudes ``A0`` (equivalent to the
     velocities that produced them), ``t_f``, ``h``. Same ``sha1(...)[:8]``
-    convention as ``rsw_sphere.plotting.sweeps.cache_key_hash`` /
-    ``wave_set_cache_key_hash``.
     """
     A0 = np.asarray(A0)
     payload = repr((
@@ -93,7 +78,7 @@ def _trajectory_cache_key_hash(modes, triads, gamma, N, deg, A0, t_f, h):
     return hashlib.sha1(payload.encode()).hexdigest()[:8]
 
 
-def run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajectories", label=None):
+def run_and_cache(ws, A0, t_f, h, velocities=None, output_root=None, label=None):
     """Cache-or-compute a raw ``WaveSet`` trajectory.
 
     Parameters
@@ -113,8 +98,10 @@ def run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajecto
         physical configuration lands in the same cache entry regardless
         of which script built it (module docstring). Required unless
         ``label`` is given explicitly.
-    output_root : str, optional
-        Default ``"outputs/trajectories"``.
+    output_root : str or None, optional
+        Cache root. A relative path is resolved against the repository
+        root, never the current working directory. Default
+        ``rsw_sphere.paths.TRAJECTORY_ROOT``.
     label : str or None, optional
         Explicit override for the readable filename part (before the
         hash suffix). Default: ``ic_label(ws.modes, velocities)`` plus
@@ -135,7 +122,8 @@ def run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajecto
                               "label, or an explicit `label` override")
         tf_days = t_f / (4 * np.pi)
         label = f"{ic_label(ws.modes, velocities)}_tf{tf_days:.0f}_h{h:g}"
-    out_dir = os.path.join(output_root, topology_folder(ws.n_modes))
+    root = TRAJECTORY_ROOT if output_root is None else resolve(output_root)
+    out_dir = os.path.join(root, topology_folder(ws.n_modes))
     path = os.path.join(out_dir, f"{label}_{key_hash}.npz")
 
     if os.path.exists(path):

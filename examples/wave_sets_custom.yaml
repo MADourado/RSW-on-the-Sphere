@@ -249,8 +249,12 @@ quartet_rossby_kelvin:
     # python run_mode_search.py --edge 4,5,3 3,4,3 --max-n 15 --alphas 1,2
     # keeping only the role=member (m=1) rows.
     d:
-      target_mode: d
-      diagnostics: [efficiency_var]
+      # target_mode: c (not d) -- we want to see how the candidate in slot
+      # d affects the PRIVATE ROSSBY mode c=RH(1,2)'s own efficiency
+      # variation (Triad 1, RH-only, is its own isolated reference), not
+      # the candidate's own efficiency variation within Triad 2.
+      target_mode: c
+      diagnostics: [efficiency_var, spectral_dev_var]
       candidates:
         - {m: 1, n: 1, alpha: 1}    # EG(1,1) -- the registered mode itself
         - {m: 1, n: 3, alpha: 1}
@@ -271,10 +275,13 @@ quartet_rossby_kelvin:
 
 quartet_gravity_79:
   label: "RH(4,5)+RH(3,4)+RH(1,2) + gravity mode EG(7,9)"
-  display_label: "Quartet D"
+  display_label: "Quartet D (EG(7,9), retired)"
   role: >-
     Rossby triad coupled with gravity mode. Tests how the gravity mode
-    changes the RH-only triad's dynamics.
+    changes the RH-only triad's dynamics. Superseded in the paper by
+    Quartet E (quartet_rossby_gravity_influence_high) -- not cited by any
+    current figure/table; kept only as a reference for
+    tests/test_mode_search.py's own edge-completion example.
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}
@@ -389,12 +396,13 @@ quartet_dual_gravity_edge:
     n_grid: 10
 
 quintet_gravity_star:
-  label: "RH(4,5)+RH(1,2)+RH(3,4) with both EG(1,1) and EG(7,9)"
+  label: "RH(4,5)+RH(3,4)+RH(1,2) with both EG(1,1) and EG(7,9)"
   display_label: "Quintet A"
   role: >-
-    Star topology (3 constituent triads sharing the edge RH(4,5)+RH(1,2)),
-    matching what five_waves.py's FIVE_WAVES class actually computes. Union of
-    Quartet C and Quartet D's gravity modes on the same RH-only triad.
+    Star topology (3 constituent triads sharing the edge RH(4,5)+RH(3,4)):
+    Quartet C (quartet_rossby_kelvin, RH(4,5)+RH(3,4)+RH(1,2)+EG(1,1))
+    with EG(7,9) added as a third triad's own sum mode, closing the same
+    shared edge a second time.
   h_e: 10000
   modes:
     a: {m: 4, n: 5, alpha: 3, u: 30.0}
@@ -408,5 +416,35 @@ quintet_gravity_star:
     - {sum: e, members: [a, b], display_label: "Triad 3 (with EG(7,9))", triad_key: null}
   reference_triad: 0
   settings:
-    tf_days: 10
+    tf_days: 60
+    h: 0.01
+
+quintet_gravity_influence_star:
+  label: "RH(3,4)+RH(4,5)+WG(7,9), WG(3,9)+RH(4,5)+WG(7,9) and EG(3,9)+RH(4,5)+WG(7,9)"
+  display_label: "Quintet B"
+  role: >-
+    Star topology (3 constituent triads sharing the edge WG(7,9)+RH(4,5)):
+    Quartet D (quartet_rossby_gravity_influence) with a third private
+    member, EG(3,9), closing the same shared sum mode WG(7,9) a third
+    time (m_e = m_a - m_b = 3, same selection rule as RH(3,4)/WG(3,9)).
+    RH(4,5)'s own coupling coefficient within this third triad
+    (|alpha|~1.9e-3) is smaller than in either of the other two triads
+    (0.68, 0.036) -- RH(4,5) is an even more passive catalyst here than
+    in Quartet D's own Triad 2, while WG(7,9) and EG(3,9) exchange energy
+    directly (verified via run_mode_search.py --edge 7,9,2 4,5,3
+    --coupling before registering).
+  h_e: 10000
+  modes:
+    a: {m: 7, n: 9, alpha: 2, u: 50.0}
+    b: {m: 4, n: 5, alpha: 3, u: 80.0}
+    c: {m: 3, n: 4, alpha: 3, u: 50.0}
+    d: {m: 3, n: 9, alpha: 2, u: 50.0}
+    e: {m: 3, n: 9, alpha: 1, u: 0.0}
+  triads:
+    - {sum: a, members: [c, b], display_label: "Triad 1 (RH(3,4)+RH(4,5))", triad_key: null}
+    - {sum: a, members: [d, b], display_label: "Triad 2 (WG(3,9)+RH(4,5))", triad_key: null}
+    - {sum: a, members: [e, b], display_label: "Triad 3 (EG(3,9)+RH(4,5))", triad_key: null}
+  reference_triad: 0
+  settings:
+    tf_days: 30
     h: 0.01

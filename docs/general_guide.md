@@ -111,6 +111,9 @@ docstring shouldn't). One script, one artifact — see `examples/README.md`
 for the full current list and which `\label{...}` each one covers. A
 script that computes something used only in prose (a headline number, not
 a table/figure) still goes in `examples/tables/`, named `paper_headline_*`.
+When an artifact is dropped from the paper, delete its script rather than
+keeping it around unnumbered — git history is the archive, and a script
+that still runs but backs nothing invites being cited again by mistake.
 
 ## Code conventions
 
@@ -128,6 +131,13 @@ a table/figure) still goes in `examples/tables/`, named `paper_headline_*`.
   ("sign was inverted here until an independent review caught it") as
   long as it states the technical reason directly, without citing the
   process that found it.
+- **Paths are anchored to the repository root, never the working
+  directory.** Output locations and the trajectory cache go through
+  `rsw_sphere/paths.py` (`REPO_ROOT`, `OUTPUT_ROOT`, `TRAJECTORY_ROOT`,
+  `resolve()`); scripts under `examples/` get the root from their
+  directory's `_bootstrap.py`. A CWD-relative default silently forks the
+  trajectory cache per launch directory, which is how 240 MB of duplicate
+  cache once ended up under `examples/figures/`.
 - **Validation gates wherever config/user input could silently produce a
   wrong-but-plausible result** — the `WaveSet` `n < m` gate exists because
   an earlier silent failure mode returned a *duplicate* eigenvector for
@@ -135,7 +145,8 @@ a table/figure) still goes in `examples/tables/`, named `paper_headline_*`.
 - **Testing:** run only the targeted subset relevant to what changed
   (`pytest -k "..."` or specific files) — the full `tests/` suite is slow
   enough that it's not a routine step. Run it in full only before a
-  release/handoff-style checkpoint, or when explicitly asked. A test
+  release/handoff-style checkpoint, or when explicitly asked (the full
+  suite is ~4 minutes). A test
   marked `@pytest.mark.slow` needs a real justification (genuine
   end-to-end coverage nothing cheaper provides) — parameters (`tf_days`,
   `n_grid`, `N`/`deg`) should already be the smallest that still exercise
@@ -172,6 +183,6 @@ a table/figure) still goes in `examples/tables/`, named `paper_headline_*`.
   (units, non-dimensionalization, mode-index ordering).
 - `docs/wave_sets.md` — the `WaveSet`/registry layer: schema, how to add
   or test a new wave-set configuration.
-- `examples/README.md` — current catalog of registries, driver configs,
-  and every `paper_table*`/`paper_figure*`/`paper_headline*` script with
-  which `\label{...}` it reproduces.
+- `examples/README.md` — current catalog of registries and every
+  `paper_table*`/`paper_figure*`/`paper_headline*` script with the
+  `\label{...}` it reproduces.

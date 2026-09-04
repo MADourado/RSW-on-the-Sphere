@@ -13,11 +13,8 @@ Run:
     python examples/figures/paper_figure002_hough_examples.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 from rsw_sphere.plotting.hough_spatial_ev import hough_spatial_ev
 
@@ -30,7 +27,7 @@ MODES = [
     ("hough_RH_3_4.png", 3, 4, 3),
 ]
 
-DEFAULT_OUT_DIR = os.path.join(_ROOT, "outputs", "figures", "paper", "hough_examples")
+DEFAULT_OUT_DIR = os.path.join(_bootstrap.ROOT, "outputs", "figures", "paper", "hough_examples")
 
 
 def main():

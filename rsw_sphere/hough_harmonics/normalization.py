@@ -1,14 +1,5 @@
 import numpy as np
-import scipy
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-
-from .eigenvalues_and_eigenvectors.matrix_system import matriz_A
-from .eigenvalues_and_eigenvectors.matrix_system import matriz_B
 from .eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
-from .eigenvalues_and_eigenvectors.eigenvectors import symetry
-from rsw_sphere.physics import gamma_from_he
 
 
 def norm_Hough(m,n,alpha,gamma, N,deg):
@@ -127,17 +118,10 @@ def velocity_to_amplitude(u_target, u_component, h_e, g=9.8):
     ``U = 2*A*u_component``, i.e. ``A = U / (2 * norm_component(u_component)
     * sqrt(g*h_e))``.
 
-    This factor of 2 was missing from the (retired) §2.2 triad toolchain's
-    own velocity-to-amplitude conversions until 2026-08-11 -- found while
-    cross-checking the new
-    quartet/quintet layer's harvested parameters against the dissertation's
-    published ``tab: cap4ex`` amplitudes: every one of 4 independent
-    (mode, velocity) pairs matched the published value to ~4-5 significant
-    figures only with this factor included, and was consistently exactly
-    2x too large without it. All velocity-labeled §2.2 figures/captions
-    were regenerated after this fix;
-    the underlying mode frequencies, periods, coupling coefficients and
-    mismatches are entirely unaffected (they don't depend on amplitude).
+    Verified against the dissertation's published ``tab: cap4ex``
+    amplitudes: 4 independent (mode, velocity) pairs match to 4-5
+    significant figures only with the factor of 2 included, and are
+    consistently exactly 2x too large without it.
 
     Parameters
     ----------
@@ -157,100 +141,3 @@ def velocity_to_amplitude(u_target, u_component, h_e, g=9.8):
         Real initial amplitude.
     """
     return u_target / (2 * norm_component(u_component) * np.sqrt(g * h_e))
-
-
-#------------------
-# PLOTS
-#------------------
-
-def label(m,n,alpha,height):
-
-    l = ''
-    if alpha == 1:
-        l += 'EIG'
-    elif alpha == 2:
-        l += 'WIG'
-    else:
-        l += 'RH'
-    
-    l += f'({m},{n}) at {height}m'
-    return l
-
-def hough_and_derivatives(m,n,alpha, h_e:int = 10000):
-
-    l = label(m,n,alpha, h_e)
-    eps, gamma = gamma_from_he(h_e)
-
-    U,V,Z,DU, DV, DZ, ANG,norm, eigen = norm_Hough(m, n, alpha, gamma, 10, 60)
-
-    angle = np.pi/2*ANG
-
-    U_1 = []
-    V_1 = []
-    Z_1 = []
-    DU_1 = []
-    DV_1 = []
-    DZ_1 = []
-
-    for phi in angle: 
-        
-        u_1,v_1,z_1,du1, dv1, dz1, eigen = Hough_harmonic(m,n,alpha,  gamma, phi, 30)
-        
-        U_1 += [u_1]    
-        V_1 += [v_1]
-        Z_1 += [z_1]  
-        
-        DU_1 += [du1]
-        DV_1 += [dv1]
-        DZ_1 += [dz1]
-        
-    U_1 = 1/np.sqrt(norm) * np.array(U_1) 
-    V_1 = 1/np.sqrt(norm) * np.array(V_1)
-    Z_1 = 1/np.sqrt(norm) * np.array(Z_1)
-
-    DU_1 = 1/np.sqrt(norm) * np.array(DU_1)
-    DV_1 = 1/np.sqrt(norm) * np.array(DV_1)
-    DZ_1 = 1/np.sqrt(norm) * np.array(DZ_1)
-
-    
-    ANG = 90*ANG
-    
-    plt.plot(ANG,U,label = r'$u$')  
-    plt.plot(ANG,V,label = r'$v$')
-    plt.plot(ANG,Z,label = r'$h$')
-
-    plt.ylim([-1.5,1.5])
-    plt.xlim([0,90])
-    x_ticks = np.linspace(0,90,7) 
-    plt.xticks(x_ticks)
-    plt.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
-    plt.legend()
-    plt.title(l)
-    plt.xlabel(r'Latitude ($\phi$) - deg')
-    plt.show()
-
-    plt.plot(ANG, DU, label = 'DU')
-    plt.plot(ANG, DV, label = 'DV')
-    plt.plot(ANG, DZ, label = 'DZ')
-
-    plt.ylim([-1.5,1.5])
-    plt.xlim([0,90])
-    x_ticks = np.linspace(0,90,7) 
-    plt.xticks(x_ticks)
-    plt.grid(True, which='both', linestyle='--', linewidth=0.5, color='gray')
-    plt.legend()
-    plt.title('Derivative - ' + l)
-    plt.xlabel(r'Latitude ($\phi$) - deg')
-    plt.show()
-
-if __name__ == "__main__":
-    hough_and_derivatives(1,2,3,10000)
-
-    
-
-
-    
-        
-        
-    
-    

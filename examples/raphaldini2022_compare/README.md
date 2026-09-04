@@ -57,19 +57,5 @@ without touching the sweep. Copy the resulting PNG into
 Both reuse `rsw_sphere.utilities.barotropic_vort_model` for the
 barotropic side and `precession_comparison.build_rsw_waveset`/
 `rsw_trajectory` for the RSW side -- neither re-derives any physics of
-its own.
-
-## Consolidation history
-
-Originally seven scripts, each importing the previous by bare module
-name (`reproduce_raphaldini2022_fig2.py` -> `precession_resonance_rsw_vs_
-barotropic.py` -> `precession_resonance_phase_diagnostic.py` ->
-`borrowed_topology_precession_figure.py`, plus the two investigation
-scripts above and `precession_resonance_broad_search.py`). Once the
-comparison itself was validated, that four-script chain was consolidated
-into `precession_comparison.py`, and the barotropic model was extracted
-into `rsw_sphere/utilities/barotropic_vort_model.py` so it has one home
-instead of being duplicated across scripts. `precession_resonance_broad_
-search.py` (an exploratory search for RSW-side phase-locking at other
-amplitudes/equivalent depths/mode candidates, all negative results) was
-deleted -- it backed no live paper number or claim.
+its own. All three scripts start with `import _bootstrap` (this
+directory's own module) and can be run from anywhere.

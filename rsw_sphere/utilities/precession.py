@@ -17,7 +17,7 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
                                      target_mode_key=None, individual_mode_keys=None,
                                      low_freq_period_cutoff_days=None,
                                      tf_days=None, h=None, N=10, deg=300,
-                                     cache_root="outputs/trajectories", sweep_cache_path=None):
+                                     cache_root=None, sweep_cache_path=None):
     """Sweep one mode's velocity, reporting every constituent triad's
     dynamical-phase libration stats, plus optionally one target mode's
     efficiency (E_total.mean()-normalized), its low-frequency power, and
@@ -35,7 +35,8 @@ def precession_frequency_efficiency(spec, sweep_mode_key, u_values, base_velocit
     low_freq_period_cutoff_days : float or None -- if given with
         target_mode_key, also report low_frequency_power on E_target/E_total.
     tf_days, h : default spec.settings, else 150.0/0.01.
-    cache_root : passed to run_and_cache.
+    cache_root : trajectory-cache root passed to run_and_cache
+        (None = the repository-anchored default).
     sweep_cache_path : .npz cache for this function's own summary arrays
         (separate from run_and_cache's per-point cache).
 

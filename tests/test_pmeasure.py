@@ -1,45 +1,11 @@
-"""p_measure's (the standalone legacy engine) MIN_REFERENCE_DEK gate, and
-efficiency_variation_final/efficiency_variation_combined_for_target's own
-reference-selection logic (the live pipeline)."""
+"""efficiency_variation_final / efficiency_variation_combined_for_target
+reference-selection logic."""
 import math
 
 import numpy as np
-import pytest
 
 from rsw_sphere.utilities.pmeasure import (
-    p_measure, MIN_REFERENCE_DEK,
     efficiency_variation_final, efficiency_variation_combined_for_target)
-
-pytestmark = pytest.mark.slow
-
-N, DEG = 6, 300  # low N for speed; deg MUST stay 300 -- see tests/test_wave_sets.py
-
-MODES = [(4, 5, 3), (1, 2, 3), (3, 4, 3)]  # sum=0, members=1,2
-TRIADS = [(0, 1, 2)]
-
-
-def test_zero_denominator_gives_nan():
-    velocities = [0.0, 0.0, 0.0]
-    result = p_measure(MODES, TRIADS, velocities, target_indices=[0],
-                        tf_days=2, h=0.02, N=N, deg=DEG)
-    assert result['dEK_triad'][0] == 0.0
-    assert math.isnan(result['P'][0])
-
-
-def test_small_nonzero_denominator_below_threshold_gives_nan():
-    velocities = [1.0, 1.0, 1.0]
-    result = p_measure(MODES, TRIADS, velocities, target_indices=[0],
-                        tf_days=2, h=0.02, N=N, deg=DEG)
-    assert 0.0 < result['dEK_triad'][0] < MIN_REFERENCE_DEK
-    assert math.isnan(result['P'][0])
-
-
-def test_denominator_above_threshold_gives_finite_value():
-    velocities = [30.0, 30.0, 30.0]
-    result = p_measure(MODES, TRIADS, velocities, target_indices=[0],
-                        tf_days=2, h=0.02, N=N, deg=DEG)
-    assert result['dEK_triad'][0] > MIN_REFERENCE_DEK
-    assert not math.isnan(result['P'][0])
 
 
 def test_efficiency_variation_final_scalar_and_array():

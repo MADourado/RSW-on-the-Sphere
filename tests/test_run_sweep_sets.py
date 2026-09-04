@@ -27,9 +27,16 @@ def test_build_candidate_spec_velocity_override():
 
 
 def test_load_alternative_modes_reads_registered_slot():
+    """The slot's own registered block is returned verbatim, including a
+    target_mode that deliberately differs from the slot being swept."""
     cfg = rss.load_alternative_modes("quartet_rossby_kelvin", "d")
-    assert cfg["target_mode"] == "d"
+    assert cfg["target_mode"] == "c"
     assert {"m": 1, "n": 1, "alpha": 1} in cfg["candidates"]
+
+
+def test_load_alternative_modes_target_mode_can_equal_the_slot():
+    cfg = rss.load_alternative_modes("quartet_rh_preference", "d")
+    assert cfg["target_mode"] == "d"
 
 
 def test_load_alternative_modes_missing_slot_raises():

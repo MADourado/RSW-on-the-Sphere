@@ -24,8 +24,6 @@ rsw-dispersion = "rsw_sphere.plotting.dispersion_relation_fancy:main"
 rsw-hough-mode = "rsw_sphere.plotting.hough_spatial_ev:main"
 rsw-waveset-table = "rsw_sphere.plotting.wave_set_table:main"
 rsw-waveset = "rsw_sphere.plotting.energy_evolution:main"
-rsw-waveset-periods = "rsw_sphere.plotting.period_panel:main"
-rsw-waveset-pmeasure = "rsw_sphere.plotting.pmeasure_map:main"
 rsw-waveset-precession = "rsw_sphere.plotting.precession_plot:main"
 
 [tool.setuptools.packages.find]

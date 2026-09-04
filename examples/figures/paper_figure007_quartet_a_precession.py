@@ -22,11 +22,8 @@ Run:
     python examples/figures/paper_figure007_quartet_a_precession.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import numpy as np
 
@@ -37,7 +34,7 @@ from rsw_sphere.plotting.precession_plot import plot_dual_axis_frequency_efficie
 from run_sweep import run_sweep
 
 WAVE_SET_KEY = "quartet_rh_preference"
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
                                "paper_figure007_quartet_a_precession.png")
 TARGET_MODE_KEY = "c"    # RH(3,4) -- efficiency variation shown on the right axis
 PLOT_TRIAD = 0           # Triad 1 -- only its own precession-frequency curve is drawn

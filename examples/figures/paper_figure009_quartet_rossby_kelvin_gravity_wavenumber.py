@@ -24,11 +24,8 @@ Run:
     python examples/figures/paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import matplotlib.pyplot as plt
 
@@ -37,7 +34,7 @@ from run_sweep_sets import run_sweep_sets
 
 WAVE_SET_KEY = "quartet_rossby_kelvin"
 SLOT = "d"
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
                                "paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.png")
 
 #: Family line colors -- EG in style.py's own gravity BLUE, WG in the same

@@ -37,6 +37,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import yaml
 
+from rsw_sphere.paths import OUTPUT_ROOT
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
 from rsw_sphere.dynamics.run_config import RunConfig, default_max_workers
 from rsw_sphere.dynamics.diagnostics_report import (compute_diagnostics_report, pairwise_value_for_target,
@@ -54,12 +55,9 @@ from run_dynamics import run_dynamics
 #: rsw_sphere.utilities.pmeasure._default_triad_index_for_mode) --
 #: efficiency_var/spectral_dev_var are the "final" combined-across-every-
 #: containing-sub-triad flavor (report['final']), same meaning run_sweep.py's
-#: own unified engine uses. What used to be reported separately as
-#: "p_measure"/"p_measure_final" (2026-09-03: recognized as the same
-#: quantity as efficiency_var once both sides of the ratio share one
-#: reference energy budget -- see rsw_sphere.utilities.pmeasure's own
-#: module docstring) is retired; every registry `diagnostics:` block has
-#: been migrated to "efficiency_var".
+#: own unified engine uses. "p_measure" is not a diagnostic name here: it
+#: is the same quantity as efficiency_var (both sides of the ratio share
+#: one reference energy budget), and is rejected explicitly.
 _KNOWN_DIAGNOSTICS = frozenset({"efficiency_var", "spectral_dev_var",
                                  "novelty_period", "efficiency", "low_frequency_energy"})
 _ROW_LABELS = {"efficiency_var": "efficiency_var (%)", "spectral_dev_var": "spectral_dev_var (%)",
@@ -200,7 +198,7 @@ def load_alternative_modes(spec_key: str, slot: str, specs_path: str = DEFAULT_W
 
 
 def run_sweep_sets(spec_key: str, slot: str, specs_path: str = DEFAULT_WAVESETS_PATH,
-                    output_root: str = "outputs", max_workers: int = None,
+                    output_root: str = OUTPUT_ROOT, max_workers: int = None,
                     diagnostics_override=None, tf_days_override: float = None,
                     h_override: float = None, plot_dynamics: bool = False,
                     target_mode_override: str = None) -> list:
@@ -342,7 +340,7 @@ def main():
     parser.add_argument("--table", default=None)
     parser.add_argument("--plot-dir", default=None)
     parser.add_argument("--no-plot", action="store_true")
-    parser.add_argument("--output-root", default="outputs")
+    parser.add_argument("--output-root", default=OUTPUT_ROOT)
     parser.add_argument("--max-workers", type=int, default=None)
     parser.add_argument("--dynamics-plots", action="store_true",
                          help="also save each candidate's own run_dynamics energy-evolution "

@@ -15,14 +15,8 @@ Run:
     python examples/figures/paper_figure004_combined_triads.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-_EXAMPLES_FIGURES = os.path.dirname(os.path.abspath(__file__))
-if _EXAMPLES_FIGURES not in sys.path:
-    sys.path.insert(0, _EXAMPLES_FIGURES)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import matplotlib.pyplot as plt
 
@@ -45,7 +39,7 @@ ROWS = [
     ("triad_gravity_with_rossby_catalyst", 1, (50.0, 0.0, 20.0)),  # Triad D, target EG(6,9)
 ]
 
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "paper", "paper_figure004_combined_triads.png")
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "paper", "paper_figure004_combined_triads.png")
 
 
 def main():

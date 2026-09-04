@@ -25,11 +25,8 @@ Run:
 """
 import dataclasses
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,7 +37,7 @@ from rsw_sphere.plotting.style import apply_house_style, mode_color
 from run_sweep import run_sweep, compute_2d_grid
 
 WAVE_SET_KEY = "quartet_rossby_gravity_influence"
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
                                "paper_figure011_quartet_rossby_gravity_influence_efficiency.png")
 
 _ROSSBY_LABELS = ["RH(4,5)", "RH(3,4)"]

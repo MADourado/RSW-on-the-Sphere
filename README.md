@@ -1,42 +1,42 @@
 # RSW on the Sphere — Nonlinear wave interactions
 
-Code accompanying the MSc dissertation
+A Python toolkit for studying **nonlinear wave interactions in the rotating
+shallow water (RSW) equations on the sphere**.
 
-> **Nonlinear wave interactions in rotating shallow water equations on the sphere**
-> Marco Antonio Dourado — Institute of Mathematics, Statistics and Computer
-> Science, University of São Paulo (IME-USP), 2025.
-> Advisor: Prof. Dr. Pedro da Silva Peixoto · Co-advisor: Prof. Dr. Breno Raphaldini.
+The RSW equations are the simplest global model whose spectrum contains both
+**fast** waves (inertia-gravity) and **slow** waves (Rossby-Haurwitz),
+connected by the Kelvin and mixed Rossby-gravity modes. This repository builds
+the **normal modes** of the linearised equations (the **Hough harmonics**,
+obtained as eigenfunctions of Laplace's tidal equations via the
+vector-spherical-harmonic method of Swarztrauber & Kasahara (1985)) and uses
+them to analyse the **nonlinear energy exchange** between waves: its
+direction, efficiency, periods and spectral signature, for any resonant or
+quasi-resonant configuration of three, four or five modes.
 
-and paper:
+Every configuration is a registry entry rather than a bespoke script, so a new
+triad, quartet or quintet is added by editing YAML — see
+[`docs/general_guide.md`](docs/general_guide.md) to get started.
 
-> **Non-linear interactions between slow and fast atmospheric waves on the Sphere **
-> Peixoto, Raphaldini, Dourado, Teruya.
+**Code authors:** Marco Antonio Dourado and Pedro da Silva Peixoto.
 
+## Publications
 
-**Code Authors:** Marco Antonio Dourado and Pedro da Silva Peixoto
+The code was developed for, and reproduces the results of:
 
-## What this is about
+> **Non-linear interactions between slow and fast atmospheric waves on the
+> sphere.** Peixoto, Raphaldini, Dourado & Teruya. *In preparation.*
 
-The Rotating Shallow Water (RSW) equations on the sphere are a first global model
-whose spectrum contains both **fast** waves (inertia-gravity) and **slow** waves
-(Rossby-Haurwitz), connected by the Kelvin and mixed Rossby-gravity modes. This
-repository builds the **normal modes** of the linearised RSW equations — the
-**Hough harmonics**, obtained as eigenfunctions of Laplace's tidal equations via
-the vector-spherical-harmonic method of Swarztrauber & Kasahara (1985) — and uses
-them to study the **nonlinear energy exchanges** between waves in reduced systems
-of three, four and five interacting modes.
+> **Nonlinear wave interactions in rotating shallow water equations on the
+> sphere.** Marco Antonio Dourado — MSc dissertation, Institute of
+> Mathematics, Statistics and Computer Science, University of São Paulo
+> (IME-USP), 2025. Advisor: Prof. Dr. Pedro da Silva Peixoto · Co-advisor:
+> Prof. Dr. Breno Raphaldini.
 
-The main physical questions explored (see the thesis for full detail):
-
-- How energy is transferred between Rossby-Haurwitz and gravity waves in a
-  **triad**, including the characterization of the *pump mode* and the efficiency
-  of resonant / quasi-resonant triads.
-- How a single gravity wave alters the kinetic-energy fields and the periods of
-  energy exchange of Rossby-Haurwitz waves in **coupled triads** (four- and
-  five-wave configurations).
+Each paper table and figure is reproduced by one script under
+[`examples/`](examples/) — see that directory's README for which
+`\label{...}` each one covers.
 
 ## Current content
-
 
 - **Hough harmonics & dispersion relation** — assembly and diagonalization of the
   tidal-equation eigenvalue problem, the normalized normal-mode fields
@@ -47,51 +47,55 @@ The main physical questions explored (see the thesis for full detail):
   world map. See [`docs/hough_modes.md`](docs/hough_modes.md).
 - **Triadic, four-wave and five-wave dynamics** — coupling coefficients,
   frequency mismatch, the amplitude equations, their time integration
-  (Runge-Kutta), energy/efficiency diagnostics, and analytic-period
-  diagnostics (`rsw_sphere/dynamics/`).
-- Four root drivers, all selecting from the single `wave_sets_default.yaml`
-  registry: `run_linear_modes.py` (dispersion relation + per-mode Hough
-  plots, `--wave-set KEY`/`--run-all`); `run_dynamics.py`, `run_sweep.py`,
-  `run_sweep_sets.py` (integration, IC sweeps, and candidate-mode
-  screening -- all sharing one config class,
-  `rsw_sphere.dynamics.run_config.RunConfig`, and all `--wave-set KEY`-driven,
-  no separate config file). A triad is just the registry's 1-triad case, so the
-  same registry covers triads, quartets and quintets. Plus a fifth,
-  registry-independent driver, `run_mode_search.py`, for finding what
-  *could* go in the registry: given 2 fixed modes (an edge) or 1 (a
-  pivot), it lists candidate modes completing a valid triad with them.
-  See `docs/code_guide.md`'s "Entry points".
+  (Runge-Kutta), and energy/efficiency/spectral diagnostics
+  (`rsw_sphere/dynamics/`, `rsw_sphere/utilities/`).
+- **Five root drivers.** Four select from the single
+  `wave_sets_default.yaml` registry: `run_linear_modes.py` (dispersion
+  relation + per-mode Hough plots), `run_dynamics.py`, `run_sweep.py` and
+  `run_sweep_sets.py` (integration, IC sweeps, candidate-mode screening --
+  all sharing one config class,
+  `rsw_sphere.dynamics.run_config.RunConfig`, all `--wave-set KEY`-driven,
+  no separate config file). A triad is just the registry's 1-triad case,
+  so the same registry covers triads, quartets and quintets. The fifth,
+  `run_mode_search.py`, is registry-independent and finds what *could* go
+  in the registry: given 2 fixed modes (an edge) or 1 (a pivot), it lists
+  candidate modes completing a valid triad with them. See
+  `docs/code_guide.md`'s "Entry points".
 
 ## Repository layout
 
 ```
-rsw_sphere/                 # the installable package
-    hough_harmonics/        # eigenvalue problem, normal modes, inner products
-    dynamics/                # WaveSet/TRIAD, integrator, trajectory cache, RunConfig
-        periods/              # analytic-period / Hamiltonian diagnostics
-    utilities/               # diagnostics compute (pmeasure, periods, precession,
-                              # efficiency, functional) + the diagnostic registry
-    plotting/                # rendering only -- dispersion, Hough, wave-set maps
-docs/                      # thesis PDF, general_guide.md (start here), code_guide.md, per-topic docs
-examples/                  # registries + driver configs (see examples/README.md)
+rsw_sphere/                # the installable package
+    paths.py               # repo root + default output roots (never CWD-relative)
+    physics.py             # constants, gamma/eps, nondimensional-time conversions
+    hough_harmonics/       # eigenvalue problem, normal modes, inner products
+    dynamics/              # WaveSet/TRIAD, integrator, trajectory cache, RunConfig
+    utilities/             # diagnostics compute (pmeasure, periods, precession,
+                           # efficiency, mode search, physics gate)
+    plotting/              # rendering only -- dispersion, Hough, wave-set figures
+docs/                      # general_guide.md (start here), code_guide.md, per-topic docs, dissertation PDF
+examples/                  # registries + one script per paper table/figure (see examples/README.md)
 outputs/                   # generated figures + cached trajectories (gitignored, reproducible)
 tests/                     # pytest suite (structural/exact invariants)
-run_linear_modes.py         # dispersion relation + per-mode Hough plots
+run_linear_modes.py        # dispersion relation + per-mode Hough plots
 run_dynamics.py            # integrate a wave set (full + sub-triads), cached
 run_sweep.py               # IC sweep (1-2 modes) + diagnostics
 run_sweep_sets.py          # loop a diagnostic over candidate-mode variants
 run_mode_search.py         # find candidate modes completing a triad with a given edge/pivot
-wave_sets_default.yaml     # default WaveSet registry (triads, quartets, quintets) -- all four drivers
+wave_sets_default.yaml     # default WaveSet registry (triads, quartets, quintets)
 pyproject.toml             # pip install -e . / console scripts
 ```
 
 `rsw_sphere/dynamics/wave_sets.py::WaveSet` generalizes the single-triad
-`TRIAD` class (same file's `dynamic_triads.py`) to an arbitrary set of
-Hough modes coupled through an arbitrary set of resonant triads —
-quartets and quintets are instances of it, replacing six earlier
-exploratory `FOUR_WAVES`/`FIVE_WAVES` scripts that were deleted in the
-2026 paper §3 rebuild (none of them worked as shipped). See
+`TRIAD` class (`dynamic_triads.py`) to an arbitrary set of Hough modes
+coupled through an arbitrary set of resonant triads; quartets and
+quintets are instances of it. `TRIAD` is kept as the independent
+reference implementation `WaveSet` is checked against. See
 [`docs/wave_sets.md`](docs/wave_sets.md).
+
+Every output path is anchored to the repository root
+(`rsw_sphere/paths.py`), so a driver or example script writes the same
+tree regardless of the directory it is launched from.
 
 ## Installation
 
@@ -104,9 +108,10 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-For pytests usage do: 
+To also get pytest for `tests/`:
+
 ```bash
-pip install -e ".[dev]"    # add [dev] to also get pytest for tests/
+pip install -e ".[dev]"
 ```
 
 Dependencies are pinned for API compatibility (`numpy<2.0`, `scipy<1.15`,
@@ -127,7 +132,7 @@ pip install -e ".[dev]"
 `pytest tests/ -m "not slow"` runs the short suite (pure unit/parsing
 tests, a few seconds) -- for everyday iteration. `pytest tests/` (no
 marker filter) runs everything, including real `RK44` integration tests
-(~1-2 minutes) -- run this before trusting a change to `rsw_sphere/`
+(~4 minutes) -- run this before trusting a change to `rsw_sphere/`
 itself, not on every edit.
 
 ## Usage
@@ -154,7 +159,7 @@ python run_sweep.py --wave-set quartet_rossby_kelvin
 python run_sweep_sets.py --wave-set quartet_rossby_kelvin --slot d
 ```
 
-All four drivers select from the same `wave_sets_default.yaml` registry
+All four registry drivers select from the same `wave_sets_default.yaml`
 (`--wave-set KEY [--specs path.yaml]`, or `--run-all`/a `RunConfig`
 sweeping every wave set). `run_dynamics.py`/`run_sweep.py`/`run_sweep_sets.py`
 additionally share one config class (`rsw_sphere.dynamics.run_config.RunConfig`),
@@ -167,8 +172,10 @@ To add a triad/quartet/quintet, add an entry to `wave_sets_default.yaml`
 — no separate config file needed, a triad is just the registry's own
 1-triad case. A wave set not yet worth adding to the default registry
 can be pointed at with `--specs path/to/other.yaml` instead (same schema,
-e.g. `examples/wave_sets_custom.yaml`). See [`examples/`](examples/) for
-`run_sweep.py` config variants reproducing specific thesis figures/tables.
+e.g. `examples/wave_sets_custom.yaml`). Run the physics gate
+(`python rsw_sphere/utilities/check_wave_set_physics.py --wave-set KEY`)
+on any new or edited entry before trusting a figure from it. See
+[`examples/`](examples/) for one script per paper table and figure.
 
 `run_sweep.py --wave-set KEY` is a general driver for parameter sweeps
 over a registered wave set (dynamical phase, efficiency, dominant
@@ -190,19 +197,17 @@ Hough mode visualization scripts (latitudinal profile and full spatial
 pattern) in [`docs/hough_modes.md`](docs/hough_modes.md) (`rsw-hough-mode
 output.png --m 3 --n 7 --alpha 3`).
 
-Resonant-triad tools (batch properties table, energy-integration time
-series, efficiency-of-energy-transfer sweeps) are covered by the same
-unified drivers used for quartets/quintets (a triad is the degenerate
-1-triad case) — see [`docs/triads.md`](docs/triads.md) for the old-to-new
-command mapping. Quartets and quintets (coupled multi-triad
-configurations) are documented in
-[`docs/wave_sets.md`](docs/wave_sets.md) (`rsw-waveset-table` /
-`rsw-waveset` / `rsw-waveset-periods` / `rsw-waveset-pmeasure` /
-`rsw-waveset-precession`) — including how to test a new
-triad/quartet/quintet that isn't in either registry YAML at all, and how
-`run_sweep.py` builds on top of these.
+Single triads, quartets and quintets all go through the same unified
+drivers (a triad is the degenerate 1-triad case) and are documented in
+[`docs/wave_sets.md`](docs/wave_sets.md), along with the `rsw-waveset-table`
+/ `rsw-waveset` / `rsw-waveset-precession` console scripts, how to test a
+configuration that isn't in either registry YAML, and how `run_sweep.py`
+builds on top of these.
 
 ## References
+
+The literature this implementation builds on (the dissertation and paper it
+backs are listed under [Publications](#publications) above):
 
 - Swarztrauber, P. N. & Kasahara, A. (1985). *The vector harmonic analysis of
   Laplace's tidal equations.* SIAM J. Sci. Stat. Comput., 6, 464–491.
@@ -210,5 +215,3 @@ triad/quartet/quintet that isn't in either registry YAML at all, and how
   equations over a sphere.* Phil. Trans. R. Soc. A, 262, 511–607.
 - Raphaldini, B., Peixoto, P., Teruya, A., Raupp, C. & Bustamante, M. (2022).
   *Precession resonance of Rossby wave triads…* Physics of Fluids.
-- Dourado, M. A. (2025). *Nonlinear wave interactions in rotating shallow water
-  equations on the sphere.* MSc dissertation, IME-USP.

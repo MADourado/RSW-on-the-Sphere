@@ -2,33 +2,16 @@
 "Partner preference", ``sec: quartet_rh_preference``): the RH(4,5)+RH(1,2)
 driving pair against every even-n RH(3,n) target, n=4..16 -- isolated
 triad efficiency E plus the efficiency variation Delta-E_a (eq: effvar)
-once RH(3,4) is restored as a four-wave competitor. Was the P-measure
-P_a (eq: Pa) until 2026-08-28 -- see the paper's own \\todo at that
-equation's definition ("efficiency variation seem to cover this").
+once RH(3,4) is restored as a four-wave competitor.
 
-NOTE (2026-09-03): `efficiency_var`'s own definition changed -- it used
-to normalize the quartet side of the ratio by the quartet's OWN mean
-total energy and the triad side by the triad's own (two different,
-RH(3,n)-dependent budgets), which can drift the percentage for reasons
-unrelated to RH(3,n)'s actual dynamical response. It is now normalized by
-one shared reference budget on both sides (algebraically the same
-quantity the paper used to report separately as P-measure -- see
-rsw_sphere.utilities.pmeasure's own module docstring), so this table's
-`eff_var_pct` column must be regenerated against the fixed code before
-being cited in the paper.
-
-Both column groups come from ONE source now: ``run_sweep_sets.py``'s own
+Both column groups come from one source: ``run_sweep_sets.py``'s own
 ``run_sweep_sets`` applied to ``quartet_rh_preference``'s registered
 ``alternative_modes.d`` block (``wave_sets_default.yaml``) -- RH(3,n)
 substituted into slot d, RH(3,4) fixed in slot c as the quartet's own
 four-wave competitor. Each candidate's own resolved reference triad
-(sum=a, members=[b, d]) is physically identical to the RH(4,5)+RH(1,2)+
-RH(3,n) triad the former ``rh_partner_family.py``/``triad_families.yaml``
-mechanism (retired 2026-08-28, its own tf-convergence discipline and
-n=10 correction preserved in this driver's registered ``tf_days: 240``)
-evaluated standalone -- verified numerically identical at a fast tf_days
-before the retirement (both evaluate the same 3-mode selection-rule-gated
-triad).
+(sum=a, members=[b, d]) is the RH(4,5)+RH(1,2)+RH(3,n) triad evaluated
+standalone. The registered ``tf_days: 240`` is what this table's own
+tf-convergence check settled on -- do not lower it.
 
 n=4 has no efficiency-variation entry (it is the quartet's own fixed
 private mode, not a candidate); odd n are omitted (selection rule forces
@@ -39,16 +22,13 @@ Run:
     python examples/tables/paper_table03_rh_partner_family.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 from run_sweep_sets import run_sweep_sets
 
 TF_DAYS = 240.0
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "tables", "paper_table03_rh_partner_family.csv")
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "tables", "paper_table03_rh_partner_family.csv")
 
 
 def build_table(tf_days: float = TF_DAYS):

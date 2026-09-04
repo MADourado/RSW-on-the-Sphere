@@ -14,15 +14,10 @@ or import and call it from another script:
 
 See docs/dispersion_relation.md for the mathematics and a description of the output.
 """
-import os
-import sys
 
 # Make the repository root importable so that "rsw_sphere" resolves
 # whether this file is run directly (python rsw_sphere/plotting/dispersion_relation_fancy.py),
 # run as a module (python -m rsw_sphere.plotting.dispersion_relation_fancy), or imported.
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import matplotlib.pyplot as plt

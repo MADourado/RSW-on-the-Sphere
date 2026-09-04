@@ -15,10 +15,12 @@ run_linear_modes.py         driver: dispersion relation + per-mode Hough plots
 run_dynamics.py              driver: integrate a wave set (full + sub-triads), cached
 run_sweep.py                 driver: IC sweep (1 or 2 modes) + diagnostics, calls run_dynamics per point
 run_sweep_sets.py            driver: loop a diagnostic over candidate-mode variants
+run_mode_search.py           driver: find candidate modes completing a triad
   └─ rsw_sphere/
+       ├─ paths.py           repo root + default output roots (never CWD-relative)
+       ├─ physics.py         constants, gamma/eps, nondimensional-time conversions
        ├─ hough_harmonics/   the numerical core (eigenproblem, modes, inner products)
        ├─ dynamics/          WaveSet/TRIAD, integrator, trajectory cache, RunConfig
-       │    └─ periods/      analytic-period / Hamiltonian diagnostics
        ├─ utilities/         compute: diagnostics (pmeasure, periods, precession,
        │                     efficiency)
        └─ plotting/          rendering only -- every plot_* fn takes already-computed
@@ -33,26 +35,27 @@ diagnostic vocabulary (`_MODE_UNIT_DIAGNOSTICS`/`_TRIAD_DIAGNOSTICS`/
 function -- adding a diagnostic is one table entry, not a new sweep loop
 (see `docs/wave_sets.md` §6.1).
 
-No `postproc/` folder: an earlier reorg plan called for one (bespoke,
-paper-specific figure *assembly*, distinct from the general-analysis
-scripts above), but the one candidate use case (combining Quartet A's and
-Quartet B's own precession-frequency panels into JFM-template.tex's
-`fig: precession_frequency`) turned out not to need it -- that figure is
-two independent PNGs combined by LaTeX `subfigure`, not a Python
-composite, and each source script (`run_sweep.py` + a config, or
-`examples/raphaldini2022_compare/precession_comparison.py`) already writes its own
-complete, publication-ready PNG on its own. A `postproc/` wrapper that
-just re-called those same plotting functions added no assembly work,
-only a second code path to keep in sync (2026-08-25 review). Create the
-folder if a figure genuinely needs combining two already-computed,
-independently-generated outputs into one new image neither source script
-can produce alone -- not for "the paper needs this specific PNG," which
-the generating script's own config/title/crop already covers.
+There is no figure-assembly (`postproc/`) layer, and none is needed
+while every paper figure is produced complete by one script: a figure
+shown as two panels from two different computations is two independent
+PNGs combined by LaTeX `subfigure`, not a Python composite. Add one only
+if a figure genuinely requires merging two already-computed,
+independently-generated outputs into an image neither source script can
+produce alone.
 
-The package is `pip install -e .`-installable (`pyproject.toml`); `rsw_sphere`
-resolves from anywhere once installed. Two plotting scripts
-(`dispersion_relation_fancy.py`, `hough_spatial_ev.py`) additionally carry a
-small `sys.path` bootstrap so they also work run directly without installing.
+The package is `pip install -e .`-installable (`pyproject.toml`); once
+installed, `rsw_sphere` resolves from anywhere. Scripts under `examples/`
+additionally `import _bootstrap`, a small per-directory module that puts
+the repo root on `sys.path`, so they also run from an uninstalled
+checkout.
+
+**Nothing resolves a path against the current working directory.**
+`rsw_sphere/paths.py` defines `REPO_ROOT`, `DEFAULT_WAVESETS_PATH`,
+`OUTPUT_ROOT`, `TRAJECTORY_ROOT` and `resolve()`; every default output
+location and the trajectory cache go through it, and a relative
+`output_root` passed by a caller is resolved against the repo root. A
+driver or example script therefore writes the same tree whether it is
+launched from the repo root or from `examples/figures/`.
 
 Everything is non-dimensional (see thesis §1.1): the single control parameter is
 `gamma = 1/sqrt(eps)`, with Lamb's number `eps = 4 a² Ω² / (g h_e)`. Time is
@@ -74,7 +77,7 @@ straight from the registry entry (`--wave-set KEY --slot LETTER`), a raw
 YAML passthrough like `sweep:`/`plot:` rather than a `WaveSetSpec` field
 (only this one driver consumes it). See `examples/` for configs.
 
-### `run_linear_modes.py` (renamed from `run_diagnostics.py`)
+### `run_linear_modes.py`
 Creates the output directory (`<output-root>/figures/`), then optionally:
 1. plots the dispersion relation (default on; `--no-dispersion-relation`
    to skip) for the wave set's own `h_e` (or every distinct `h_e` across
@@ -132,11 +135,9 @@ own `outputs/sweep/<wave_set_key>/sweep_diag_<name>_<sweep_label>.png/.csv`
 figure combining several diagnostics (e.g. the paper's own
 precession-frequency-and-efficiency figure) is a separate script's job
 (`examples/figures/paper_figure007_quartet_a_precession.py`), not
-something this driver special-cases. See `docs/wave_sets.md` §6.1 for
-the full vocabulary; the older, separate 2D-only engine
-(`rsw_sphere.utilities.registry.sweep_2d`) has been retired -- both
-`run_sweep_sets.py` and `examples/figures/_triad_panel_row.py` now go
-through this same unified engine (`run_dynamics()` +
+something this driver special-cases. See `docs/wave_sets.md` §6.1 for the full vocabulary.
+`run_sweep_sets.py` and `examples/figures/_triad_panel_row.py` go through
+this same unified engine (`run_dynamics()` +
 `compute_diagnostics_report()`/`compute_2d_grid()`).
 
     python run_sweep.py --wave-set quartet_rossby_kelvin
@@ -188,8 +189,10 @@ for zonal wavenumber `m ≠ 0`. Entries come from the coefficients `p`, `q`, `r`
 (meridional coupling, Coriolis, gravity). Each matrix is `3N × 3N`.
 
 ### `eigenvalues_and_eigenvectors/matrix_m0.py`
-The special `m = 0` case: matrices `C` and `D`. (Used by the dispersion relation;
-Rossby modes are degenerate/absent at `m = 0`.)
+The special `m = 0` case: matrices `C` and `D`. Used for the `m = 0`
+eigenvalues on the dispersion diagram only -- no `m = 0` eigenvector/mode
+construction exists, and no registered wave set uses an `m = 0` mode
+(Rossby modes are degenerate/absent there).
 
 ### `eigenvalues_and_eigenvectors/eigenvectors.py`
 The heart of the mode construction:
@@ -205,9 +208,6 @@ The heart of the mode construction:
   their derivatives `DU, DV, DZ` at a given latitude φ, returning also the
   eigenvalue (dimensionless frequency).
 
-`eigenvectors_m0.py`, `eigenvector_0.py` — analogous helpers for the `m = 0`
-modes.
-
 ### `normalization.py`
 - `norm_Hough(m, n, alpha, gamma, N, deg)` — evaluates a mode on a
   Gauss-Legendre latitude grid and normalizes it to unit energy inner product,
@@ -215,8 +215,6 @@ modes.
   norm, and the eigenvalue. This is the canonical way to obtain a usable mode.
 - `norm_component(u)` — norm of just the zonal-velocity component, used to
   convert a desired physical zonal velocity (m/s) into a mode amplitude.
-
-`normalization_m0.py` — the `m = 0` normalization.
 
 ### `inner_product.py`
 - `inner_product(...)` — the coupling-coefficient inner product (the projection
@@ -231,60 +229,40 @@ modes.
   frequencies, the three coupling coefficients (`coef_ABC`, `coef_BAC`,
   `coef_CAB`), the frequency `mismatch`, and the cubic-energy integral `Sabc`.
   `TRIAD.f(AMP)` is the RHS of the three-wave amplitude ODE system.
-- `RK44` — Runge-Kutta time integrator for the amplitude equations.
 - `Energy_0` — quadratic (E²) and cubic (E³) energy of an amplitude state.
-- `Triad_dynamics` — integrates the triad, computes per-mode kinetic energy,
-  efficiency (max−min energy), total-energy conservation check, and plots the
-  time series.
-- `Triad_Precession` — dead code (commented out since the §2.2 rebuild).
-  Superseded by `run_sweep.py`'s efficiency diagnostic
-  (`rsw_sphere/utilities/efficiency.py`).
-- `eff_tri`, `period_Fourier` — efficiency-vs-velocity curves and FFT-based
-  dominant-period analysis. (Some of these are exploratory helpers.)
+- `RK44` — re-exported from `integrators.py` for callers that only import
+  this module.
+
+Integration, plotting and efficiency diagnostics for a single triad go
+through the same drivers everything else uses (a triad is `WaveSet`'s
+1-triad case); `TRIAD` itself only builds the system.
 
 ### `wave_sets.py` — quartets, quintets (generalized `TRIAD`)
 `class WaveSet` — an arbitrary set of Hough modes coupled through an
 arbitrary set of resonant triads; a quartet is 4 modes/2 triads sharing
 one edge, a quintet is 5 modes/3 triads, a plain triad is the degenerate
-3-modes/1-triad case. Replaces six earlier near-duplicate exploratory
-scripts (`five_waves.py`'s `FIVE_WAVES`; `four_waves_2.py`,
-`four_waves_79.py`, `four_waves_pump.py`, `four_waves_basic.py`,
-`four_waves_rk4_driver.py`'s various `FOUR_WAVES` variants), all deleted
-in the 2026 paper §3 rebuild — none worked as shipped (all called a
-`Triad_dynamics(..., p=...)` kwarg that never existed). `TRIAD` itself
-(`dynamic_triads.py`) is untouched and is `WaveSet`'s independent
-reference implementation, proven equivalent under a mode-relabeling
-permutation (`WaveSet`'s own module docstring;
+3-modes/1-triad case. `TRIAD` (`dynamic_triads.py`) is deliberately kept
+as `WaveSet`'s independent reference implementation, proven equivalent
+under a mode-relabeling permutation (`WaveSet`'s own module docstring;
 `rsw_sphere/utilities/check_wave_set_physics.py` checks C1-C3). See
 [`../docs/wave_sets.md`](../docs/wave_sets.md) for the plotting/registry
 layer built on top and how to test a configuration not yet registered.
 
 ### `trajectory_cache.py` — raw trajectory caching
-`run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajectories", label=None)`
+`run_and_cache(ws, A0, t_f, h, velocities=None, output_root=None, label=None)`
 caches a `WaveSet`/`RK44` run's raw `Y(t)` solution itself (not just a
 derived summary) under `outputs/trajectories/<topology>/`, `topology`
-auto-derived from `ws.n_modes` (`triads`/`quartets`/`quintets`) — the one
-piece with no prior analogue in this repo (every other cache here,
-`rsw_sphere.plotting.sweeps`/the `wave_set_*.py` sweep functions' own
-`cache_path`, stores summary arrays only). The cache filename is built
+auto-derived from `ws.n_modes` (`triads`/`quartets`/`quintets`); every
+other cache in the repo stores summary arrays only. The filename is built
 from every mode's own initial condition (`ic_label(ws.modes, velocities)`,
 canonically sorted), not a caller-supplied key, so the same physical
 configuration lands in the same cache entry regardless of which script
-built it. Used by `run_dynamics.py` and `rsw_sphere.utilities.precession`;
-any new script computing a `WaveSet` trajectory that might be revisited
-should go through this rather than calling `RK44` directly.
-
-### `periods/` — analytic-period diagnostics
-Consumes `dynamic_triads.py`'s `TRIAD` (coupling coefficients, mismatch) to
-compute the resonant-triad energy-exchange period **analytically** (Jacobi
-elliptic integrals), as opposed to reading it off a numerically integrated
-time series. Nested inside `dynamics/` because it only makes sense applied to
-a `TRIAD` instance, not as a standalone concern.
-- `period.py` — Bustamante-style formulation (`Hamiltonian`, `rho`, `nu`, `PERIOD`).
-- `period_harris.py` — Harris-style formulation (`UU`, `J`, `E`, `Hamiltonian`,
-  `P`, `PERIOD`, `Amp_change`); imports `Energy_0` from `dynamic_triads.py`.
-- `period_both.py` — sets up a triad and compares both analytic periods
-  (`p_bus` from `period.py`, `p_har` from `period_harris.py`).
+built it. `output_root` defaults to `rsw_sphere.paths.TRAJECTORY_ROOT`
+and a relative override is resolved against the repo root, so the cache
+never fragments by launch directory. Used by `run_dynamics.py` and
+`rsw_sphere.utilities.precession`; any new script computing a `WaveSet`
+trajectory that might be revisited should go through this rather than
+calling `RK44` directly.
 
 ## `rsw_sphere/plotting/` — orchestration + plotting
 
@@ -312,13 +290,7 @@ PlateCarree cartopy map. Has its own `argparse` CLI (`main()`), also installed
 as the `rsw-hough-mode` console script. Documented in detail, including two
 worked-around matplotlib/cartopy rendering bugs, in `hough_modes.md`.
 
-### `dynamic_three_waves.py`
-`triad_evolution(...)` — the glue for a triad experiment: converts the config's
-physical velocities to amplitudes via `norm_component`, constructs a `TRIAD`,
-prints coupling coefficients / frequencies / mismatch / energy-conservation
-constraint, and calls `Triad_dynamics` to integrate and plot.
-
-### `wave_set_table.py`, `energy_evolution.py`, `period_panel.py`, `pmeasure_map.py`, `precession_plot.py`, `functional_map.py`
+### `wave_set_table.py`, `energy_evolution.py`, `precession_plot.py`, `functional_map.py`, `novelty_frequency_panel.py`, `sweep_diagnostics.py`
 Rendering for quartet/quintet ("wave set") examples, each with its own
 `rsw-waveset-*` console script -- the `WaveSet` analogue of this section's
 single-triad tools. Compute lives in `rsw_sphere/utilities/` (below), not
@@ -326,11 +298,9 @@ here. Fully documented in [`../docs/wave_sets.md`](../docs/wave_sets.md).
 
 ## `rsw_sphere/utilities/` — diagnostics compute
 
-`pmeasure.py` (efficiency variation, pairwise/final full-wave-set-vs-constituent-triad
-comparisons -- `efficiency_variation_final`,
-`pairwise_target_diagnostics`; the standalone `p_measure`/`p_measure_sweep`
-at the bottom of the file are an older, legacy engine, kept only for
-`examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`),
+`pmeasure.py` (efficiency variation, pairwise/final
+full-wave-set-vs-constituent-triad comparisons --
+`efficiency_variation_final`, `pairwise_target_diagnostics`),
 `periods.py` (`dominant_periods`,
 `low_frequency_power`, novelty-frequency content, `spectral_deviation`),
 `precession.py` (`precession_frequency_efficiency`), `efficiency.py`
@@ -338,9 +308,8 @@ at the bottom of the file are an older, legacy engine, kept only for
 unified sweep engine itself (`rsw_sphere.dynamics.diagnostics_report.compute_diagnostics_report`,
 used by `run_sweep.py`/`run_sweep_sets.py`/`_triad_panel_row.py`) reads
 these functions' outputs per grid point rather than duplicating their
-formulas. `p_measure_sweep`/`efficiency_sweep`-style functions take a
-`cache_path` (`.npz`, cache-if-absent/load-if-present) as their own,
-separate sweep cache.
+formulas. Sweep-style functions take a `cache_path` (`.npz`,
+cache-if-absent/load-if-present) as their own, separate sweep cache.
 
 ## Outputs
 
@@ -406,9 +375,9 @@ plus one point-wise `candidates_<column>.png` figure per column (every
 requested diagnostic and each candidate's own static delta/coeff/
 isolated-triad-efficiency properties).
 
-**`outputs/tables/`** -- one `.tex`/`.csv` per `examples/tables/paper_table<NN>_*.py`/
-`paper_headline_*.py` script (see `examples/README.md` for the full list
-and which paper `\label{...}` each one reproduces).
+**`outputs/tables/`** -- one `.tex`/`.csv` per
+`examples/tables/paper_table<NN>_*.py` script (see `examples/README.md`
+for the full list and which paper `\label{...}` each one reproduces).
 
 Standalone dispersion/Hough scripts write wherever their `path` argument
 points, outside this layout.
@@ -423,6 +392,10 @@ points, outside this layout.
 - **Pump mode** is expected to be mode c (`m_c` largest) -- `TRIAD`'s own convention.
 - **Dependency pinning** (`numpy<2.0`, `scipy<1.15`) matters: the Legendre /
   eigenvalue APIs used here changed in later releases.
-- **No Python identifiers were renamed** in the 2026-07 package refactor
-  (`TRIAD`, `FOUR_WAVES`, `matriz_A`, etc. are unchanged) — only directories,
-  filenames, and import paths moved to the `rsw_sphere` package layout.
+- **Paths are never CWD-relative.** Anything writing under `outputs/`, and
+  the trajectory cache, goes through `rsw_sphere/paths.py`; a relative
+  `output_root` is resolved against the repo root, not the launch
+  directory.
+- **`m = 0` modes are not constructed.** `matrix_m0.py` supplies the
+  `m = 0` eigenvalues for the dispersion diagram only; there is no `m = 0`
+  eigenvector/normalization path, and no registered wave set uses one.

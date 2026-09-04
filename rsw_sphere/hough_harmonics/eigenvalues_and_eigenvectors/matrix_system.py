@@ -1,8 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-from .matrix_m0 import matriz_C, matriz_D
 
 def p(n,m):
     

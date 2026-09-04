@@ -43,12 +43,7 @@ independent ``WaveSet``/``RK44`` machinery on a toy triad):
 
     python -m rsw_sphere.dynamics.dynamical_phase
 """
-import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 

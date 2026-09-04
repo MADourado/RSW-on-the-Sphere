@@ -34,13 +34,8 @@ share the same triad count (e.g. every quartet) into ONE
 multi-group style rather than one block per wave set -- see
 ``examples/tables/paper_table02_quartet_master.py``.
 """
-import os
-import sys
 import warnings
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -57,11 +52,7 @@ def wave_set_properties(spec, N: int = 10, deg: int = 300) -> dict:
     spec : rsw_sphere.dynamics.wave_set_specs.WaveSetSpec
     N, deg : int, optional
         See ``rsw_sphere.dynamics.wave_sets.WaveSet``. Default ``N=10,
-        deg=300`` -- matches §2.2's own convention; the legacy four-wave
-        scripts used ``N=30`` but with no documented convergence check
-        tying the result to that resolution, so ``N=10`` (already
-        established as sufficient at this ``deg`` in §2.2) was kept
-        instead.
+        deg=300``, the resolution established as sufficient in section 2.2.
 
     Returns
     -------

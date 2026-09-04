@@ -1,7 +1,6 @@
 """precession_frequency_efficiency lock-island regression: locks
 Quartet A's own published boundary -- u~83-92/u~140 lock both constituent
 triads, u=70 doesn't."""
-import numpy as np
 import pytest
 
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs

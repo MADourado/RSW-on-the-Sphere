@@ -17,18 +17,15 @@ Run as a quick self-check (validates every registered wave set's
 
     python -m rsw_sphere.dynamics.wave_set_specs
 """
-import os
-import sys
 from dataclasses import dataclass, field
 
 import yaml
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+from rsw_sphere.paths import DEFAULT_WAVESETS_PATH as _DEFAULT_WAVESETS_PATH
 
-#: Default registry YAML, relative to the repo root.
-DEFAULT_WAVESETS_PATH = os.path.join(_ROOT, "wave_sets_default.yaml")
+
+#: Default registry YAML (repository-anchored, see rsw_sphere.paths).
+DEFAULT_WAVESETS_PATH = _DEFAULT_WAVESETS_PATH
 
 
 @dataclass(frozen=True)

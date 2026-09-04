@@ -5,45 +5,22 @@ trajectory in one constituent triad alone:
 
     efficiency_var (%) = 100 * (dEK_full - dEK_triad) / dEK_triad
 
-"Efficiency variation" and what an earlier version of this module called
-"P-measure" are the same quantity (2026-09-03), not two diagnostics to be
-read together: naively defining efficiency variation as the percent
-change between two *standalone* efficiencies (each side's own dEK divided
-by *its own* configuration's mean total energy,
-`rsw_sphere.utilities.efficiency.wave_set_efficiency`) is wrong in
-general -- the two configurations' total-energy budgets differ for
-reasons unrelated to the target's actual response (e.g. a fixed driving
-velocity needs more energy at a higher wavenumber), so that ratio can
-drift purely from the denominator. Dividing both sides by the SAME
-reference energy budget instead (the smaller/reference configuration's
-own, exact for a lone triad) cancels that denominator out of the ratio
-entirely, leaving exactly the raw-dEK formula above -- P-measure was
-already computing the right thing. "P-measure" as a name/label is
-retired; the functions below are named/documented for what they compute
-(efficiency variation), except the standalone legacy engine at the
-bottom of this file (see its own section comment), kept only for
-`examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`.
-
-Run as a quick self-check:
-
-    python -m rsw_sphere.utilities.pmeasure
+Both sides of the ratio are raw energy variations, deliberately not
+standalone efficiencies: each configuration's own mean total energy
+differs for reasons unrelated to the target's response (a fixed driving
+velocity costs more energy at a higher wavenumber), so a ratio of
+separately normalized efficiencies drifts with its denominator. Dividing
+both sides by the same reference budget cancels it out and leaves the
+formula above.
 """
-import os
-
 import numpy as np
 
-from rsw_sphere.physics import gamma_from_he, days_from_nondim_time
-from rsw_sphere.dynamics.integrators import RK44
-from rsw_sphere.dynamics.wave_sets import WaveSet
-from rsw_sphere.plotting.labels import _mode_label
-from rsw_sphere.utilities.efficiency import default_velocity_range, MIN_REFERENCE_DEK
+from rsw_sphere.utilities.efficiency import MIN_REFERENCE_DEK
 from rsw_sphere.utilities.periods import novel_frequency_content, spectral_deviation, DEFAULT_EXCLUSION_FRAC
 
-G = 9.8
-
 #: Below this, a target's own reference-triad dEK is numerically
-#: indistinguishable from zero -- P and F2 are left NaN rather than a
-#: blown-up ratio (paper eq. Pa). Shared with
+#: indistinguishable from zero -- the ratio is left NaN rather than
+#: blowing up. Shared with
 #: `rsw_sphere.utilities.efficiency.efficiency_variation`'s own identical
 #: guard on its efficiency denominator -- defined once in efficiency.py
 #: (imported here, not the reverse, to avoid a circular import).
@@ -58,12 +35,6 @@ def _default_triad_index_for_mode(triads, reference_triad, mode_idx):
         if mode_idx in tri:
             return t
     return None
-
-
-def _all_triad_indices_for_mode(triads, mode_idx):
-    """Every triad index containing mode_idx -- 1 for a private mode, 2+
-    for a mode shared across triads (member or sum role alike)."""
-    return [t for t, tri in enumerate(triads) if mode_idx in tri]
 
 
 def efficiency_variation_final(dEK_full, dEK_subs):
@@ -130,26 +101,6 @@ def efficiency_variation_final(dEK_full, dEK_subs):
     }
 
 
-def _integrate_sub_triad_amplitude(gamma, modes, triad, velocities, h_e, t0, t_f, h, N, deg, mode_idx):
-    """mode_idx's own |A(t)| within constituent triad alone."""
-    i_sum, i_p, i_q = triad
-    sub_modes = [modes[i_p], modes[i_q], modes[i_sum]]
-    sub_velocities = [velocities[i_p], velocities[i_q], velocities[i_sum]]
-    local = {i_p: 0, i_q: 1, i_sum: 2}[mode_idx]
-
-    sub_ws = WaveSet(gamma, sub_modes, [(2, 0, 1)], N=N, deg=deg)
-    A0 = sub_ws.amplitudes_from_velocities(sub_velocities, h_e, g=G)
-    Y, _ = RK44(sub_ws, t0, t_f, h, A0)
-    return np.abs(Y[:, local])
-
-
-def _dEK_for_triad(gamma, modes, triad, velocities, h_e, t0, t_f, h, N, deg, mode_idx):
-    """mode_idx's kinetic-energy variation within constituent triad alone."""
-    amp = _integrate_sub_triad_amplitude(gamma, modes, triad, velocities, h_e, t0, t_f, h, N, deg, mode_idx)
-    E = amp ** 2
-    return E.max() - E.min()
-
-
 def _spectral_deviation(T_days, E_full, E_total_full, E_sub, E_total_sub, dEK_sub, xmax: float = None):
     """Gated wrapper around ``periods.spectral_deviation`` -- builds each
     run's own AMPLITUDE share (``q = |A| / sqrt(E_total.mean())``, i.e.
@@ -170,181 +121,13 @@ def _spectral_deviation(T_days, E_full, E_total_full, E_sub, E_total_sub, dEK_su
     return spectral_deviation(T_days, q_full, T_days, q_sub, xmax=xmax)
 
 
-########################################################################
-# Standalone legacy engine, kept only for
-# examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py
-# (own modes/triads/velocities API, no WaveSetSpec/results dict) -- NOT
-# the current pipeline. run_dynamics.py/run_sweep.py/run_sweep_sets.py go
-# through pairwise_target_diagnostics/efficiency_variation_final above
-# instead, via rsw_sphere.dynamics.diagnostics_report. Retained under its
-# original "P-measure" name since it computes the same formula the
-# functions above do, just against a single, always-fixed reference triad
-# (no efficiency_variation_final-style "largest of every containing
-# triad" reference selection).
-########################################################################
-
-def p_measure(modes, triads, velocities, h_e: float = 10000,
-              target_indices=None, reference_triad: int = 0, triad_index=None,
-              t0: float = 0, tf_days: float = 10, h: float = 0.01,
-              N: int = 10, deg: int = 300):
-    """P-measure (%) for one or more target modes, at one fixed IC.
-
-    Returns
-    -------
-    dict
-        P (percent, NaN below MIN_REFERENCE_DEK), dEK_full, dEK_triad,
-        triad_index_used, drift, labels.
-    """
-    gamma = gamma_from_he(h_e, g=G)[1]
-    ws = WaveSet(gamma, modes, triads, N=N, deg=deg)
-    A0 = ws.amplitudes_from_velocities(velocities, h_e, g=G)
-
-    t_f = tf_days * 4 * np.pi
-    Y, T = RK44(ws, t0, t_f, h, A0)
-    E = np.real(Y * np.conj(Y))
-    E2, E3 = ws.energy(Y)
-    E_total = np.real(E2 + E3)
-    drift = np.max(np.abs(E_total - E_total[0])) / np.abs(E_total[0])
-
-    if target_indices is None:
-        target_indices = list(range(ws.n_modes))
-    triad_index = dict(triad_index or {})
-
-    P = np.full(len(target_indices), np.nan)
-    dEK_full = np.full(len(target_indices), np.nan)
-    dEK_triad = np.full(len(target_indices), np.nan)
-    triad_index_used = []
-
-    for k, tgt in enumerate(target_indices):
-        t_idx = triad_index.get(tgt, _default_triad_index_for_mode(triads, reference_triad, tgt))
-        triad_index_used.append(t_idx)
-        dEK_full[k] = E[:, tgt].max() - E[:, tgt].min()
-        if t_idx is None:
-            continue
-        dEK_triad[k] = _dEK_for_triad(gamma, modes, triads[t_idx], velocities, h_e,
-                                       t0, t_f, h, N, deg, tgt)
-        if dEK_triad[k] > MIN_REFERENCE_DEK:
-            P[k] = 100 * (dEK_full[k] - dEK_triad[k]) / dEK_triad[k]
-
-    labels = [_mode_label(*modes[tgt]) for tgt in target_indices]
-    return {'P': P, 'dEK_full': dEK_full, 'dEK_triad': dEK_triad,
-            'triad_index_used': triad_index_used, 'drift': drift, 'labels': labels}
-
-
-def p_measure_sweep(modes, triads, h_e: float, swept_indices, fixed_velocities: dict,
-                     target_indices, u1_range=None, u2_range=None,
-                     reference_triad: int = 0, triad_index=None,
-                     n_grid: int = 40, tf_days: float = 10, h: float = 0.01,
-                     N: int = 10, deg: int = 300, cache_path: str = None,
-                     verbose: bool = False, progress_label: str = ""):
-    """Pure-compute 2D sweep of P-measure over two modes' velocities.
-
-    cache_path: .npz, cache-if-absent/load-if-present. Cache format is
-    pinned -- do not change the saved payload shape.
-
-    Returns
-    -------
-    dict
-        U1, U2 (meshgrid, m/s), P (n_grid, n_grid, len(target_indices), %),
-        drift (n_grid, n_grid), labels.
-    """
-    idx1, idx2 = swept_indices
-    if u1_range is None:
-        u1_range = default_velocity_range(modes[idx1][2])
-    if u2_range is None:
-        u2_range = default_velocity_range(modes[idx2][2])
-
-    if cache_path and os.path.exists(cache_path):
-        data = np.load(cache_path)
-        return {'U1': data['U1'], 'U2': data['U2'], 'P': data['P'],
-                'drift': data['drift'], 'labels': list(data['labels'])}
-
-    gamma = gamma_from_he(h_e, g=G)[1]
-    ws = WaveSet(gamma, modes, triads, N=N, deg=deg)
-    t_f = tf_days * 4 * np.pi
-
-    triad_index = dict(triad_index or {})
-    t_idx_for_target = [
-        triad_index.get(tgt, _default_triad_index_for_mode(triads, reference_triad, tgt))
-        for tgt in target_indices
-    ]
-    u1 = np.linspace(u1_range[0], u1_range[1], n_grid)
-    u2 = np.linspace(u2_range[0], u2_range[1], n_grid)
-    U1, U2 = np.meshgrid(u1, u2)
-    # U1[i,j]=u1[j] varies across columns, U2[i,j]=u2[i] constant per row --
-    # a target's denominator triad is row-cacheable only if it excludes idx1.
-    axis1_in_triad = [
-        (t_idx is not None and idx1 in triads[t_idx]) for t_idx in t_idx_for_target
-    ]
-
-    P = np.full((n_grid, n_grid, len(target_indices)), np.nan)
-    DRIFT = np.empty((n_grid, n_grid))
-
-    if verbose:
-        import time
-        t_start = time.time()
-
-    for i in range(n_grid):
-        row_cache = {}  # (triad_idx, target_idx) -> dEK
-        for j in range(n_grid):
-            velocities = np.empty(ws.n_modes)
-            for m in range(ws.n_modes):
-                if m == idx1:
-                    velocities[m] = U1[i, j]
-                elif m == idx2:
-                    velocities[m] = U2[i, j]
-                else:
-                    velocities[m] = fixed_velocities[m]
-
-            A0 = ws.amplitudes_from_velocities(velocities, h_e, g=G)
-            Y, _ = RK44(ws, 0, t_f, h, A0)
-            E = np.real(Y * np.conj(Y))
-            E2, E3 = ws.energy(Y)
-            E_total = np.real(E2 + E3)
-            DRIFT[i, j] = np.max(np.abs(E_total - E_total[0])) / np.maximum(np.abs(E_total[0]), 1e-300)
-
-            for k, tgt in enumerate(target_indices):
-                t_idx = t_idx_for_target[k]
-                dEK_full = E[:, tgt].max() - E[:, tgt].min()
-                if t_idx is None:
-                    continue
-                cache_key = (t_idx, tgt)
-                if (not axis1_in_triad[k]) and cache_key in row_cache:
-                    dEK_triad = row_cache[cache_key]
-                else:
-                    dEK_triad = _dEK_for_triad(gamma, modes, triads[t_idx], velocities, h_e,
-                                                0, t_f, h, N, deg, tgt)
-                    if not axis1_in_triad[k]:
-                        row_cache[cache_key] = dEK_triad
-                if dEK_triad > MIN_REFERENCE_DEK:
-                    P[i, j, k] = 100 * (dEK_full - dEK_triad) / dEK_triad
-
-        if verbose:
-            done_rows = i + 1
-            elapsed = time.time() - t_start
-            eta = elapsed / done_rows * (n_grid - done_rows)
-            prefix = f"[{progress_label}] " if progress_label else ""
-            print(f"    {prefix}row {done_rows}/{n_grid} "
-                  f"({100 * done_rows / n_grid:.0f}%) "
-                  f"elapsed {elapsed:.0f}s, eta {eta:.0f}s", flush=True)
-
-    labels = [_mode_label(*modes[tgt]) for tgt in target_indices]
-    if cache_path:
-        np.savez(cache_path, U1=U1, U2=U2, P=P, drift=DRIFT, labels=np.array(labels))
-
-    return {'U1': U1, 'U2': U2, 'P': P, 'drift': DRIFT, 'labels': labels}
-
-########################################################################
-# End of the standalone legacy engine. Everything below is the current
-# pipeline (rsw_sphere.dynamics.diagnostics_report's own compute path).
-########################################################################
 
 
 def _novelty_period(T_days, amp_full, amp_sub, dEK_sub, exclusion_frac: float = DEFAULT_EXCLUSION_FRAC,
                      min_prominence: float = 0.02, xmax: float = None):
     """(dominant novel period in days, its relevance %) -- see
     ``rsw_sphere.utilities.periods.novel_frequency_content`` for the
-    algorithm (2026-08-26 design: excludes only the sub-triad's own
+    algorithm (excludes only the sub-triad's own
     dominant peak, not a "how much did the dominant period shift"
     comparison). NaN/0 if dEK_sub is too small, or if nothing survives
     the prominence threshold.
@@ -468,15 +251,3 @@ def efficiency_variation_combined_for_all_targets(results: dict) -> dict:
     """``efficiency_variation_combined_for_target`` for every mode in the full wave set."""
     return {label: efficiency_variation_combined_for_target(results, label)
             for label in results["full"]["labels"]}
-
-
-if __name__ == "__main__":
-    # Exercises only the standalone legacy engine (p_measure) -- the live
-    # pipeline is exercised via run_dynamics.py/run_sweep.py's own tests.
-    from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs
-    spec = load_wave_set_specs()["quartet_rossby_kelvin"]
-    triads = [spec.triad_indices(i) for i in range(spec.n_triads())]
-    result = p_measure(spec.modes, triads, spec.velocities, h_e=spec.h_e,
-                        reference_triad=spec.reference_triad, tf_days=5, h=0.02)
-    assert not np.isnan(result['P']).all()
-    print(f"pmeasure legacy-engine self-check OK: P={dict(zip(result['labels'], result['P']))}")

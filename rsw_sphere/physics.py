@@ -1,11 +1,9 @@
 """Shared physical constants and nondimensionalization helpers for the RSW
 equations on the sphere.
 
-These are the ``eps``/``gamma`` (Lamb's parameter) computations that were
-previously copy-pasted across ``dynamic_three_waves.py``, ``hough_spatial_ev.py``,
-``hough_and_derivatives.py``, ``dispersion_relation_fancy.py`` and
-``normalization.py``, plus the nondimensional-time <-> days conversions used
-throughout the triad-dynamics code.
+The ``eps``/``gamma`` (Lamb's parameter) computations and the
+nondimensional-time <-> days conversions, defined once here and shared by
+every module that needs them.
 
 Run as a quick sanity check:
 
@@ -138,7 +136,7 @@ def days_from_nondim_time(t):
     The triad ODEs (``TRIAD.f`` / ``RK44`` in
     ``rsw_sphere.dynamics.dynamic_triads``) are integrated in units of
     ``1/(2*Omega)``; this is the convention already used in
-    ``Triad_dynamics`` (``t = np.linspace(0, t_f/(4*np.pi), len(T))``).
+    the amplitude-equation drivers (``t = np.linspace(0, t_f/(4*np.pi), len(T))``).
 
     Parameters
     ----------

@@ -79,12 +79,11 @@ def add_outward_twin_axis(ax, x, y, marker_style='v-', color=GREEN, ylabel='', l
     second axis' own ticks/label -- and plot one curve on it.
 
     Factored out after the identical "third twin axis, spine pushed
-    outward, matching-color label" block was copy-pasted between
+    outward, matching-color label" block is shared by
     ``precession_plot.plot_dual_axis_frequency_efficiency`` and
-    ``examples/raphaldini2022_compare/precession_comparison.py``'s ``plot_sweep``
-    and had already drifted (one copy set a log y-scale, the other
-    didn't) -- see paper-nonlinear-interactions-SWE-sphere's own code
-    review, 2026-08-25.
+    ``examples/raphaldini2022_compare/precession_comparison.py``'s
+    ``plot_sweep``; it lives here because the two copies it replaced had
+    already drifted (one set a log y-scale, the other did not).
 
     **Deliberately always linear scale** -- do not set a log scale on the
     returned axis for a quantity that can be exactly zero (e.g.
@@ -144,19 +143,17 @@ def apply_house_style(base_size: int = 13):
         Tick-label size; axis labels, panel/sub-plot titles, AND the
         legend are all set EQUAL to each other, one step above it --
         legend text reading noticeably smaller than the axis labels
-        right next to it was flagged repeatedly (2026-09-04 sizing pass,
-        round 2: an even smaller *relative* legend size on top of an
-        already-small base compounded the problem in the busiest
-        panels), so there is now exactly one non-tick text size per
-        figure, not two. Any per-call ``fontsize=`` override (a
+        right next to it reads badly, and a smaller *relative* legend
+        size on top of an already-small base compounds it in the busiest
+        panels. So: exactly one non-tick text size per figure, not two.
+        Any per-call ``fontsize=`` override (a
         ``ax.legend(fontsize=...)`` or ``ax.set_title(..., fontsize=...)``)
         should be removed rather than added -- it silently drifts out of
         sync with this hierarchy the next time base_size changes here.
-        Default 13 (bumped from 11, 2026-09-03: a multi-panel figure gets
-        shrunk further once embedded at fixed `\\linewidth` in the paper,
-        so 11pt read too small there -- pass a still-larger value (e.g.
-        15-16) for a busy 2x2/2x3 panel grid, or for a figure combining
-        several small subfigures, specifically.
+        Default 13. A multi-panel figure is shrunk further once embedded
+        at a fixed ``\\linewidth`` in the paper, so pass a larger value
+        (15-16) for a busy 2x2/2x3 grid or a figure combining several
+        small subfigures.
     """
     plt.rcParams.update({
         'font.family': 'serif',

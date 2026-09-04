@@ -17,15 +17,10 @@ or import and call it from another script:
     from rsw_sphere.plotting.hough_spatial_ev import hough_spatial_ev
     hough_spatial_ev(m=3, n=7, alpha=3, h_e=10000, path="output.png")
 """
-import os
-import sys
 
 # Make the repository root importable so that "rsw_sphere" resolves
 # whether this file is run directly (python rsw_sphere/plotting/hough_spatial_ev.py),
 # run as a module (python -m rsw_sphere.plotting.hough_spatial_ev), or imported.
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 import matplotlib.pyplot as plt

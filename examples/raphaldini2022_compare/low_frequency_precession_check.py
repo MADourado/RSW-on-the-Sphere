@@ -30,15 +30,7 @@ Run:
 
     python examples/raphaldini2022_compare/low_frequency_precession_check.py
 """
-import os
-import sys
-
-_ROOT = os.path.dirname(os.path.abspath(__file__))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
-_REPO = os.path.dirname(_ROOT)
-if _REPO not in sys.path:
-    sys.path.insert(0, _REPO)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import numpy as np
 

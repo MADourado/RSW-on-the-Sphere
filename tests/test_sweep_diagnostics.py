@@ -58,12 +58,10 @@ def test_normalize_raises_on_unknown_name():
         _normalize_diagnostics(("not_a_real_diagnostic",), spec)
 
 
-def test_normalize_rejects_retired_p_measure_name():
-    # "p_measure" (2026-09-03: recognized as the same quantity as
-    # "efficiency_var" once both sides of the ratio share one reference
-    # energy budget -- see rsw_sphere.utilities.pmeasure's own module
-    # docstring) is retired, not aliased -- callers must migrate to
-    # "efficiency_var" explicitly.
+def test_normalize_rejects_p_measure_name():
+    # "p_measure" is the same quantity as "efficiency_var" (both sides of
+    # the ratio share one reference energy budget). It is rejected rather
+    # than aliased, so a registry entry has to name it unambiguously.
     spec = load_wave_set_specs()["quartet_rossby_kelvin"]
     with pytest.raises(ValueError, match="unknown sweep diagnostic"):
         _normalize_diagnostics(("p_measure",), spec)

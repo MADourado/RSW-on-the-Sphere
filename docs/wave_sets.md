@@ -1,21 +1,19 @@
 # Quartet/quintet ("wave set") tools
 
-Five modules (3 in `rsw_sphere/plotting/`, 2 in `rsw_sphere/utilities/`)
+Four modules (2 in `rsw_sphere/plotting/`, 2 in `rsw_sphere/utilities/`)
 compute and visualize coupled multi-triad interactions (quartets,
 quintets, and — as a degenerate case — single triads), built on
 `rsw_sphere.dynamics.wave_sets.WaveSet`, a generalization of the
 single-triad `rsw_sphere.dynamics.dynamic_triads.TRIAD` to an arbitrary
 set of Hough modes coupled through an arbitrary set of resonant triads.
 They back the paper's "Coupled Triads" section: every number quoted there
-should come from one of these, not be hand-typed. `TRIAD` itself is
-untouched and serves as the independent reference implementation
-`WaveSet` is checked against (§0).
+should come from one of these, not be hand-typed. `TRIAD` is kept as the
+independent reference implementation `WaveSet` is checked against (§0).
 
 | Module | Shows |
 |--------|-------|
 | `rsw_sphere/plotting/wave_set_table.py` | Batch table: per-mode frequency/period, one coupling-coefficient column per constituent triad, per-triad mismatch `δ` and pump mode |
 | `rsw_sphere/plotting/energy_evolution.py` | Energy-integration time series — one mode's own trajectory, or a "triad 1 / triad 2 [/ triad 3] / full wave set" comparison row |
-| `rsw_sphere/plotting/period_panel.py` | Power spectrum (dominant periods) of a wave set's kinetic-energy time series |
 | `rsw_sphere/utilities/pmeasure.py` | Efficiency variation (%): how much a wave set's extra mode(s) enhance/inhibit one constituent triad's own energy exchange |
 | `rsw_sphere/utilities/precession.py` | Precession-frequency + efficiency (+ individual-mode phase) sweep over one mode's driving velocity |
 
@@ -26,7 +24,7 @@ diagnostics engine). Prefer them over calling a module directly when the
 run is tied to a specific figure, so the registry entry — not a new
 script — is what's committed.
 
-All five modules load their wave sets from a **registry YAML** rather
+All four modules load their wave sets from a **registry YAML** rather
 than hardcoding mode numbers — by default
 [`wave_sets_default.yaml`](../wave_sets_default.yaml), via
 `rsw_sphere.dynamics.wave_set_specs.load_wave_set_specs()`. Pass
@@ -300,20 +298,23 @@ erroring; **extend the dict, don't fork it**.
 
 ---
 
-## 4. `period_panel.py` — dominant-period analysis
+## 4. `rsw_sphere/utilities/periods.py` — dominant-period analysis
 
 ```bash
-python rsw_sphere/plotting/period_panel.py outputs/figures/wave_sets/quartet_rossby_kelvin_periods.png --wave-set quartet_rossby_kelvin
+python run_dynamics.py --wave-set quartet_rossby_kelvin --diagnostics
 ```
 
-Console script: `rsw-waveset-periods`. Same `--wave-set`/`--tf`/`--h`
-flags as `rsw-waveset`. Prints, per mode, `period_global` (the single
+`dominant_periods()` reports, per mode, `period_global` (the single
 largest spectral peak) and `period_local_max` (the largest-*period* local
 maximum, if distinct from the global one — a real, lower-power
 periodicity the global max alone hides), flagging `[HORIZON-LIMITED]` for
 any period within 10% of the integration horizon (unresolvable, not
 necessarily a genuine long periodicity — read `--max-period`'s docstring
 in `dominant_periods()` before citing a period near this boundary).
+`run_dynamics.py` writes these to `diag_evol_<run_label>.csv`;
+`run_sweep.py`'s `dominant_period` diagnostic sweeps them, and
+`rsw_sphere/plotting/novelty_frequency_panel.py` draws the corresponding
+spectra.
 
 Input to the FFT is the kinetic-energy series `|A_j(t)|^2`, not the raw
 complex amplitude. Peak-finding uses `scipy.signal.find_peaks`, not a
@@ -321,10 +322,9 @@ manual float-equality scan.
 
 **Not yet built**: a period-*difference* sweep (this wave set's dominant
 period minus its reference triad's, gridded over two swept velocities).
-Only the single-IC power spectrum above exists so far.
 
 Run `python -m rsw_sphere.utilities.periods` (no args) for a fast,
-registry-independent synthetic self-check instead of the registry CLI.
+registry-independent synthetic self-check.
 
 ---
 
@@ -411,18 +411,6 @@ wraps it for a sweep (`run_sweep.py`'s `efficiency_var` diagnostic).
 private or shared — unlike the "final"/combined versions above, this
 pairwise form is exactly the effect of one specific, named mode removal,
 valid whether the target is private or shared.
-
-**Standalone legacy engine** (`p_measure`/`p_measure_sweep`, bottom of
-`pmeasure.py`, plus `rsw_sphere/plotting/pmeasure_map.py` and its
-`rsw-waveset-pmeasure` console script): an older, standalone
-modes/triads/velocities API predating `WaveSetSpec`/`run_dynamics()`, with
-its own single-fixed-reference-triad 2D sweep + diverging-colormap
-plotting, kept only for
-`examples/figures/legacy/paper_figure011_quintet_gravity_star_pmeasure.py`
--- not part of the current pipeline (no current `paper_figure*.py` script
-calls it). Computes the same formula as `pairwise_target_diagnostics`
-above, just against always the one fixed reference triad, never the
-"final"/largest-of-every-containing-triad selection.
 
 ---
 
@@ -548,13 +536,14 @@ See `run_sweep.py`'s own module docstring for the full config schema.
 
 ### 6.2. `rsw_sphere/dynamics/trajectory_cache.py` — raw trajectory caching
 
-`run_and_cache(ws, A0, t_f, h, velocities=None, output_root="outputs/trajectories", label=None)`
+`run_and_cache(ws, A0, t_f, h, velocities=None, output_root=None, label=None)`
 caches the raw `Y(t)` ODE solution itself, not just a derived summary --
-every other cache in this codebase (the legacy `p_measure_sweep`/
-`efficiency_sweep`, `rsw_sphere.plotting.sweeps`) stores summary/sweep
-arrays only, so any new
-diagnostic on an already-run trajectory would otherwise mean
-re-integrating from scratch. Cache path:
+every other cache in this codebase stores summary/sweep arrays only, so a
+new diagnostic on an already-integrated trajectory would otherwise mean
+re-integrating from scratch. `output_root` defaults to
+`rsw_sphere.paths.TRAJECTORY_ROOT` and a relative override is resolved
+against the repo root, so the cache never fragments by launch directory.
+Cache path:
 `outputs/trajectories/<topology>/<label>_<hash8>.npz`; the hash covers
 everything that changes the numerical result (modes, triads, `gamma`,
 `N`, `deg`, `A0`, `t_f`, `h`). `topology` is auto-derived from the wave
@@ -578,14 +567,14 @@ Each composite figure for the gravity-Rossby quartets (§4.3) and the star
 quintet (§5) has its own dedicated `examples/figures/paper_figureNNN_*.py`
 script. Script numbers are kept in sync with each script's own actual
 compiled figure number (`JFM-template.aux`'s `\newlabel{fig: ...}`, not
-creation order) -- a script whose own figure is removed from the paper
-entirely moves to `examples/figures/legacy/` instead of being renumbered
-into a slot that no longer means anything (see `examples/README.md`).
+creation order); a script whose figure is dropped from the paper is
+deleted rather than renumbered into a slot that no longer means anything
+(see `examples/README.md`).
 
 | Script | Figure | Wave set |
 |---|---|---|
 | `paper_figure008_quartet_rossby_kelvin_panel.py` | `fig: cap4ex1` | `quartet_rossby_kelvin` (3x2: Triad 1/Triad 2/full-quartet evolution on top, one novelty spectrum per Rossby mode on bottom) |
-| `paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.py` | `fig: rossby_kelvin_wavenumber` | `quartet_rossby_kelvin` (single panel, twin y-axes: candidate's own coupling coefficient (log, left) + RH(1,2)'s own efficiency variation (right), over the registered `alternative_modes.d` candidate list EG(1,n)/WG(1,n); `run_sweep_sets.run_sweep_sets`'s `target_mode_override` run twice over the same candidates -- redesigned 2026-09-03, dropped the old 2x2 efficiency_var/p_measure grid once both were recognized as the same quantity) |
+| `paper_figure009_quartet_rossby_kelvin_gravity_wavenumber.py` | `fig: rossby_kelvin_wavenumber` | `quartet_rossby_kelvin` (single panel, twin y-axes: candidate's own coupling coefficient (log, left) + RH(1,2)'s own efficiency variation (right), over the registered `alternative_modes.d` candidate list EG(1,n)/WG(1,n); `run_sweep_sets.run_sweep_sets`'s `target_mode_override` run twice over the same candidates) |
 | `paper_figure010_quartet_rossby_gravity_influence_panel.py` | `fig: quartet_rossby_gravity_influence_panel` (Quartet D) | `quartet_rossby_gravity_influence` (2x2: both constituent-triad evolutions + full-quartet evolution + RH(3,4) novelty spectrum against Triad 1, its only containing triad) |
 | `paper_figure011_quartet_rossby_gravity_influence_efficiency.py` | `fig: quartet_rossby_gravity_influence_efficiency` (Quartet D efficiency sweep) | `quartet_rossby_gravity_influence` (1D efficiency_var sweep over WG(3,9), Rossby modes only + 2D heatmap for RH(4,5)) |
 | `paper_figure012_quartet_rossby_gravity_influence_high_panel.py` | `fig: quartet_rossby_gravity_influence_high_panel` (Quartet E) | `quartet_rossby_gravity_influence_high` (same 2x2 layout as Quartet D's panel; EG(7,9) plays sum role for Triad 1 and member role for Triad 2, closed by EG(11,11)) |
@@ -617,17 +606,11 @@ LaTeX `subfigure`, not a Python-composited image -- each source script
 already writes its own complete, publication-ready PNG, so no separate
 assembly step exists or is needed.
 
-Retired scripts and superseded tables/figures live in
-`examples/{figures,tables}/legacy/` -- see each retired script's own
-module docstring and `examples/README.md` for what superseded it, rather
-than repeating that history here.
-
 ---
 
 ## 8. References
 
-See [`triads.md`](triads.md) for the single-triad tools this generalizes,
-and [`dispersion_relation.md`](dispersion_relation.md) and the main
+See [`dispersion_relation.md`](dispersion_relation.md) and the main
 [`README.md`](../README.md) for the underlying eigenvalue problem. See
 `rsw_sphere/dynamics/wave_sets.py`'s own module docstring for the design
 rationale (the permutation between `TRIAD`'s and `WaveSet`'s conventions,

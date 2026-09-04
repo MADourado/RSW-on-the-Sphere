@@ -18,11 +18,8 @@ Run:
     python examples/figures/paper_figure014_quintet_gravity_star_panel.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import matplotlib.pyplot as plt
 
@@ -37,7 +34,7 @@ from rsw_sphere.utilities.novelty_frequency import novelty_combined_for_target
 WAVE_SET_KEY = "quintet_gravity_star"
 TF_DAYS = 150.0
 SPECTRUM_LABELS = ["RH(4,5)", "RH(1,2)"]
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
                                "paper_figure014_quintet_gravity_star_panel.png")
 
 #: Display-only time-axis limit (days) for the top row -- tuned by eye,

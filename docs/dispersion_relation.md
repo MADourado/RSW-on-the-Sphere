@@ -119,7 +119,7 @@ where — per thesis §2.1 — inertia-gravity modes are symmetric when `n + m` 
 (`utils`→`rsw_sphere/hough_harmonics/eigenvalues_and_eigenvectors/matrix_system.py`).
 For the special case `m = 0`:
 
-- `C(γ, N)`, `D(γ, N)`  (`.../Matrix_m0.py`).
+- `C(γ, N)`, `D(γ, N)`  (`.../eigenvalues_and_eigenvectors/matrix_m0.py`).
 
 `N` is the spectral truncation; the script uses `N = 3`, giving `6N = 18`
 eigenvalues per `m`. The matrix entries are built from three coefficients:
@@ -166,7 +166,7 @@ thesis (Fig. 2.1 caption) highlights:
 
 When the 18 eigenvalues per `m` are sorted ascending, the columns map to
 `(family, l)` as follows (verified against the Hough-function builder
-`Eigenvectors.py`, stable for all `m`):
+`eigenvalues_and_eigenvectors/eigenvectors.py`, stable for all `m`):
 
 ```
 idx 0–5   : WIG,  l = 5,4,3,2,1,0     (most negative → highest l)

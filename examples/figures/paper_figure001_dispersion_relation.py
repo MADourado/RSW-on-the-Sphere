@@ -12,15 +12,12 @@ Run:
     python examples/figures/paper_figure001_dispersion_relation.py
 """
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 from rsw_sphere.plotting.dispersion_relation_fancy import dispersion_relation
 
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "paper", "paper_figure001_dispersion_relation.png")
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "paper", "paper_figure001_dispersion_relation.png")
 
 
 def main():

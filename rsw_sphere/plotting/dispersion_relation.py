@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.matrix_m0 import matriz_C, matriz_D
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.matrix_system import matriz_A, matriz_B
 

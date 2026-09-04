@@ -79,23 +79,6 @@ def plot_dual_axis_frequency_efficiency(result, spec, plot_triad=None,
     return fig, ax
 
 
-def plot_phase_trace(phi_list, T_days_list, labels, title='', ylabel=r'$\Phi$ (rad)', path=None):
-    """One or more phi(t) traces -- works for both combined dynamical
-    phase (dynamical_phase) and individual raw mode phase (individual_phase).
-    """
-    apply_house_style()
-    fig, ax = plt.subplots(figsize=(7, 4.5))
-    for phi, T_days, lbl in zip(phi_list, T_days_list, labels):
-        ax.plot(T_days, phi, label=lbl)
-    ax.set_xlabel('Time (days)')
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.legend()
-    fig.tight_layout()
-    save_or_show(fig, path)
-    return fig, ax
-
-
 def main():
     import argparse
     import numpy as np

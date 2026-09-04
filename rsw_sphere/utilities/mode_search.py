@@ -31,7 +31,6 @@ coupling coefficients (expensive: builds Hough eigenvectors per
 candidate) and rank/filter survivors by coupling strength, not just
 whether it's structurally allowed to be nonzero.
 """
-import csv
 import os
 import warnings
 

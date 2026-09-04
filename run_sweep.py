@@ -19,12 +19,10 @@ One diagnostic vocabulary, both dimensionalities:
   does (same meaning in 1D and 2D). Undefined for a plain triad with no
   sub-triad to compare against -- warned and skipped there. `efficiency_var`
   is the target's own raw energy-variation percent change, full wave set
-  vs. whichever containing sub-triad gives it the largest raw swing --
-  what used to be reported separately as "P-measure" before both were
-  recognized as the same quantity (2026-09-03): both sides of the ratio
-  share one reference energy budget, so it is immune to the full wave
-  set's own total-energy budget changing independently of the target's
-  actual dynamical response.
+  vs. whichever containing sub-triad gives it the largest raw swing. Both
+  sides of the ratio share one reference energy budget, so it is immune to
+  the full wave set's own total-energy budget changing independently of
+  the target's actual dynamical response.
 - `total_energy` -- one line/heatmap per UNIT (`full` plus every
   sub-triad, not per mode): each unit's own time-averaged total energy,
   in Joules (`rsw_sphere.physics.total_energy_joules`, same conversion
@@ -64,6 +62,7 @@ import numpy as np
 import yaml
 
 from rsw_sphere.dynamics.run_config import RunConfig, default_max_workers
+from rsw_sphere.paths import OUTPUT_ROOT
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
 from rsw_sphere.dynamics.diagnostics_report import compute_diagnostics_report, write_diagnostics_files
 from rsw_sphere.plotting.labels import _mode_label, mode_fs_label
@@ -432,7 +431,7 @@ def main():
                          help="registry role key -- reads sweep/tf_days/h/plot straight from that "
                               "wave_sets_default.yaml entry, no separate config file needed.")
     parser.add_argument("--specs", default=DEFAULT_WAVESETS_PATH, help="used with --wave-set")
-    parser.add_argument("--output-root", default="outputs",
+    parser.add_argument("--output-root", default=OUTPUT_ROOT,
                          help="override the config's own output_root (e.g. for an isolated test run)")
     parser.add_argument("--no-plot-per-point", action="store_true",
                          help="skip every per-grid-point file output (evolution figure + full "

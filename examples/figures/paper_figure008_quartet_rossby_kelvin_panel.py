@@ -16,22 +16,14 @@ sqrt(tf_days/2) scaling to show up to 10d, wide enough to resolve the
 ~4.5d period this configuration turns out to produce (see module-level
 numbers printed by ``main()``).
 
-Retires the separate ``fig: power1`` power-spectrum figure (previously
-``paper_figure009_quartet_rossby_kelvin_periods.py``, now in
-``examples/figures/legacy/``) -- its own spectra are now this figure's
-own bottom row instead of a companion figure.
-
 Run:
 
     python examples/figures/paper_figure008_quartet_rossby_kelvin_panel.py
 """
 import dataclasses
 import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
+import _bootstrap  # noqa: F401 -- repo root on sys.path
 
 import matplotlib.pyplot as plt
 
@@ -49,7 +41,7 @@ VELOCITIES = (40.0, 40.0, 40.0, 40.0)  # a, b, c, d -- all modes driven equally
 TF_DAYS = 200.0
 HIGHLIGHT_KEY = "d"  # EG(1,1) -- matches this figure's own prior convention
 ROSSBY_LABELS = ["RH(4,5)", "RH(3,4)", "RH(1,2)"]
-DEFAULT_OUTPUT = os.path.join(_ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
+DEFAULT_OUTPUT = os.path.join(_bootstrap.ROOT, "outputs", "figures", "wave_sets", WAVE_SET_KEY,
                                "paper_figure008_quartet_rossby_kelvin_panel.png")
 
 #: Display-only axis limits (days) -- independent of TF_DAYS/the spectrum's

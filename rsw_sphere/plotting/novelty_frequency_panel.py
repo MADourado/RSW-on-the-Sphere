@@ -1,5 +1,5 @@
 """Figures for ``rsw_sphere.utilities.novelty_frequency``'s novelty-
-frequency detection: ONE figure per target mode (2026-08-26 request),
+frequency detection: ONE figure per target mode,
 combining every containing sub-triad into the same plot rather than a
 separate file per (target, sub-triad) pair -- a private mode's figure
 has one sub-triad curve, a mode shared across N triads has N.
@@ -14,8 +14,8 @@ Each figure shows, on one axis (all curves on the same peak-normalized
 
 The difference spectrum itself (full vs. the BEST explanation any single
 sub-triad offers -- see ``periods.novel_frequency_content_multi``) and
-detected novel peaks are NOT drawn on this figure (dropped 2026-08-28):
-the exclusion band's edges can produce a spurious "peak" right at the
+detected novel peaks are deliberately NOT drawn on this figure: the
+exclusion band's edges can produce a spurious "peak" right at the
 boundary (a real, still-declining difference clamped flat inside the
 excluded window creates an artificial step there), so read the
 underlying value off ``diag_final_*.csv``'s ``novelty_period_final_days``

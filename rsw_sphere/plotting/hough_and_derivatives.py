@@ -1,10 +1,7 @@
 import numpy as np
-import scipy
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
 
-from rsw_sphere.hough_harmonics.normalization import norm_Hough, norm_component
+from rsw_sphere.hough_harmonics.normalization import norm_Hough
 from rsw_sphere.hough_harmonics.eigenvalues_and_eigenvectors.eigenvectors import Hough_harmonic
 from rsw_sphere.physics import gamma_from_he
 

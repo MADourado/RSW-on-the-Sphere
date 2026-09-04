@@ -1,9 +1,7 @@
 """Shared time integrator for amplitude-equation systems (triads, quartets,
 quintets, ...).
 
-``RK44`` was previously copy-pasted, byte-identical apart from the parameter
-name, into ``dynamic_triads.py`` and all six legacy four/five-wave scripts.
-It only ever calls ``X.f(state)``, so it is arity-agnostic: any object with
+``RK44`` only ever calls ``X.f(state)``, so it is arity-agnostic: any object with
 an ``f(AMP) -> dAMP/dt`` method works, whether ``AMP`` has 3, 4 or 5
 components (or a batch of them, if ``f`` is written to broadcast).
 

@@ -1,22 +1,14 @@
 """Generalized N-wave amplitude-equation system: quartets, quintets, and
 (as a degenerate 1-triad case) triads, all as instances of one class.
 
-Background
-----------
-Six legacy scripts (``four_waves_basic.py``, ``four_waves_2.py``,
-``four_waves_79.py``, ``four_waves_pump.py``, ``four_waves_rk4_driver.py``,
-``five_waves.py``) each define their own ``FOUR_WAVES``/``FIVE_WAVES``
-class, byte-identical to each other apart from cosmetic differences, and
-none of them works as shipped (they call ``Triad_dynamics(..., p=...)``, a
-kwarg that never existed). Rather than writing a seventh near-duplicate,
 ``WaveSet`` generalizes ``TRIAD`` (``rsw_sphere.dynamics.dynamic_triads``)
 to an arbitrary set of modes coupled through an arbitrary set of
-constituent triads -- a quartet is 4 modes / 2 triads sharing one edge, a
+constituent triads: a quartet is 4 modes / 2 triads sharing one edge, a
 quintet is 5 modes / (2 or 3) triads, a triad is the degenerate case of 3
 modes / 1 triad.
 
-**``TRIAD`` itself is left untouched.** It is the independent reference
-implementation ``WaveSet`` is proven against -- see
+``TRIAD`` is deliberately left as an independent implementation -- it is
+the reference ``WaveSet`` is proven against, see
 ``rsw_sphere/utilities/check_wave_set_physics.py``, checks C1-C4.
 
 The permutation, precisely
@@ -36,8 +28,7 @@ The symmetry factor ``fat``
 ----------------------------
 ``TRIAD`` applies ``fat = -1`` to all three coupling coefficients (and to
 ``Sabc``) when all three modes are equatorially symmetric
-(``symetry() == True``); the legacy four/five-wave scripts never apply it
-at all (equivalent to ``fat_policy='off'``). Flipping one triad's ``fat``
+(``symetry() == True``). Flipping one triad's ``fat``
 is the gauge transformation ``A_j -> s_j A_j`` with ``s_p s_q s_r = -1``;
 since every configuration used in this paper is a *star* sharing a single
 edge (the sum mode's siblings are each private to one triad), this map is
@@ -62,12 +53,7 @@ Run as a quick sanity check:
 
     python -m rsw_sphere.dynamics.wave_sets
 """
-import os
-import sys
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
 import numpy as np
 
@@ -109,8 +95,8 @@ class WaveSet:
     fat_policy : {'symmetry', 'off', 'always'}, optional
         Per-triad symmetry sign factor. ``'symmetry'`` (default) matches
         ``TRIAD``'s own rule (``fat=-1`` iff all three modes are
-        equatorially symmetric). ``'off'`` never applies it (the legacy
-        four/five-wave scripts' behaviour). ``'always'`` applies ``fat=-1``
+        equatorially symmetric). ``'off'`` never applies it. ``'always'``
+        applies ``fat=-1``
         unconditionally, for probing the gauge claim (check C4) beyond
         just the symmetric-mode case. Does not affect any energy at any
         instant (see module docstring) -- provided *only* for the physics

@@ -6,15 +6,12 @@ Run as a quick self-check:
     python -m rsw_sphere.dynamics.run_config
 """
 import os
-import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import yaml
 
-_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if _ROOT not in sys.path:
-    sys.path.insert(0, _ROOT)
 
+from rsw_sphere.paths import OUTPUT_ROOT, resolve
 from rsw_sphere.dynamics.wave_set_specs import WaveSetSpec, DEFAULT_WAVESETS_PATH, load_wave_set_specs
 
 
@@ -47,11 +44,16 @@ class RunConfig:
     wave_set_spec: WaveSetSpec
     tf_days: float
     h: float
-    output_root: str = "outputs"
+    output_root: str = OUTPUT_ROOT
     plot: bool = True
     parallel: bool = True
     max_workers: int = None
     sweep: SweepConfig = None
+
+    def __post_init__(self):
+        # A relative output_root is resolved against the repo root, so a
+        # driver writes the same tree wherever it is launched from.
+        object.__setattr__(self, "output_root", resolve(self.output_root))
 
     @classmethod
     def from_registry_entry(cls, key: str, specs_path: str = DEFAULT_WAVESETS_PATH) -> "RunConfig":
@@ -73,7 +75,7 @@ class RunConfig:
             spec,
             tf_days=cfg.get("tf_days", spec.settings.get("tf_days", 10)),
             h=cfg.get("h", spec.settings.get("h", 0.01)),
-            output_root=cfg.get("output_root", "outputs"),
+            output_root=cfg.get("output_root", OUTPUT_ROOT),
             plot=cfg.get("plot", True),
             parallel=cfg.get("parallel", True),
             max_workers=cfg.get("max_workers"),
@@ -86,7 +88,7 @@ class RunConfig:
             wave_set_spec=spec,
             tf_days=tf_days if tf_days is not None else spec.settings.get("tf_days", 10),
             h=h if h is not None else spec.settings.get("h", 0.01),
-            output_root=overrides.get("output_root", "outputs"),
+            output_root=overrides.get("output_root", OUTPUT_ROOT),
             plot=overrides.get("plot", True),
             parallel=overrides.get("parallel", True),
             max_workers=overrides.get("max_workers"),

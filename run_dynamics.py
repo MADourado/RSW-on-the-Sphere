@@ -22,8 +22,8 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 
 from rsw_sphere.physics import gamma_from_he, days_from_nondim_time, G
+from rsw_sphere.paths import OUTPUT_ROOT
 from rsw_sphere.dynamics.wave_sets import WaveSet
-from rsw_sphere.dynamics.integrators import RK44
 from rsw_sphere.dynamics.trajectory_cache import run_and_cache, _mode_slug, ic_label, topology_folder
 from rsw_sphere.dynamics.run_config import RunConfig, default_max_workers
 from rsw_sphere.dynamics.wave_set_specs import load_wave_set_specs, DEFAULT_WAVESETS_PATH
@@ -177,7 +177,7 @@ def main():
     parser.add_argument("--wave-set", required=True,
                          help="registry role key (rsw_sphere.dynamics.wave_set_specs)")
     parser.add_argument("--specs", default=DEFAULT_WAVESETS_PATH)
-    parser.add_argument("--output-root", default="outputs")
+    parser.add_argument("--output-root", default=OUTPUT_ROOT)
     parser.add_argument("--tf-days", type=float, default=None,
                          help="override the wave set's own registered tf_days")
     parser.add_argument("--h", type=float, default=None,
@@ -362,10 +362,8 @@ def main():
         # efficiency_variation_final's own docstring). efficiency_var_final and
         # spectral_dev_final share one reference (largest raw dEK, "vs."
         # column) -- efficiency_var_final IS the raw energy-variation
-        # percent change (2026-09-03: "efficiency variation" and
-        # "P-measure" recognized as the same quantity once both sides of
-        # the ratio share one reference energy budget), so there is no
-        # longer a second, independently-chosen efficiency reference.
+        # percent change, so there is no second, independently-chosen
+        # efficiency reference.
         print("\n=== final diagnostics (per target, across all containing sub-triads) ===")
         final_rows = [
             [d['mode'],

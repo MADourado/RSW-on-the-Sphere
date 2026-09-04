@@ -24,6 +24,7 @@ from rsw_sphere.plotting.dispersion_relation import dispersion_relation
 from rsw_sphere.plotting.dispersion_relation_fancy import dispersion_relation as dispersion_relation_fancy
 from rsw_sphere.plotting.hough_and_derivatives import hough_and_derivatives, mode_tag
 from rsw_sphere.plotting.hough_spatial_ev import hough_spatial_ev
+from rsw_sphere.paths import resolve
 from rsw_sphere.dynamics.wave_set_specs import DEFAULT_WAVESETS_PATH, load_wave_set_specs
 
 
@@ -78,7 +79,7 @@ def main():
         parser.error(f"--wave-set {args.wave_set!r} not found in {args.specs!r} "
                      f"(available: {list(specs)})")
 
-    output = os.path.join(args.output_root, "figures")
+    output = os.path.join(resolve(args.output_root), "figures")
     os.makedirs(output, exist_ok=True)
     print(f'Output directory: {os.path.abspath(output)}')
 
